@@ -43,3 +43,53 @@ Phase 2 regions: Italy, Spain, Portugal, Greece.
 ## Data
 
 The API server seeds 64 dummy candidates across the Phase 1 countries on first start, plus 24 activity feed entries. All data is dummy / synthetic — there is no real candidate data on the platform.
+
+The schema (`candidates`, `activity`) is created automatically on server start via `ensureSchema()` in `lib/db/src/bootstrap.ts` — no separate migration step is required for fresh databases.
+
+## Environment Variables
+
+See `.env.example` for the full list. Summary:
+
+| Variable        | Required          | Purpose                                                                     |
+| --------------- | ----------------- | --------------------------------------------------------------------------- |
+| `DATABASE_URL`  | yes               | PostgreSQL connection string. SSL is auto-enabled in production.            |
+| `PORT`          | yes               | TCP port the API server binds to (Render injects this automatically).       |
+| `BASE_PATH`     | web only          | Vite `base` for the SPA (`/` for root, `/app` for nested).                  |
+| `NODE_ENV`      | recommended       | Set to `production` on hosted deployments. Enables SSL + CORS lockdown.     |
+| `LOG_LEVEL`     | optional          | Pino log level (`info` default).                                            |
+| `WEB_DIST_PATH` | Render single-svc | If set, Express serves the built SPA from this path (no separate web svc). |
+| `WEB_ORIGIN`    | Render two-svc    | Lock CORS to this origin when SPA is hosted as a separate static site.      |
+
+## Deployment
+
+### Replit
+The artifacts are configured for Replit's path-based reverse proxy via each artifact's `.replit-artifact/artifact.toml`. Use the publish flow in the workspace — no extra setup required.
+
+### Render
+
+The recommended pattern is **a single Render web service** that hosts both the API and the built SPA. This avoids cross-origin issues entirely.
+
+1. **Create a managed Postgres** on Render. Copy the *Internal Database URL*.
+2. **Create a Web Service** pointing at this repo. Settings:
+   - **Runtime**: Node 24
+   - **Build command**:
+     ```
+     corepack enable && pnpm install --frozen-lockfile \
+       && pnpm --filter @workspace/api-server run build \
+       && BASE_PATH=/ PORT=8080 pnpm --filter @workspace/orn-ai run build
+     ```
+     `PORT` is only needed at build time so Vite's config doesn't refuse to load; the actual runtime port comes from Render.
+   - **Start command**:
+     ```
+     node --enable-source-maps artifacts/api-server/dist/index.mjs
+     ```
+   - **Health check path**: `/api/healthz`
+   - **Environment variables**:
+     - `DATABASE_URL` = (paste Render Postgres Internal URL)
+     - `NODE_ENV` = `production`
+     - `WEB_DIST_PATH` = `artifacts/orn-ai/dist/public`
+     - `BASE_PATH` = `/` (only consumed during build)
+     - `LOG_LEVEL` = `info` (optional)
+3. Deploy. On first boot, `ensureSchema()` creates the tables and the seed populates 64 demo candidates.
+
+If you'd rather run the SPA as a separate Render Static Site, omit `WEB_DIST_PATH`, deploy the SPA build (`artifacts/orn-ai/dist/public`) as a Static Site with a SPA rewrite rule (`/* → /index.html`), and set `WEB_ORIGIN` on the API service to that site's URL.

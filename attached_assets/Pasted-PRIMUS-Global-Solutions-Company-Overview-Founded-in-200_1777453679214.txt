@@ -1,0 +1,206 @@
+PRIMUS Global Solutions – Company Overview
+Founded in 2002, PRIMUS Global Solutions is a global IT services and consulting organization delivering enterprise-grade technology solutions and strategic talent services across North America, Europe, the Middle East, and India.
+
+With a global talent pool of over 10,000 professionals—including PRIMUS Global Solutions and its Centers of Excellence (CoEs)—PRIMUS supports 400+ clients by combining deep domain expertise, emerging technologies, and agile delivery models.
+________________________________________
+Staffing Services
+PRIMUS provides end-to-end staffing solutions tailored to client needs with speed, quality, and compliance.
+Engagement Models
+Lateral Hiring (Permanent)
+•	Full-cycle recruitment (sourcing to on boarding) 
+•	Strong talent pipeline 
+•	Replacement management 
+Sub-Contract Staffing
+•	Rapid deployment of pre-vetted resources 
+•	Strong compliance and screening 
+•	Ideal for project ramp-ups 
+FTE / FTC (Full-Time / Fixed-Term Contracts)
+•	Flexible staffing aligned to project timelines 
+•	Cost-effective and scalable 
+•	Suitable for short-term and long-term engagements 
+________________________________________
+Support Services
+•	CV formatting aligned to client standards (e.g., Wipro format) 
+•	Technical screening & validation 
+•	Interview coordination and scheduling 
+•	Offer rollout & on boarding governance 
+•	Continuous follow-ups for on boarding success 
+
+Core Capabilities
+1. Digital & Application Services
+•	Digital Transformation 
+•	Application Development (Java, .NET, Python, Node.js) 
+•	Frontend Technologies (React, Angular, Vue.js) 
+•	Microservices & API-first Architecture 
+2. Cloud Engineering
+•	AWS, Microsoft Azure, Google Cloud Platform (GCP) 
+•	Kubernetes, Docker, Serverless Architecture 
+3. Data, AI & Analytics
+•	Data Engineering & Real-time Processing 
+•	AI & Machine Learning Solutions 
+•	Predictive & Prescriptive Analytics 
+•	BI & Visualization (Power BI, Tableau) 
+4. DevOps & Automation
+•	CI/CD (Jenkins, GitHub Actions, GitLab CI/CD) 
+•	Infrastructure as Code (Terraform, Ansible) 
+•	Monitoring (Prometheus, Grafana) 
+5. Cybersecurity
+•	Identity & Access Management (IAM) 
+•	SIEM & SOC Operations 
+•	Zero Trust Security 
+•	Endpoint & Data Protection 
+6. Enterprise Platforms
+•	SAP, Oracle, Salesforce 
+________________________________________
+Value Proposition
+•	Faster onboarding with pre-trained talent pools 
+•	Cost optimization through global delivery models 
+•	Flexible engagement models (Project, Managed Services, Staffing) 
+•	Proven track record across industries 
+________________________________________
+Delivery & Engagement Models
+1. Delivery Models
+Onsite Model
+•	Resources deployed at client location 
+•	Ideal for high collaboration or sensitive projects 
+Offshore Model
+•	Delivery from global centers (India, Europe, etc.) 
+•	Cost-effective with 24/7 execution 
+Hybrid Model
+•	Combination of onsite and offshore teams 
+•	Balanced cost and collaboration 
+Managed Services
+•	End-to-end ownership with SLA-driven delivery 
+•	Continuous improvement and optimization 
+________________________________________
+2. Statement of Work (SoW)
+A structured engagement model with clearly defined scope, deliverables, timelines, and commercial terms.
+Value Delivered: Greater predictability, milestone-driven execution, and minimized delivery risk.
+Ideal For: Digital transformation initiatives, application development, and data platform programs.
+________________________________________
+3. BOT Model (Build – Operate – Transfer)
+An end-to-end approach where teams are built, managed, and stabilized before being seamlessly transitioned to the client.
+Value Delivered: Reduced entry risk, accelerated offshore setup, operational maturity, and optimized costs.
+________________________________________
+4. POD Model (Pod of Experts)
+A dedicated, cross-functional team comprising leads, developers, QA engineers, and DevOps specialists aligned to specific business goals.
+Value Delivered: Agile execution, faster time-to-market, enhanced accountability, and flexible scalability.
+
+
+
+2. Statement of Work (SoW)
+A project-based engagement model with clearly defined:
+•	Scope, deliverables, timelines, and cost 
+Benefits:
+•	Predictable outcomes 
+•	Milestone-based execution 
+•	Reduced client risk 
+Best suited for:
+•	Digital transformation initiatives 
+•	Application development 
+•	Data platform implementations 
+________________________________________
+3. BOT Model (Build – Operate – Transfer)
+Approach:
+1.	Build dedicated teams/infrastructure 
+2.	Operate and stabilize delivery 
+3.	Transfer ownership to the client 
+Benefits:
+•	Low-risk market entry 
+•	Faster offshore capability setup 
+•	Smooth knowledge transfer 
+•	Long-term cost efficiency 
+________________________________________
+4. POD Model (Pod of Experts)
+A cross-functional, self-contained team aligned to a specific product or function.
+Structure:
+•	Tech Lead / Architect 
+•	Developers 
+•	QA Engineers 
+•	DevOps / Support 
+Benefits:
+•	Agile and scalable delivery 
+•	Faster release cycles 
+•	High ownership and accountability 
+•	Plug-and-play team model 
+________________________________________
+Centers of Excellence (CoEs)
+DGLiger – AI, ML & Data Science CoE
+A dedicated CoE focused on unlocking business value through advanced data and AI capabilities.
+Capabilities:
+•	Machine Learning & Deep Learning 
+•	Generative AI & NLP 
+•	Predictive & Prescriptive Analytics 
+•	Data Engineering & Real-time Processing 
+•	MLOps & Model Lifecycle Management 
+Key Outcomes:
+•	Data-driven decision making 
+•	Intelligent automation 
+•	Business forecasting & optimization 
+•	Enhanced customer experiences 
+________________________________________
+Data Reslove– Cybersecurity CoE
+Focused on insider threat detection, data protection, and behavioral analytics.
+Capabilities:
+•	Data Loss Prevention (DLP) 
+•	User Behavior Analytics (UBA) 
+•	Endpoint Monitoring 
+•	Insider Threat Detection 
+•	Compliance & Risk Management 
+________________________________________
+Technology Stack
+Application Development
+•	Java, Spring Boot, .NET, Python, Node.js 
+•	React, Angular, Vue.js 
+•	REST APIs, Microservices 
+Cloud & Infrastructure
+•	AWS, Azure, GCP 
+•	Kubernetes, Docker 
+•	Serverless Computing 
+Data & AI
+•	Azure Data Factory, Databricks, Snowflake 
+•	Apache Spark, Kafka 
+•	Python (Pandas, TensorFlow, PyTorch) 
+•	Power BI, Tableau 
+DevOps
+•	Jenkins, GitHub Actions, GitLab CI/CD 
+•	Terraform, Ansible 
+•	Prometheus, Grafana 
+Cybersecurity
+•	IAM, SIEM, SOC 
+•	OAuth2, SSO 
+•	Zero Trust Security 
+Enterprise Platforms
+•	SAP, Oracle, Salesforce 
+________________________________________
+How We Help Clients
+1. Accelerate Innovation
+•	AI/ML solutions via DGLiger 
+•	Modern application development 
+•	Cloud-native transformation 
+2. Strengthen Security
+•	Cybersecurity via InDefend & DataResolve 
+•	Insider threat detection 
+•	Compliance & governance 
+3. Optimize Delivery
+•	Flexible models (SoW, BOT, POD) 
+•	Agile and scalable execution 
+•	Reduced time-to-market 
+4. Build Scalable Teams
+•	End-to-end staffing services 
+•	Rapid resource deployment 
+•	High-quality talent acquisition 
+5. Ensure Business Continuity
+•	24/7 global delivery 
+•	Robust SLA-driven operations 
+•	Risk-managed execution 
+________________________________________
+Final Value Proposition
+PRIMUS Global Solutions delivers:
+•	End-to-end technology and consulting services 
+•	Access to 10,000+ global professionals including CoEs 
+•	Advanced AI/ML capabilities through DGLiger 
+•	Robust cybersecurity via InDefend & DataResolve 
+•	Flexible engagement and staffing models 
+•	Scalable, cost-efficient, and high-quality delivery
+
