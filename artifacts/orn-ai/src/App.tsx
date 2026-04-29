@@ -11,6 +11,8 @@ import CandidateEvaluation from "@/pages/CandidateEvaluation";
 import RecruiterDashboard from "@/pages/RecruiterDashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
 import DemoJourney from "@/pages/DemoJourney";
+import TrainingDashboard from "@/pages/TrainingDashboard";
+import CandidateTraining from "@/pages/CandidateTraining";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,8 +30,10 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/candidate/:id/upload" component={CandidateUpload} />
       <Route path="/candidate/:id/evaluation" component={CandidateEvaluation} />
+      <Route path="/candidate/:id/training" component={CandidateTraining} />
       <Route path="/recruiter" component={RecruiterDashboard} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/training" component={TrainingDashboard} />
       <Route path="/demo" component={DemoJourney} />
       <Route component={NotFound} />
     </Switch>

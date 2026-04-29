@@ -20,6 +20,8 @@ tags:
     description: Admin dashboard endpoints
   - name: meta
     description: Reference data (countries, roles, levels)
+  - name: training
+    description: Career-transformation workflow (Upskilling / Reskilling → Recruiter Ready)
 paths:
   /healthz:
     get:
@@ -245,6 +247,152 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DemoJourney"
+
+  /training/catalog:
+    get:
+      operationId: listTrainingCatalog
+      tags: [training]
+      summary: Available training programs and trainers
+      responses:
+        "200":
+          description: Catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingCatalog"
+
+  /training/dashboard:
+    get:
+      operationId: trainingDashboard
+      tags: [training]
+      summary: Admin training dashboard aggregates
+      responses:
+        "200":
+          description: Dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingDashboard"
+
+  /training/assignments:
+    get:
+      operationId: listTrainingAssignments
+      tags: [training]
+      summary: List training assignments (admin view)
+      parameters:
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/TrainingStatus" }
+        - name: trainingType
+          in: query
+          schema: { $ref: "#/components/schemas/TrainingType" }
+        - name: trainerId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainingAssignment"
+    post:
+      operationId: createTrainingAssignment
+      tags: [training]
+      summary: Assign a training program to a candidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingAssignmentCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingAssignment"
+
+  /training/assignments/{id}:
+    get:
+      operationId: getTrainingAssignment
+      tags: [training]
+      summary: Get a single training assignment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Assignment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingAssignment"
+    patch:
+      operationId: updateTrainingAssignment
+      tags: [training]
+      summary: Update training progress / status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrainingAssignmentUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingAssignment"
+
+  /candidates/{id}/training:
+    get:
+      operationId: getCandidateTraining
+      tags: [training]
+      summary: Get the active training assignment for a candidate (or null)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Training assignment or null
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/TrainingAssignment"
+                  - type: "null"
+
+  /training/recommend/{candidateId}:
+    get:
+      operationId: recommendTrainingForCandidate
+      tags: [training]
+      summary: Suggest a recommended program for a candidate based on their evaluation
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Recommendation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingRecommendation"
 
 components:
   schemas:
@@ -532,3 +680,263 @@ components:
               status: { type: string, enum: [done, active, pending] }
             required: [label, detail, status]
       required: [candidate, steps]
+
+    AssessmentCategory:
+      type: string
+      enum: [needs_upskilling, needs_reskilling]
+
+    TrainingType:
+      type: string
+      enum: [upskilling, reskilling]
+
+    TrainingStatus:
+      type: string
+      enum:
+        - not_started
+        - in_progress
+        - module_completed
+        - live_session_pending
+        - assessment_pending
+        - completed
+        - recruiter_ready
+
+    ModuleStatus:
+      type: string
+      enum: [not_started, in_progress, completed, assessment_pending]
+
+    LiveSessionStatus:
+      type: string
+      enum: [scheduled, completed, cancelled]
+
+    TrainingModule:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        durationMinutes: { type: integer }
+        status: { $ref: "#/components/schemas/ModuleStatus" }
+      required: [id, title, durationMinutes, status]
+
+    LiveSession:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        scheduledFor: { type: string, format: date-time }
+        trainerName: { type: string }
+        status: { $ref: "#/components/schemas/LiveSessionStatus" }
+      required: [id, title, scheduledFor, trainerName, status]
+
+    Trainer:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        specialism: { type: string }
+        yearsExperience: { type: integer }
+        country: { type: string }
+      required: [id, name, specialism, yearsExperience, country]
+
+    TrainingProgram:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        trainingType: { $ref: "#/components/schemas/TrainingType" }
+        recommendedPath: { type: string }
+        deliveryMode: { type: string, enum: [hybrid] }
+        durationWeeks: { type: integer }
+        moduleTemplates:
+          type: array
+          items:
+            type: object
+            properties:
+              title: { type: string }
+              durationMinutes: { type: integer }
+            required: [title, durationMinutes]
+        focusAreas:
+          type: array
+          items: { type: string }
+      required:
+        - id
+        - name
+        - trainingType
+        - recommendedPath
+        - deliveryMode
+        - durationWeeks
+        - moduleTemplates
+        - focusAreas
+
+    TrainingCatalog:
+      type: object
+      properties:
+        programs:
+          type: array
+          items: { $ref: "#/components/schemas/TrainingProgram" }
+        trainers:
+          type: array
+          items: { $ref: "#/components/schemas/Trainer" }
+      required: [programs, trainers]
+
+    TrainingAssignment:
+      type: object
+      properties:
+        id: { type: string }
+        candidateId: { type: string }
+        candidateName: { type: string }
+        candidateCountry: { type: string }
+        candidateAvatarUrl: { type: string }
+        candidateTargetRole: { type: string }
+        assessmentCategory: { $ref: "#/components/schemas/AssessmentCategory" }
+        trainingType: { $ref: "#/components/schemas/TrainingType" }
+        programId: { type: string }
+        programName: { type: string }
+        recommendedPath: { type: string }
+        deliveryMode: { type: string, enum: [hybrid] }
+        trainerId: { type: string }
+        trainerName: { type: string }
+        modules:
+          type: array
+          items: { $ref: "#/components/schemas/TrainingModule" }
+        liveSessions:
+          type: array
+          items: { $ref: "#/components/schemas/LiveSession" }
+        startDate: { type: string, format: date-time }
+        targetCompletionDate: { type: string, format: date-time }
+        status: { $ref: "#/components/schemas/TrainingStatus" }
+        progressPct: { type: integer, minimum: 0, maximum: 100 }
+        finalReadinessNote:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required:
+        - id
+        - candidateId
+        - candidateName
+        - candidateCountry
+        - candidateAvatarUrl
+        - candidateTargetRole
+        - assessmentCategory
+        - trainingType
+        - programId
+        - programName
+        - recommendedPath
+        - deliveryMode
+        - trainerId
+        - trainerName
+        - modules
+        - liveSessions
+        - startDate
+        - targetCompletionDate
+        - status
+        - progressPct
+        - createdAt
+        - updatedAt
+
+    TrainingAssignmentCreate:
+      type: object
+      properties:
+        candidateId: { type: string }
+        programId: { type: string }
+        trainerId: { type: string }
+        startDate: { type: string, format: date-time }
+        targetCompletionDate: { type: string, format: date-time }
+      required: [candidateId, programId, trainerId, startDate, targetCompletionDate]
+
+    TrainingAssignmentUpdate:
+      type: object
+      properties:
+        status: { $ref: "#/components/schemas/TrainingStatus" }
+        progressPct: { type: integer, minimum: 0, maximum: 100 }
+        moduleId: { type: string }
+        moduleStatus: { $ref: "#/components/schemas/ModuleStatus" }
+        liveSessionId: { type: string }
+        liveSessionStatus: { $ref: "#/components/schemas/LiveSessionStatus" }
+        finalReadinessNote: { type: string }
+
+    TrainingRecommendation:
+      type: object
+      properties:
+        candidateId: { type: string }
+        assessmentCategory: { $ref: "#/components/schemas/AssessmentCategory" }
+        trainingType: { $ref: "#/components/schemas/TrainingType" }
+        recommendedPath: { type: string }
+        program: { $ref: "#/components/schemas/TrainingProgram" }
+        suggestedTrainer: { $ref: "#/components/schemas/Trainer" }
+        suggestedStartDate: { type: string, format: date-time }
+        suggestedTargetCompletionDate: { type: string, format: date-time }
+        rationale: { type: string }
+      required:
+        - candidateId
+        - assessmentCategory
+        - trainingType
+        - recommendedPath
+        - program
+        - suggestedTrainer
+        - suggestedStartDate
+        - suggestedTargetCompletionDate
+        - rationale
+
+    TrainingDashboard:
+      type: object
+      properties:
+        totalInTraining: { type: integer }
+        upskillingCount: { type: integer }
+        reskillingCount: { type: integer }
+        completedCount: { type: integer }
+        recruiterReadyCount: { type: integer }
+        pendingLiveSessions: { type: integer }
+        avgProgressPct: { type: integer }
+        statusBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              status: { $ref: "#/components/schemas/TrainingStatus" }
+              count: { type: integer }
+            required: [status, count]
+        trainerAllocation:
+          type: array
+          items:
+            type: object
+            properties:
+              trainerId: { type: string }
+              trainerName: { type: string }
+              specialism: { type: string }
+              activeAssignments: { type: integer }
+              completedAssignments: { type: integer }
+            required:
+              - trainerId
+              - trainerName
+              - specialism
+              - activeAssignments
+              - completedAssignments
+        upcomingLiveSessions:
+          type: array
+          items:
+            type: object
+            properties:
+              assignmentId: { type: string }
+              candidateName: { type: string }
+              sessionTitle: { type: string }
+              trainerName: { type: string }
+              scheduledFor: { type: string, format: date-time }
+            required:
+              - assignmentId
+              - candidateName
+              - sessionTitle
+              - trainerName
+              - scheduledFor
+      required:
+        - totalInTraining
+        - upskillingCount
+        - reskillingCount
+        - completedCount
+        - recruiterReadyCount
+        - pendingLiveSessions
+        - avgProgressPct
+        - statusBreakdown
+        - trainerAllocation
+        - upcomingLiveSessions

@@ -253,6 +253,208 @@ export interface DemoJourney {
   steps: DemoJourneyStepsItem[];
 }
 
+export type AssessmentCategory =
+  (typeof AssessmentCategory)[keyof typeof AssessmentCategory];
+
+export const AssessmentCategory = {
+  needs_upskilling: "needs_upskilling",
+  needs_reskilling: "needs_reskilling",
+} as const;
+
+export type TrainingType = (typeof TrainingType)[keyof typeof TrainingType];
+
+export const TrainingType = {
+  upskilling: "upskilling",
+  reskilling: "reskilling",
+} as const;
+
+export type TrainingStatus =
+  (typeof TrainingStatus)[keyof typeof TrainingStatus];
+
+export const TrainingStatus = {
+  not_started: "not_started",
+  in_progress: "in_progress",
+  module_completed: "module_completed",
+  live_session_pending: "live_session_pending",
+  assessment_pending: "assessment_pending",
+  completed: "completed",
+  recruiter_ready: "recruiter_ready",
+} as const;
+
+export type ModuleStatus = (typeof ModuleStatus)[keyof typeof ModuleStatus];
+
+export const ModuleStatus = {
+  not_started: "not_started",
+  in_progress: "in_progress",
+  completed: "completed",
+  assessment_pending: "assessment_pending",
+} as const;
+
+export type LiveSessionStatus =
+  (typeof LiveSessionStatus)[keyof typeof LiveSessionStatus];
+
+export const LiveSessionStatus = {
+  scheduled: "scheduled",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export interface TrainingModule {
+  id: string;
+  title: string;
+  durationMinutes: number;
+  status: ModuleStatus;
+}
+
+export interface LiveSession {
+  id: string;
+  title: string;
+  scheduledFor: string;
+  trainerName: string;
+  status: LiveSessionStatus;
+}
+
+export interface Trainer {
+  id: string;
+  name: string;
+  specialism: string;
+  yearsExperience: number;
+  country: string;
+}
+
+export type TrainingProgramDeliveryMode =
+  (typeof TrainingProgramDeliveryMode)[keyof typeof TrainingProgramDeliveryMode];
+
+export const TrainingProgramDeliveryMode = {
+  hybrid: "hybrid",
+} as const;
+
+export type TrainingProgramModuleTemplatesItem = {
+  title: string;
+  durationMinutes: number;
+};
+
+export interface TrainingProgram {
+  id: string;
+  name: string;
+  trainingType: TrainingType;
+  recommendedPath: string;
+  deliveryMode: TrainingProgramDeliveryMode;
+  durationWeeks: number;
+  moduleTemplates: TrainingProgramModuleTemplatesItem[];
+  focusAreas: string[];
+}
+
+export interface TrainingCatalog {
+  programs: TrainingProgram[];
+  trainers: Trainer[];
+}
+
+export type TrainingAssignmentDeliveryMode =
+  (typeof TrainingAssignmentDeliveryMode)[keyof typeof TrainingAssignmentDeliveryMode];
+
+export const TrainingAssignmentDeliveryMode = {
+  hybrid: "hybrid",
+} as const;
+
+export interface TrainingAssignment {
+  id: string;
+  candidateId: string;
+  candidateName: string;
+  candidateCountry: string;
+  candidateAvatarUrl: string;
+  candidateTargetRole: string;
+  assessmentCategory: AssessmentCategory;
+  trainingType: TrainingType;
+  programId: string;
+  programName: string;
+  recommendedPath: string;
+  deliveryMode: TrainingAssignmentDeliveryMode;
+  trainerId: string;
+  trainerName: string;
+  modules: TrainingModule[];
+  liveSessions: LiveSession[];
+  startDate: string;
+  targetCompletionDate: string;
+  status: TrainingStatus;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  progressPct: number;
+  finalReadinessNote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrainingAssignmentCreate {
+  candidateId: string;
+  programId: string;
+  trainerId: string;
+  startDate: string;
+  targetCompletionDate: string;
+}
+
+export interface TrainingAssignmentUpdate {
+  status?: TrainingStatus;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  progressPct?: number;
+  moduleId?: string;
+  moduleStatus?: ModuleStatus;
+  liveSessionId?: string;
+  liveSessionStatus?: LiveSessionStatus;
+  finalReadinessNote?: string;
+}
+
+export interface TrainingRecommendation {
+  candidateId: string;
+  assessmentCategory: AssessmentCategory;
+  trainingType: TrainingType;
+  recommendedPath: string;
+  program: TrainingProgram;
+  suggestedTrainer: Trainer;
+  suggestedStartDate: string;
+  suggestedTargetCompletionDate: string;
+  rationale: string;
+}
+
+export type TrainingDashboardStatusBreakdownItem = {
+  status: TrainingStatus;
+  count: number;
+};
+
+export type TrainingDashboardTrainerAllocationItem = {
+  trainerId: string;
+  trainerName: string;
+  specialism: string;
+  activeAssignments: number;
+  completedAssignments: number;
+};
+
+export type TrainingDashboardUpcomingLiveSessionsItem = {
+  assignmentId: string;
+  candidateName: string;
+  sessionTitle: string;
+  trainerName: string;
+  scheduledFor: string;
+};
+
+export interface TrainingDashboard {
+  totalInTraining: number;
+  upskillingCount: number;
+  reskillingCount: number;
+  completedCount: number;
+  recruiterReadyCount: number;
+  pendingLiveSessions: number;
+  avgProgressPct: number;
+  statusBreakdown: TrainingDashboardStatusBreakdownItem[];
+  trainerAllocation: TrainingDashboardTrainerAllocationItem[];
+  upcomingLiveSessions: TrainingDashboardUpcomingLiveSessionsItem[];
+}
+
 export type ListCandidatesParams = {
   country?: string;
   role?: string;
@@ -261,4 +463,10 @@ export type ListCandidatesParams = {
   englishLevel?: string;
   minReadiness?: number;
   search?: string;
+};
+
+export type ListTrainingAssignmentsParams = {
+  status?: TrainingStatus;
+  trainingType?: TrainingType;
+  trainerId?: string;
 };

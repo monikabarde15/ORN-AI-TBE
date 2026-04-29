@@ -26,8 +26,15 @@ import type {
   Evaluation,
   HealthStatus,
   ListCandidatesParams,
+  ListTrainingAssignmentsParams,
   RecruiterSummary,
   RegionList,
+  TrainingAssignment,
+  TrainingAssignmentCreate,
+  TrainingAssignmentUpdate,
+  TrainingCatalog,
+  TrainingDashboard,
+  TrainingRecommendation,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1084,3 +1091,708 @@ export const useRunDemoJourney = <
 > => {
   return useMutation(getRunDemoJourneyMutationOptions(options));
 };
+
+/**
+ * @summary Available training programs and trainers
+ */
+export const getListTrainingCatalogUrl = () => {
+  return `/api/training/catalog`;
+};
+
+export const listTrainingCatalog = async (
+  options?: RequestInit,
+): Promise<TrainingCatalog> => {
+  return customFetch<TrainingCatalog>(getListTrainingCatalogUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListTrainingCatalogQueryKey = () => {
+  return [`/api/training/catalog`] as const;
+};
+
+export const getListTrainingCatalogQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTrainingCatalog>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listTrainingCatalog>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListTrainingCatalogQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listTrainingCatalog>>
+  > = ({ signal }) => listTrainingCatalog({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listTrainingCatalog>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListTrainingCatalogQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTrainingCatalog>>
+>;
+export type ListTrainingCatalogQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Available training programs and trainers
+ */
+
+export function useListTrainingCatalog<
+  TData = Awaited<ReturnType<typeof listTrainingCatalog>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listTrainingCatalog>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListTrainingCatalogQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Admin training dashboard aggregates
+ */
+export const getTrainingDashboardUrl = () => {
+  return `/api/training/dashboard`;
+};
+
+export const trainingDashboard = async (
+  options?: RequestInit,
+): Promise<TrainingDashboard> => {
+  return customFetch<TrainingDashboard>(getTrainingDashboardUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getTrainingDashboardQueryKey = () => {
+  return [`/api/training/dashboard`] as const;
+};
+
+export const getTrainingDashboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof trainingDashboard>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof trainingDashboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getTrainingDashboardQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof trainingDashboard>>
+  > = ({ signal }) => trainingDashboard({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof trainingDashboard>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type TrainingDashboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof trainingDashboard>>
+>;
+export type TrainingDashboardQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Admin training dashboard aggregates
+ */
+
+export function useTrainingDashboard<
+  TData = Awaited<ReturnType<typeof trainingDashboard>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof trainingDashboard>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getTrainingDashboardQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List training assignments (admin view)
+ */
+export const getListTrainingAssignmentsUrl = (
+  params?: ListTrainingAssignmentsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/training/assignments?${stringifiedParams}`
+    : `/api/training/assignments`;
+};
+
+export const listTrainingAssignments = async (
+  params?: ListTrainingAssignmentsParams,
+  options?: RequestInit,
+): Promise<TrainingAssignment[]> => {
+  return customFetch<TrainingAssignment[]>(
+    getListTrainingAssignmentsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListTrainingAssignmentsQueryKey = (
+  params?: ListTrainingAssignmentsParams,
+) => {
+  return [`/api/training/assignments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListTrainingAssignmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTrainingAssignments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListTrainingAssignmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTrainingAssignments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListTrainingAssignmentsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listTrainingAssignments>>
+  > = ({ signal }) =>
+    listTrainingAssignments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listTrainingAssignments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListTrainingAssignmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTrainingAssignments>>
+>;
+export type ListTrainingAssignmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List training assignments (admin view)
+ */
+
+export function useListTrainingAssignments<
+  TData = Awaited<ReturnType<typeof listTrainingAssignments>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListTrainingAssignmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTrainingAssignments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListTrainingAssignmentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Assign a training program to a candidate
+ */
+export const getCreateTrainingAssignmentUrl = () => {
+  return `/api/training/assignments`;
+};
+
+export const createTrainingAssignment = async (
+  trainingAssignmentCreate: TrainingAssignmentCreate,
+  options?: RequestInit,
+): Promise<TrainingAssignment> => {
+  return customFetch<TrainingAssignment>(getCreateTrainingAssignmentUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(trainingAssignmentCreate),
+  });
+};
+
+export const getCreateTrainingAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTrainingAssignment>>,
+    TError,
+    { data: BodyType<TrainingAssignmentCreate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createTrainingAssignment>>,
+  TError,
+  { data: BodyType<TrainingAssignmentCreate> },
+  TContext
+> => {
+  const mutationKey = ["createTrainingAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createTrainingAssignment>>,
+    { data: BodyType<TrainingAssignmentCreate> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createTrainingAssignment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateTrainingAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createTrainingAssignment>>
+>;
+export type CreateTrainingAssignmentMutationBody =
+  BodyType<TrainingAssignmentCreate>;
+export type CreateTrainingAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Assign a training program to a candidate
+ */
+export const useCreateTrainingAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTrainingAssignment>>,
+    TError,
+    { data: BodyType<TrainingAssignmentCreate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createTrainingAssignment>>,
+  TError,
+  { data: BodyType<TrainingAssignmentCreate> },
+  TContext
+> => {
+  return useMutation(getCreateTrainingAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary Get a single training assignment
+ */
+export const getGetTrainingAssignmentUrl = (id: string) => {
+  return `/api/training/assignments/${id}`;
+};
+
+export const getTrainingAssignment = async (
+  id: string,
+  options?: RequestInit,
+): Promise<TrainingAssignment> => {
+  return customFetch<TrainingAssignment>(getGetTrainingAssignmentUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetTrainingAssignmentQueryKey = (id: string) => {
+  return [`/api/training/assignments/${id}`] as const;
+};
+
+export const getGetTrainingAssignmentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTrainingAssignment>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTrainingAssignment>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetTrainingAssignmentQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTrainingAssignment>>
+  > = ({ signal }) => getTrainingAssignment(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTrainingAssignment>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetTrainingAssignmentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTrainingAssignment>>
+>;
+export type GetTrainingAssignmentQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get a single training assignment
+ */
+
+export function useGetTrainingAssignment<
+  TData = Awaited<ReturnType<typeof getTrainingAssignment>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTrainingAssignment>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetTrainingAssignmentQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update training progress / status
+ */
+export const getUpdateTrainingAssignmentUrl = (id: string) => {
+  return `/api/training/assignments/${id}`;
+};
+
+export const updateTrainingAssignment = async (
+  id: string,
+  trainingAssignmentUpdate: TrainingAssignmentUpdate,
+  options?: RequestInit,
+): Promise<TrainingAssignment> => {
+  return customFetch<TrainingAssignment>(getUpdateTrainingAssignmentUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(trainingAssignmentUpdate),
+  });
+};
+
+export const getUpdateTrainingAssignmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTrainingAssignment>>,
+    TError,
+    { id: string; data: BodyType<TrainingAssignmentUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateTrainingAssignment>>,
+  TError,
+  { id: string; data: BodyType<TrainingAssignmentUpdate> },
+  TContext
+> => {
+  const mutationKey = ["updateTrainingAssignment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateTrainingAssignment>>,
+    { id: string; data: BodyType<TrainingAssignmentUpdate> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateTrainingAssignment(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateTrainingAssignmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateTrainingAssignment>>
+>;
+export type UpdateTrainingAssignmentMutationBody =
+  BodyType<TrainingAssignmentUpdate>;
+export type UpdateTrainingAssignmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update training progress / status
+ */
+export const useUpdateTrainingAssignment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTrainingAssignment>>,
+    TError,
+    { id: string; data: BodyType<TrainingAssignmentUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateTrainingAssignment>>,
+  TError,
+  { id: string; data: BodyType<TrainingAssignmentUpdate> },
+  TContext
+> => {
+  return useMutation(getUpdateTrainingAssignmentMutationOptions(options));
+};
+
+/**
+ * @summary Get the active training assignment for a candidate (or null)
+ */
+export const getGetCandidateTrainingUrl = (id: string) => {
+  return `/api/candidates/${id}/training`;
+};
+
+export const getCandidateTraining = async (
+  id: string,
+  options?: RequestInit,
+): Promise<TrainingAssignment | null> => {
+  return customFetch<TrainingAssignment | null>(
+    getGetCandidateTrainingUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetCandidateTrainingQueryKey = (id: string) => {
+  return [`/api/candidates/${id}/training`] as const;
+};
+
+export const getGetCandidateTrainingQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCandidateTraining>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCandidateTraining>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCandidateTrainingQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCandidateTraining>>
+  > = ({ signal }) => getCandidateTraining(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCandidateTraining>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCandidateTrainingQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCandidateTraining>>
+>;
+export type GetCandidateTrainingQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get the active training assignment for a candidate (or null)
+ */
+
+export function useGetCandidateTraining<
+  TData = Awaited<ReturnType<typeof getCandidateTraining>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCandidateTraining>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCandidateTrainingQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Suggest a recommended program for a candidate based on their evaluation
+ */
+export const getRecommendTrainingForCandidateUrl = (candidateId: string) => {
+  return `/api/training/recommend/${candidateId}`;
+};
+
+export const recommendTrainingForCandidate = async (
+  candidateId: string,
+  options?: RequestInit,
+): Promise<TrainingRecommendation> => {
+  return customFetch<TrainingRecommendation>(
+    getRecommendTrainingForCandidateUrl(candidateId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getRecommendTrainingForCandidateQueryKey = (
+  candidateId: string,
+) => {
+  return [`/api/training/recommend/${candidateId}`] as const;
+};
+
+export const getRecommendTrainingForCandidateQueryOptions = <
+  TData = Awaited<ReturnType<typeof recommendTrainingForCandidate>>,
+  TError = ErrorType<unknown>,
+>(
+  candidateId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof recommendTrainingForCandidate>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getRecommendTrainingForCandidateQueryKey(candidateId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof recommendTrainingForCandidate>>
+  > = ({ signal }) =>
+    recommendTrainingForCandidate(candidateId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!candidateId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof recommendTrainingForCandidate>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type RecommendTrainingForCandidateQueryResult = NonNullable<
+  Awaited<ReturnType<typeof recommendTrainingForCandidate>>
+>;
+export type RecommendTrainingForCandidateQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Suggest a recommended program for a candidate based on their evaluation
+ */
+
+export function useRecommendTrainingForCandidate<
+  TData = Awaited<ReturnType<typeof recommendTrainingForCandidate>>,
+  TError = ErrorType<unknown>,
+>(
+  candidateId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof recommendTrainingForCandidate>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getRecommendTrainingForCandidateQueryOptions(
+    candidateId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

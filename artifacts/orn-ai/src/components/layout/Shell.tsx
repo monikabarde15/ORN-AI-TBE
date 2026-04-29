@@ -1,10 +1,14 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Network, Search, FileText, UserPlus, Presentation, Settings2, BarChart3, Database } from "lucide-react";
+import { Network, Search, FileText, UserPlus, Presentation, Settings2, BarChart3, Database, GraduationCap } from "lucide-react";
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const isDashboard = location.startsWith("/recruiter") || location.startsWith("/admin");
+  const isDashboard =
+    location.startsWith("/recruiter") ||
+    location.startsWith("/admin") ||
+    location.startsWith("/training") ||
+    /^\/candidate\/[^/]+\/training$/.test(location);
 
   if (isDashboard) {
     return (
@@ -28,7 +32,19 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <Search className="size-4" />
               Talent Search
             </Link>
-            
+
+            <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Career Transformation
+            </div>
+            <Link
+              href="/training"
+              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location.startsWith("/training") || /^\/candidate\/[^/]+\/training$/.test(location) ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+              data-testid="link-nav-training"
+            >
+              <GraduationCap className="size-4" />
+              Training Pipeline
+            </Link>
+
             <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Platform
             </div>

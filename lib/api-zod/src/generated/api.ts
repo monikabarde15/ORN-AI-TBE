@@ -746,3 +746,447 @@ export const RunDemoJourneyResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary Available training programs and trainers
+ */
+export const ListTrainingCatalogResponse = zod.object({
+  programs: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      trainingType: zod.enum(["upskilling", "reskilling"]),
+      recommendedPath: zod.string(),
+      deliveryMode: zod.enum(["hybrid"]),
+      durationWeeks: zod.number(),
+      moduleTemplates: zod.array(
+        zod.object({
+          title: zod.string(),
+          durationMinutes: zod.number(),
+        }),
+      ),
+      focusAreas: zod.array(zod.string()),
+    }),
+  ),
+  trainers: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      specialism: zod.string(),
+      yearsExperience: zod.number(),
+      country: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Admin training dashboard aggregates
+ */
+export const TrainingDashboardResponse = zod.object({
+  totalInTraining: zod.number(),
+  upskillingCount: zod.number(),
+  reskillingCount: zod.number(),
+  completedCount: zod.number(),
+  recruiterReadyCount: zod.number(),
+  pendingLiveSessions: zod.number(),
+  avgProgressPct: zod.number(),
+  statusBreakdown: zod.array(
+    zod.object({
+      status: zod.enum([
+        "not_started",
+        "in_progress",
+        "module_completed",
+        "live_session_pending",
+        "assessment_pending",
+        "completed",
+        "recruiter_ready",
+      ]),
+      count: zod.number(),
+    }),
+  ),
+  trainerAllocation: zod.array(
+    zod.object({
+      trainerId: zod.string(),
+      trainerName: zod.string(),
+      specialism: zod.string(),
+      activeAssignments: zod.number(),
+      completedAssignments: zod.number(),
+    }),
+  ),
+  upcomingLiveSessions: zod.array(
+    zod.object({
+      assignmentId: zod.string(),
+      candidateName: zod.string(),
+      sessionTitle: zod.string(),
+      trainerName: zod.string(),
+      scheduledFor: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary List training assignments (admin view)
+ */
+export const ListTrainingAssignmentsQueryParams = zod.object({
+  status: zod
+    .enum([
+      "not_started",
+      "in_progress",
+      "module_completed",
+      "live_session_pending",
+      "assessment_pending",
+      "completed",
+      "recruiter_ready",
+    ])
+    .optional(),
+  trainingType: zod.enum(["upskilling", "reskilling"]).optional(),
+  trainerId: zod.coerce.string().optional(),
+});
+
+export const listTrainingAssignmentsResponseProgressPctMin = 0;
+export const listTrainingAssignmentsResponseProgressPctMax = 100;
+
+export const ListTrainingAssignmentsResponseItem = zod.object({
+  id: zod.string(),
+  candidateId: zod.string(),
+  candidateName: zod.string(),
+  candidateCountry: zod.string(),
+  candidateAvatarUrl: zod.string(),
+  candidateTargetRole: zod.string(),
+  assessmentCategory: zod.enum(["needs_upskilling", "needs_reskilling"]),
+  trainingType: zod.enum(["upskilling", "reskilling"]),
+  programId: zod.string(),
+  programName: zod.string(),
+  recommendedPath: zod.string(),
+  deliveryMode: zod.enum(["hybrid"]),
+  trainerId: zod.string(),
+  trainerName: zod.string(),
+  modules: zod.array(
+    zod.object({
+      id: zod.string(),
+      title: zod.string(),
+      durationMinutes: zod.number(),
+      status: zod.enum([
+        "not_started",
+        "in_progress",
+        "completed",
+        "assessment_pending",
+      ]),
+    }),
+  ),
+  liveSessions: zod.array(
+    zod.object({
+      id: zod.string(),
+      title: zod.string(),
+      scheduledFor: zod.coerce.date(),
+      trainerName: zod.string(),
+      status: zod.enum(["scheduled", "completed", "cancelled"]),
+    }),
+  ),
+  startDate: zod.coerce.date(),
+  targetCompletionDate: zod.coerce.date(),
+  status: zod.enum([
+    "not_started",
+    "in_progress",
+    "module_completed",
+    "live_session_pending",
+    "assessment_pending",
+    "completed",
+    "recruiter_ready",
+  ]),
+  progressPct: zod
+    .number()
+    .min(listTrainingAssignmentsResponseProgressPctMin)
+    .max(listTrainingAssignmentsResponseProgressPctMax),
+  finalReadinessNote: zod.union([zod.string(), zod.null()]).optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListTrainingAssignmentsResponse = zod.array(
+  ListTrainingAssignmentsResponseItem,
+);
+
+/**
+ * @summary Assign a training program to a candidate
+ */
+export const CreateTrainingAssignmentBody = zod.object({
+  candidateId: zod.string(),
+  programId: zod.string(),
+  trainerId: zod.string(),
+  startDate: zod.coerce.date(),
+  targetCompletionDate: zod.coerce.date(),
+});
+
+/**
+ * @summary Get a single training assignment
+ */
+export const GetTrainingAssignmentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const getTrainingAssignmentResponseProgressPctMin = 0;
+export const getTrainingAssignmentResponseProgressPctMax = 100;
+
+export const GetTrainingAssignmentResponse = zod.object({
+  id: zod.string(),
+  candidateId: zod.string(),
+  candidateName: zod.string(),
+  candidateCountry: zod.string(),
+  candidateAvatarUrl: zod.string(),
+  candidateTargetRole: zod.string(),
+  assessmentCategory: zod.enum(["needs_upskilling", "needs_reskilling"]),
+  trainingType: zod.enum(["upskilling", "reskilling"]),
+  programId: zod.string(),
+  programName: zod.string(),
+  recommendedPath: zod.string(),
+  deliveryMode: zod.enum(["hybrid"]),
+  trainerId: zod.string(),
+  trainerName: zod.string(),
+  modules: zod.array(
+    zod.object({
+      id: zod.string(),
+      title: zod.string(),
+      durationMinutes: zod.number(),
+      status: zod.enum([
+        "not_started",
+        "in_progress",
+        "completed",
+        "assessment_pending",
+      ]),
+    }),
+  ),
+  liveSessions: zod.array(
+    zod.object({
+      id: zod.string(),
+      title: zod.string(),
+      scheduledFor: zod.coerce.date(),
+      trainerName: zod.string(),
+      status: zod.enum(["scheduled", "completed", "cancelled"]),
+    }),
+  ),
+  startDate: zod.coerce.date(),
+  targetCompletionDate: zod.coerce.date(),
+  status: zod.enum([
+    "not_started",
+    "in_progress",
+    "module_completed",
+    "live_session_pending",
+    "assessment_pending",
+    "completed",
+    "recruiter_ready",
+  ]),
+  progressPct: zod
+    .number()
+    .min(getTrainingAssignmentResponseProgressPctMin)
+    .max(getTrainingAssignmentResponseProgressPctMax),
+  finalReadinessNote: zod.union([zod.string(), zod.null()]).optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update training progress / status
+ */
+export const UpdateTrainingAssignmentParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const updateTrainingAssignmentBodyProgressPctMin = 0;
+export const updateTrainingAssignmentBodyProgressPctMax = 100;
+
+export const UpdateTrainingAssignmentBody = zod.object({
+  status: zod
+    .enum([
+      "not_started",
+      "in_progress",
+      "module_completed",
+      "live_session_pending",
+      "assessment_pending",
+      "completed",
+      "recruiter_ready",
+    ])
+    .optional(),
+  progressPct: zod
+    .number()
+    .min(updateTrainingAssignmentBodyProgressPctMin)
+    .max(updateTrainingAssignmentBodyProgressPctMax)
+    .optional(),
+  moduleId: zod.string().optional(),
+  moduleStatus: zod
+    .enum(["not_started", "in_progress", "completed", "assessment_pending"])
+    .optional(),
+  liveSessionId: zod.string().optional(),
+  liveSessionStatus: zod
+    .enum(["scheduled", "completed", "cancelled"])
+    .optional(),
+  finalReadinessNote: zod.string().optional(),
+});
+
+export const updateTrainingAssignmentResponseProgressPctMin = 0;
+export const updateTrainingAssignmentResponseProgressPctMax = 100;
+
+export const UpdateTrainingAssignmentResponse = zod.object({
+  id: zod.string(),
+  candidateId: zod.string(),
+  candidateName: zod.string(),
+  candidateCountry: zod.string(),
+  candidateAvatarUrl: zod.string(),
+  candidateTargetRole: zod.string(),
+  assessmentCategory: zod.enum(["needs_upskilling", "needs_reskilling"]),
+  trainingType: zod.enum(["upskilling", "reskilling"]),
+  programId: zod.string(),
+  programName: zod.string(),
+  recommendedPath: zod.string(),
+  deliveryMode: zod.enum(["hybrid"]),
+  trainerId: zod.string(),
+  trainerName: zod.string(),
+  modules: zod.array(
+    zod.object({
+      id: zod.string(),
+      title: zod.string(),
+      durationMinutes: zod.number(),
+      status: zod.enum([
+        "not_started",
+        "in_progress",
+        "completed",
+        "assessment_pending",
+      ]),
+    }),
+  ),
+  liveSessions: zod.array(
+    zod.object({
+      id: zod.string(),
+      title: zod.string(),
+      scheduledFor: zod.coerce.date(),
+      trainerName: zod.string(),
+      status: zod.enum(["scheduled", "completed", "cancelled"]),
+    }),
+  ),
+  startDate: zod.coerce.date(),
+  targetCompletionDate: zod.coerce.date(),
+  status: zod.enum([
+    "not_started",
+    "in_progress",
+    "module_completed",
+    "live_session_pending",
+    "assessment_pending",
+    "completed",
+    "recruiter_ready",
+  ]),
+  progressPct: zod
+    .number()
+    .min(updateTrainingAssignmentResponseProgressPctMin)
+    .max(updateTrainingAssignmentResponseProgressPctMax),
+  finalReadinessNote: zod.union([zod.string(), zod.null()]).optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get the active training assignment for a candidate (or null)
+ */
+export const GetCandidateTrainingParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const getCandidateTrainingResponseOneProgressPctMin = 0;
+export const getCandidateTrainingResponseOneProgressPctMax = 100;
+
+export const GetCandidateTrainingResponse = zod.union([
+  zod.object({
+    id: zod.string(),
+    candidateId: zod.string(),
+    candidateName: zod.string(),
+    candidateCountry: zod.string(),
+    candidateAvatarUrl: zod.string(),
+    candidateTargetRole: zod.string(),
+    assessmentCategory: zod.enum(["needs_upskilling", "needs_reskilling"]),
+    trainingType: zod.enum(["upskilling", "reskilling"]),
+    programId: zod.string(),
+    programName: zod.string(),
+    recommendedPath: zod.string(),
+    deliveryMode: zod.enum(["hybrid"]),
+    trainerId: zod.string(),
+    trainerName: zod.string(),
+    modules: zod.array(
+      zod.object({
+        id: zod.string(),
+        title: zod.string(),
+        durationMinutes: zod.number(),
+        status: zod.enum([
+          "not_started",
+          "in_progress",
+          "completed",
+          "assessment_pending",
+        ]),
+      }),
+    ),
+    liveSessions: zod.array(
+      zod.object({
+        id: zod.string(),
+        title: zod.string(),
+        scheduledFor: zod.coerce.date(),
+        trainerName: zod.string(),
+        status: zod.enum(["scheduled", "completed", "cancelled"]),
+      }),
+    ),
+    startDate: zod.coerce.date(),
+    targetCompletionDate: zod.coerce.date(),
+    status: zod.enum([
+      "not_started",
+      "in_progress",
+      "module_completed",
+      "live_session_pending",
+      "assessment_pending",
+      "completed",
+      "recruiter_ready",
+    ]),
+    progressPct: zod
+      .number()
+      .min(getCandidateTrainingResponseOneProgressPctMin)
+      .max(getCandidateTrainingResponseOneProgressPctMax),
+    finalReadinessNote: zod.union([zod.string(), zod.null()]).optional(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+  zod.null(),
+]);
+
+/**
+ * @summary Suggest a recommended program for a candidate based on their evaluation
+ */
+export const RecommendTrainingForCandidateParams = zod.object({
+  candidateId: zod.coerce.string(),
+});
+
+export const RecommendTrainingForCandidateResponse = zod.object({
+  candidateId: zod.string(),
+  assessmentCategory: zod.enum(["needs_upskilling", "needs_reskilling"]),
+  trainingType: zod.enum(["upskilling", "reskilling"]),
+  recommendedPath: zod.string(),
+  program: zod.object({
+    id: zod.string(),
+    name: zod.string(),
+    trainingType: zod.enum(["upskilling", "reskilling"]),
+    recommendedPath: zod.string(),
+    deliveryMode: zod.enum(["hybrid"]),
+    durationWeeks: zod.number(),
+    moduleTemplates: zod.array(
+      zod.object({
+        title: zod.string(),
+        durationMinutes: zod.number(),
+      }),
+    ),
+    focusAreas: zod.array(zod.string()),
+  }),
+  suggestedTrainer: zod.object({
+    id: zod.string(),
+    name: zod.string(),
+    specialism: zod.string(),
+    yearsExperience: zod.number(),
+    country: zod.string(),
+  }),
+  suggestedStartDate: zod.coerce.date(),
+  suggestedTargetCompletionDate: zod.coerce.date(),
+  rationale: zod.string(),
+});

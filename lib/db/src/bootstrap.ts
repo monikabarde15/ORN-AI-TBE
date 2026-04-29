@@ -47,4 +47,33 @@ export async function ensureSchema(): Promise<void> {
       timestamp timestamptz NOT NULL DEFAULT now()
     );
   `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS training_assignments (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      candidate_id uuid NOT NULL,
+      assessment_category text NOT NULL,
+      training_type text NOT NULL,
+      program_id text NOT NULL,
+      program_name text NOT NULL,
+      recommended_path text NOT NULL,
+      delivery_mode text NOT NULL DEFAULT 'hybrid',
+      trainer_id text NOT NULL,
+      trainer_name text NOT NULL,
+      modules jsonb NOT NULL,
+      live_sessions jsonb NOT NULL,
+      start_date timestamptz NOT NULL,
+      target_completion_date timestamptz NOT NULL,
+      status text NOT NULL DEFAULT 'not_started',
+      progress_pct integer NOT NULL DEFAULT 0,
+      final_readiness_note text,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS training_assignments_candidate_id_idx
+      ON training_assignments (candidate_id);
+  `);
 }

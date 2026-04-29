@@ -1,8 +1,21 @@
-import { db, candidatesTable, activityTable } from "@workspace/db";
+import {
+  db,
+  candidatesTable,
+  activityTable,
+  trainingAssignmentsTable,
+} from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { REGIONS, ROLES } from "./regions";
 import { evaluate, pickSkillsFor, type CandidateLike } from "./evaluation";
 import { logger } from "./logger";
+import {
+  recommendTraining,
+  buildInitialModules,
+  buildInitialLiveSessions,
+  type ModuleState,
+  type LiveSessionState,
+  type TrainingStatus,
+} from "./training";
 
 const FIRST_NAMES = [
   "Andrei",
@@ -98,12 +111,34 @@ function avatarFor(seed: number): string {
   return `https://randomuser.me/api/portraits/${gender}/${id}.jpg`;
 }
 
+async function ensureTrainingSeed(): Promise<void> {
+  const [{ count: trainingCount }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(trainingAssignmentsTable);
+  if (trainingCount > 0) {
+    logger.info({ trainingCount }, "Training assignments already seeded; skipping");
+    return;
+  }
+  const seededCandidates = await db.select().from(candidatesTable);
+  const trainingRows = buildTrainingRowsFor(seededCandidates);
+  if (trainingRows.length) {
+    await db.insert(trainingAssignmentsTable).values(trainingRows);
+  }
+  logger.info(
+    { trainingAssignments: trainingRows.length },
+    "Seeded training assignments",
+  );
+}
+
 export async function ensureSeedData(): Promise<void> {
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(candidatesTable);
   if (count > 0) {
     logger.info({ count }, "Candidates already seeded; skipping");
+    // Still backfill training assignments if they're missing (e.g. existing
+    // databases predating the training module).
+    await ensureTrainingSeed();
     return;
   }
 
@@ -208,5 +243,133 @@ export async function ensureSeedData(): Promise<void> {
   }
   await db.insert(activityTable).values(activitySeeds);
 
-  logger.info({ candidates: rows.length, activity: activitySeeds.length }, "Seeded");
+  // ---- Seed training assignments ----
+  // Pull every candidate row back so we have the persisted `id`s and
+  // `evaluation` fields to feed the recommender.
+  const seededCandidates = await db.select().from(candidatesTable);
+  const trainingRows = buildTrainingRowsFor(seededCandidates);
+  if (trainingRows.length) {
+    await db.insert(trainingAssignmentsTable).values(trainingRows);
+  }
+
+  logger.info(
+    {
+      candidates: rows.length,
+      activity: activitySeeds.length,
+      trainingAssignments: trainingRows.length,
+    },
+    "Seeded",
+  );
+}
+
+function buildTrainingRowsFor(
+  candidates: Array<{
+    id: string;
+    targetRole: string;
+    evaluation: unknown;
+  }>,
+): Array<typeof trainingAssignmentsTable.$inferInsert> {
+  const trainingRows: Array<typeof trainingAssignmentsTable.$inferInsert> = [];
+  const now = Date.now();
+  let trainingIdx = 0;
+
+  for (const c of candidates) {
+    const evalAny = c.evaluation as { scores?: { overall?: number } } | null;
+    const overall = evalAny?.scores?.overall ?? 0;
+
+    // Only "developing" / "emerging" tiers get training. Elite & ready
+    // candidates are recruiter-ready and don't need a transformation track.
+    if (overall >= 75) continue;
+
+    const rec = recommendTraining({
+      id: c.id,
+      targetRole: c.targetRole,
+      evaluation: c.evaluation,
+    });
+
+    // Spread start dates 1-60 days in the past so progress can be realistic
+    const daysAgo = (trainingIdx * 7 + 3) % 60;
+    const startDate = new Date(now - daysAgo * 24 * 3600 * 1000);
+    const targetCompletionDate = new Date(
+      startDate.getTime() + rec.program.durationWeeks * 7 * 24 * 3600 * 1000,
+    );
+
+    const modules = buildInitialModules(rec.program);
+    const liveSessions = buildInitialLiveSessions(
+      rec.program,
+      rec.suggestedTrainer,
+      startDate,
+    );
+
+    const elapsedRatio = Math.min(
+      1,
+      (now - startDate.getTime()) /
+        (rec.program.durationWeeks * 7 * 24 * 3600 * 1000),
+    );
+    const completedCount = Math.floor(modules.length * elapsedRatio);
+    const advancedModules: ModuleState[] = modules.map((m, i) => {
+      if (i < completedCount) return { ...m, status: "completed" };
+      if (i === completedCount && elapsedRatio < 0.95)
+        return { ...m, status: "in_progress" };
+      return m;
+    });
+
+    const advancedSessions: LiveSessionState[] = liveSessions.map((s) => {
+      if (new Date(s.scheduledFor).getTime() < now) {
+        return { ...s, status: "completed" };
+      }
+      return s;
+    });
+
+    const progressPct = Math.round((completedCount / modules.length) * 100);
+
+    let status: TrainingStatus;
+    if (progressPct >= 100) {
+      status = trainingIdx % 3 === 0 ? "recruiter_ready" : "completed";
+    } else if (progressPct === 0) {
+      status = "not_started";
+    } else if (
+      advancedSessions.some(
+        (s) =>
+          s.status === "scheduled" &&
+          new Date(s.scheduledFor).getTime() < now + 7 * 24 * 3600 * 1000,
+      )
+    ) {
+      status = "live_session_pending";
+    } else if (trainingIdx % 5 === 0 && progressPct >= 40) {
+      status = "assessment_pending";
+    } else if (progressPct >= 50) {
+      status = "module_completed";
+    } else {
+      status = "in_progress";
+    }
+
+    trainingRows.push({
+      candidateId: c.id,
+      assessmentCategory: rec.assessmentCategory,
+      trainingType: rec.trainingType,
+      programId: rec.program.id,
+      programName: rec.program.name,
+      recommendedPath: rec.recommendedPath,
+      deliveryMode: "hybrid",
+      trainerId: rec.suggestedTrainer.id,
+      trainerName: rec.suggestedTrainer.name,
+      modules: advancedModules,
+      liveSessions: advancedSessions,
+      startDate,
+      targetCompletionDate,
+      status,
+      progressPct,
+      finalReadinessNote:
+        status === "recruiter_ready"
+          ? `Final review passed by ${rec.suggestedTrainer.name}. Cleared for recruiter shortlists.`
+          : null,
+      createdAt: startDate,
+      updatedAt: new Date(now - (daysAgo * 24 * 3600 * 1000) / 2),
+    });
+
+    trainingIdx++;
+  }
+
+  return trainingRows;
 }

@@ -31,7 +31,8 @@ Phase 2 regions: Italy, Spain, Portugal, Greece.
 4. AI CV evaluation across 5 scores (CV quality, technical skill match, English readiness, Europe job readiness, upskilling needs) + overall + readiness tier.
 5. Recruiter dashboard with summary metrics and filter sidebar (country, role, experience, English level, readiness).
 6. Admin dashboard with pipeline analytics by country, skill, readiness, upskilling area, and monthly growth.
-7. Investor demo journey with cinematic step-by-step animation.
+7. Training Assignment module — ORN-AI's career-transformation pipeline. Routes evaluated candidates into upskilling or reskilling tracks (six programs, six trainers), tracks self-paced modules + live trainer sessions, gates promotion through trainer review (`assessment_pending` → `completed`) into `recruiter_ready`. Pages: `/training` (admin pipeline view) and `/candidate/:id/training` (per-candidate plan with module/session controls).
+8. Investor demo journey with cinematic step-by-step animation.
 
 ## Key Commands
 
