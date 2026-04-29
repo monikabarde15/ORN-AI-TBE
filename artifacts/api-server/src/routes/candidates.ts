@@ -60,15 +60,20 @@ router.post("/candidates", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const skills = pickSkillsFor(parsed.data.targetRole, Date.now());
+  const submittedSkills = parsed.data.skills?.filter((s) => s.trim().length > 0) ?? [];
+  const skills =
+    submittedSkills.length > 0
+      ? submittedSkills.slice(0, 20)
+      : pickSkillsFor(parsed.data.targetRole, Date.now());
   const seed = Math.floor(Math.random() * 89) + 1;
   const gender = seed % 2 === 0 ? "men" : "women";
   const avatarUrl = `https://randomuser.me/api/portraits/${gender}/${seed}.jpg`;
 
+  const { skills: _ignored, ...rest } = parsed.data;
   const [row] = await db
     .insert(candidatesTable)
     .values({
-      ...parsed.data,
+      ...rest,
       skills,
       avatarUrl,
     })

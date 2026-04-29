@@ -295,6 +295,9 @@ components:
         englishLevel: { $ref: "#/components/schemas/EnglishLevel" }
         euWorkEligible: { type: boolean }
         linkedinUrl: { type: string }
+        skills:
+          type: array
+          items: { type: string }
       required:
         - fullName
         - email

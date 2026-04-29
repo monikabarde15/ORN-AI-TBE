@@ -58,6 +58,7 @@ export interface CandidateRegistration {
   englishLevel: EnglishLevel;
   euWorkEligible: boolean;
   linkedinUrl: string;
+  skills?: string[];
 }
 
 export interface CvUpload {

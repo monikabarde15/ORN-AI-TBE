@@ -187,6 +187,7 @@ export const RegisterCandidateBody = zod.object({
   englishLevel: zod.enum(["A1", "A2", "B1", "B2", "C1", "C2"]),
   euWorkEligible: zod.boolean(),
   linkedinUrl: zod.string(),
+  skills: zod.array(zod.string()).optional(),
 });
 
 /**
