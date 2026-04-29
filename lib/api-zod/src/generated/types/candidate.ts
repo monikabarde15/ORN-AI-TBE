@@ -5,6 +5,7 @@
  * ORN-AI Talent Infrastructure Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { CandidateSource } from "./candidateSource";
 import type { CvUpload } from "./cvUpload";
 import type { EnglishLevel } from "./englishLevel";
 import type { Evaluation } from "./evaluation";
@@ -27,4 +28,13 @@ export interface Candidate {
   evaluation?: Evaluation | null;
   skills: string[];
   avatarUrl: string;
+  source: CandidateSource;
+  lastRole?: string | null;
+  domain?: string | null;
+  /** @minimum 0 */
+  careerGapMonths: number;
+  isShortlisted: boolean;
+  isClientReady: boolean;
+  isIndustryReady: boolean;
+  hasCvFile: boolean;
 }

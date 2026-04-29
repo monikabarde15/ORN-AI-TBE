@@ -1,6 +1,76 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Network, Search, FileText, UserPlus, Presentation, Settings2, BarChart3, Database, GraduationCap } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/use-auth";
+import { Network, Search, UserPlus, Presentation, Settings2, BarChart3, Database, GraduationCap, LogIn, LogOut, User as UserIcon } from "lucide-react";
+
+function UserMenu({ compact = false }: { compact?: boolean }) {
+  const { user, logout } = useAuth();
+  if (!user) {
+    return (
+      <Link href="/login">
+        <Button variant={compact ? "ghost" : "outline"} size={compact ? "sm" : "default"} className="gap-2" data-testid="button-header-login">
+          <LogIn className="size-4" />
+          Sign in
+        </Button>
+      </Link>
+    );
+  }
+  const initials = user.fullName
+    .split(/\s+/)
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="gap-2 px-2" data-testid="button-user-menu">
+          <Avatar className="size-7">
+            <AvatarFallback className="text-xs bg-primary/10 text-primary">{initials || "U"}</AvatarFallback>
+          </Avatar>
+          <span className="hidden md:inline text-sm font-medium">{user.fullName}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>
+          <div className="flex flex-col">
+            <span className="text-sm">{user.fullName}</span>
+            <span className="text-xs text-muted-foreground capitalize">{user.role}</span>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {user.candidateId && (
+          <Link href={`/candidate/${user.candidateId}/evaluation`}>
+            <DropdownMenuItem className="cursor-pointer gap-2">
+              <UserIcon className="size-4" />
+              My evaluation
+            </DropdownMenuItem>
+          </Link>
+        )}
+        <DropdownMenuItem
+          className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+          onClick={() => {
+            void logout();
+          }}
+          data-testid="button-logout"
+        >
+          <LogOut className="size-4" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -32,6 +102,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <Search className="size-4" />
               Talent Search
             </Link>
+            <Link href="/recruiter/add" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/add" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
+              <UserPlus className="size-4" />
+              Add Candidate
+            </Link>
 
             <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Career Transformation
@@ -60,6 +134,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <Settings2 className="size-4" />
               Settings
             </div>
+          </div>
+          <div className="border-t p-3">
+            <UserMenu />
           </div>
         </aside>
         
@@ -101,6 +178,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 Join Talent Pool
               </Button>
             </Link>
+            <UserMenu compact />
           </div>
         </div>
       </header>

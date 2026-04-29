@@ -7,6 +7,8 @@ import {
   getAdminPipelineQueryKey,
   useAdminActivity,
   getAdminActivityQueryKey,
+  useListAuditLogs,
+  getListAuditLogsQueryKey,
 } from "@workspace/api-client-react";
 import {
   AreaChart,
@@ -79,6 +81,12 @@ export default function AdminDashboard() {
   const { data: activities, isLoading: isLoadingActivity } = useAdminActivity({
     query: { queryKey: getAdminActivityQueryKey() },
   });
+
+  const auditParams = { limit: 50 };
+  const { data: auditLogs, isLoading: isLoadingAudit } = useListAuditLogs(
+    auditParams,
+    { query: { queryKey: getListAuditLogsQueryKey(auditParams) } },
+  );
 
   // ---- Derived metrics ----
   const derived = useMemo(() => {
@@ -652,6 +660,92 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                   </motion.div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ============ AUDIT LOG FEED ============ */}
+        <Card className="border shadow-sm mt-6">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Activity className="size-4 text-primary" /> Audit Log
+            </CardTitle>
+            <CardDescription>
+              Append-only record of authentication, CV, training, project, and
+              status events
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingAudit ? (
+              <div className="space-y-2">
+                {Array(5)
+                  .fill(0)
+                  .map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-12 bg-muted/30 animate-pulse rounded-md"
+                    />
+                  ))}
+              </div>
+            ) : !auditLogs || auditLogs.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">
+                No audit events yet.
+              </p>
+            ) : (
+              <div className="divide-y max-h-[440px] overflow-y-auto">
+                {auditLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="flex items-start gap-3 py-3 first:pt-0 last:pb-0"
+                    data-testid={`audit-row-${log.id}`}
+                  >
+                    <Badge
+                      variant="outline"
+                      className="font-mono text-[10px] uppercase tracking-wider shrink-0"
+                    >
+                      {log.action}
+                    </Badge>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm">
+                        <span className="font-medium">
+                          {log.actorEmail ?? "anonymous"}
+                        </span>
+                        {log.actorRole && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            ({log.actorRole})
+                          </span>
+                        )}
+                        {log.entityType && log.entityId && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            · {log.entityType}#
+                            {log.entityId.slice(0, 8)}
+                          </span>
+                        )}
+                      </div>
+                      {Object.keys(log.metadata ?? {}).length > 0 && (
+                        <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {Object.entries(log.metadata)
+                            .map(
+                              ([k, v]) =>
+                                `${k}=${typeof v === "object" ? JSON.stringify(v) : String(v)}`,
+                            )
+                            .join(" · ")}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground shrink-0 tabular-nums">
+                      {new Date(log.createdAt).toLocaleString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

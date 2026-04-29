@@ -22,7 +22,282 @@ tags:
     description: Reference data (countries, roles, levels)
   - name: training
     description: Career-transformation workflow (Upskilling / Reskilling → Recruiter Ready)
+  - name: auth
+    description: Authentication and session management
+  - name: projects
+    description: Real-world capstone projects assigned to candidates
 paths:
+  /auth/register:
+    post:
+      operationId: authRegister
+      tags: [auth]
+      summary: Register a new user account (candidate, recruiter or admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRegisterRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+  /auth/login:
+    post:
+      operationId: authLogin
+      tags: [auth]
+      summary: Sign in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthLoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+  /auth/logout:
+    post:
+      operationId: authLogout
+      tags: [auth]
+      summary: Sign out
+      responses:
+        "204":
+          description: Logged out
+  /auth/me:
+    get:
+      operationId: authMe
+      tags: [auth]
+      summary: Get the current authenticated user (or null)
+      responses:
+        "200":
+          description: Current user or null
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/AuthUser"
+                  - type: "null"
+
+  /candidates/{id}/cv-file:
+    post:
+      operationId: uploadCvFile
+      tags: [candidates]
+      summary: Upload a real CV file (PDF/DOC/DOCX) and auto-extract profile data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CvFileUploadRequest"
+      responses:
+        "200":
+          description: Updated candidate with extracted profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CvFileUploadResult"
+
+  /candidates/{id}/cv/full.pdf:
+    get:
+      operationId: downloadFullCv
+      tags: [candidates]
+      summary: Download the candidate's transformed full CV as a branded PDF
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /candidates/{id}/cv/masked.pdf:
+    get:
+      operationId: downloadMaskedCv
+      tags: [candidates]
+      summary: Download an anonymised, recruiter-shareable PDF (no PII)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /candidates/{id}/shortlist:
+    post:
+      operationId: shortlistCandidate
+      tags: [recruiter]
+      summary: Toggle the recruiter shortlist flag on a candidate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShortlistRequest"
+      responses:
+        "200":
+          description: Updated candidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Candidate"
+
+  /candidates/{id}/client-ready:
+    post:
+      operationId: markClientReady
+      tags: [recruiter]
+      summary: Mark a candidate as client-ready (visible to client portfolios)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientReadyRequest"
+      responses:
+        "200":
+          description: Updated candidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Candidate"
+
+  /candidates/{id}/skill-gap:
+    get:
+      operationId: getSkillGap
+      tags: [evaluation]
+      summary: Skill gap analysis for a candidate against their target role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Skill gap result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SkillGap"
+
+  /candidates/{id}/projects:
+    get:
+      operationId: listCandidateProjects
+      tags: [projects]
+      summary: List projects assigned to a candidate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Project" }
+    post:
+      operationId: assignCandidateProject
+      tags: [projects]
+      summary: Assign a new capstone project to a candidate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{projectId}:
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update project status, feedback or end date
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /admin/audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [admin]
+      summary: Recent platform audit log entries
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200 }
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AuditLog" }
+
+
   /healthz:
     get:
       operationId: healthCheck
@@ -471,17 +746,43 @@ components:
       properties:
         cvQuality: { type: integer, minimum: 0, maximum: 100 }
         technicalSkillMatch: { type: integer, minimum: 0, maximum: 100 }
+        technicalRelevance: { type: integer, minimum: 0, maximum: 100 }
         englishReadiness: { type: integer, minimum: 0, maximum: 100 }
         europeJobReadiness: { type: integer, minimum: 0, maximum: 100 }
+        marketReadiness: { type: integer, minimum: 0, maximum: 100 }
+        careerGapRisk: { type: integer, minimum: 0, maximum: 100 }
         upskillingNeeds: { type: integer, minimum: 0, maximum: 100 }
         overall: { type: integer, minimum: 0, maximum: 100 }
       required:
         - cvQuality
         - technicalSkillMatch
+        - technicalRelevance
         - englishReadiness
         - europeJobReadiness
+        - marketReadiness
+        - careerGapRisk
         - upskillingNeeds
         - overall
+
+    CandidateClassification:
+      type: string
+      enum: [recruiter_ready, needs_upskilling, needs_reskilling, not_ready_yet]
+
+    SkillGap:
+      type: object
+      properties:
+        targetRole: { type: string }
+        required:
+          type: array
+          items: { type: string }
+        matched:
+          type: array
+          items: { type: string }
+        missing:
+          type: array
+          items: { type: string }
+        matchPct: { type: integer, minimum: 0, maximum: 100 }
+      required: [targetRole, required, matched, missing, matchPct]
 
     EvaluationInsight:
       type: object
@@ -510,6 +811,8 @@ components:
           type: array
           items: { $ref: "#/components/schemas/EvaluationInsight" }
         readinessTier: { type: string, enum: [emerging, developing, ready, elite] }
+        classification: { $ref: "#/components/schemas/CandidateClassification" }
+        skillGap: { $ref: "#/components/schemas/SkillGap" }
       required:
         - candidateId
         - evaluatedAt
@@ -519,6 +822,8 @@ components:
         - recommendedUpskilling
         - insights
         - readinessTier
+        - classification
+        - skillGap
 
     Candidate:
       type: object
@@ -547,6 +852,20 @@ components:
           type: array
           items: { type: string }
         avatarUrl: { type: string }
+        source: { type: string, enum: [direct, recruiter] }
+        lastRole:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        domain:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+        careerGapMonths: { type: integer, minimum: 0 }
+        isShortlisted: { type: boolean }
+        isClientReady: { type: boolean }
+        isIndustryReady: { type: boolean }
+        hasCvFile: { type: boolean }
       required:
         - id
         - fullName
@@ -562,6 +881,12 @@ components:
         - createdAt
         - skills
         - avatarUrl
+        - source
+        - careerGapMonths
+        - isShortlisted
+        - isClientReady
+        - isIndustryReady
+        - hasCvFile
 
     RecruiterSummary:
       type: object
@@ -940,3 +1265,159 @@ components:
         - statusBreakdown
         - trainerAllocation
         - upcomingLiveSessions
+
+    UserRole:
+      type: string
+      enum: [candidate, recruiter, admin]
+
+    AuthUser:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        fullName: { type: string }
+        role: { $ref: "#/components/schemas/UserRole" }
+        candidateId:
+          oneOf:
+            - { type: string }
+            - { type: "null" }
+      required: [id, email, fullName, role, candidateId]
+
+    AuthSession:
+      type: object
+      properties:
+        user: { $ref: "#/components/schemas/AuthUser" }
+      required: [user]
+
+    AuthRegisterRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        fullName: { type: string, minLength: 2 }
+        role: { $ref: "#/components/schemas/UserRole" }
+        gdprConsent: { type: boolean }
+        candidateProfile:
+          oneOf:
+            - $ref: "#/components/schemas/CandidateRegistration"
+            - type: "null"
+      required: [email, password, fullName, role, gdprConsent]
+
+    AuthLoginRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+      required: [email, password]
+
+    ExtractedProfile:
+      type: object
+      properties:
+        fullName:
+          oneOf: [{ type: string }, { type: "null" }]
+        email:
+          oneOf: [{ type: string }, { type: "null" }]
+        phone:
+          oneOf: [{ type: string }, { type: "null" }]
+        location:
+          oneOf: [{ type: string }, { type: "null" }]
+        yearsExperience:
+          oneOf: [{ type: integer }, { type: "null" }]
+        lastRole:
+          oneOf: [{ type: string }, { type: "null" }]
+        domain:
+          oneOf: [{ type: string }, { type: "null" }]
+        careerGapMonths: { type: integer, minimum: 0 }
+        skills:
+          type: array
+          items: { type: string }
+      required: [careerGapMonths, skills]
+
+    CvFileUploadResult:
+      type: object
+      properties:
+        candidate: { $ref: "#/components/schemas/Candidate" }
+        extracted: { $ref: "#/components/schemas/ExtractedProfile" }
+      required: [candidate, extracted]
+
+    ProjectStatus:
+      type: string
+      enum: [in_progress, completed, cancelled]
+
+    Project:
+      type: object
+      properties:
+        id: { type: string }
+        candidateId: { type: string }
+        name: { type: string }
+        techStack:
+          type: array
+          items: { type: string }
+        durationWeeks: { type: integer, minimum: 1, maximum: 52 }
+        status: { $ref: "#/components/schemas/ProjectStatus" }
+        feedback:
+          oneOf: [{ type: string }, { type: "null" }]
+        startDate: { type: string, format: date-time }
+        endDate:
+          oneOf: [{ type: string, format: date-time }, { type: "null" }]
+        createdAt: { type: string, format: date-time }
+      required: [id, candidateId, name, techStack, durationWeeks, status, startDate, createdAt]
+
+    ProjectCreate:
+      type: object
+      properties:
+        name: { type: string, minLength: 2 }
+        techStack:
+          type: array
+          items: { type: string }
+        durationWeeks: { type: integer, minimum: 1, maximum: 52 }
+        startDate: { type: string, format: date-time }
+      required: [name, techStack, durationWeeks, startDate]
+
+    ProjectUpdate:
+      type: object
+      properties:
+        status: { $ref: "#/components/schemas/ProjectStatus" }
+        feedback: { type: string }
+        endDate: { type: string, format: date-time }
+
+    AuditLog:
+      type: object
+      properties:
+        id: { type: string }
+        actorUserId:
+          oneOf: [{ type: string }, { type: "null" }]
+        actorEmail:
+          oneOf: [{ type: string }, { type: "null" }]
+        actorRole:
+          oneOf: [{ $ref: "#/components/schemas/UserRole" }, { type: "null" }]
+        action: { type: string }
+        entityType:
+          oneOf: [{ type: string }, { type: "null" }]
+        entityId:
+          oneOf: [{ type: string }, { type: "null" }]
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt: { type: string, format: date-time }
+      required: [id, action, metadata, createdAt]
+
+    CvFileUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required: [file]
+
+    ShortlistRequest:
+      type: object
+      properties:
+        shortlisted: { type: boolean }
+      required: [shortlisted]
+
+    ClientReadyRequest:
+      type: object
+      properties:
+        clientReady: { type: boolean }
+      required: [clientReady]

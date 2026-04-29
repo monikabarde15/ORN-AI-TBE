@@ -8,6 +8,788 @@
 import * as zod from "zod";
 
 /**
+ * @summary Register a new user account (candidate, recruiter or admin)
+ */
+export const authRegisterBodyPasswordMin = 8;
+
+export const authRegisterBodyFullNameMin = 2;
+
+export const authRegisterBodyCandidateProfileOneFullNameMin = 2;
+
+export const authRegisterBodyCandidateProfileOneYearsExperienceMin = 0;
+export const authRegisterBodyCandidateProfileOneYearsExperienceMax = 50;
+
+export const AuthRegisterBody = zod.object({
+  email: zod.string().email(),
+  password: zod.string().min(authRegisterBodyPasswordMin),
+  fullName: zod.string().min(authRegisterBodyFullNameMin),
+  role: zod.enum(["candidate", "recruiter", "admin"]),
+  gdprConsent: zod.boolean(),
+  candidateProfile: zod
+    .union([
+      zod.object({
+        fullName: zod
+          .string()
+          .min(authRegisterBodyCandidateProfileOneFullNameMin),
+        email: zod.string().email(),
+        phone: zod.string(),
+        country: zod.string(),
+        targetRole: zod.string(),
+        yearsExperience: zod
+          .number()
+          .min(authRegisterBodyCandidateProfileOneYearsExperienceMin)
+          .max(authRegisterBodyCandidateProfileOneYearsExperienceMax),
+        visaStatus: zod.enum([
+          "eu_citizen",
+          "work_permit",
+          "blue_card",
+          "requires_sponsorship",
+          "student_visa",
+        ]),
+        englishLevel: zod.enum(["A1", "A2", "B1", "B2", "C1", "C2"]),
+        euWorkEligible: zod.boolean(),
+        linkedinUrl: zod.string(),
+        skills: zod.array(zod.string()).optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+});
+
+/**
+ * @summary Sign in
+ */
+export const AuthLoginBody = zod.object({
+  email: zod.string().email(),
+  password: zod.string(),
+});
+
+export const AuthLoginResponse = zod.object({
+  user: zod.object({
+    id: zod.string(),
+    email: zod.string().email(),
+    fullName: zod.string(),
+    role: zod.enum(["candidate", "recruiter", "admin"]),
+    candidateId: zod.union([zod.string(), zod.null()]),
+  }),
+});
+
+/**
+ * @summary Get the current authenticated user (or null)
+ */
+export const AuthMeResponse = zod.union([
+  zod.object({
+    id: zod.string(),
+    email: zod.string().email(),
+    fullName: zod.string(),
+    role: zod.enum(["candidate", "recruiter", "admin"]),
+    candidateId: zod.union([zod.string(), zod.null()]),
+  }),
+  zod.null(),
+]);
+
+/**
+ * @summary Upload a real CV file (PDF/DOC/DOCX) and auto-extract profile data
+ */
+export const UploadCvFileParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UploadCvFileBody = zod.object({
+  file: zod.instanceof(File),
+});
+
+export const uploadCvFileResponseCandidateEvaluationOneScoresCvQualityMin = 0;
+export const uploadCvFileResponseCandidateEvaluationOneScoresCvQualityMax = 100;
+
+export const uploadCvFileResponseCandidateEvaluationOneScoresTechnicalSkillMatchMin = 0;
+export const uploadCvFileResponseCandidateEvaluationOneScoresTechnicalSkillMatchMax = 100;
+
+export const uploadCvFileResponseCandidateEvaluationOneScoresTechnicalRelevanceMin = 0;
+export const uploadCvFileResponseCandidateEvaluationOneScoresTechnicalRelevanceMax = 100;
+
+export const uploadCvFileResponseCandidateEvaluationOneScoresEnglishReadinessMin = 0;
+export const uploadCvFileResponseCandidateEvaluationOneScoresEnglishReadinessMax = 100;
+
+export const uploadCvFileResponseCandidateEvaluationOneScoresEuropeJobReadinessMin = 0;
+export const uploadCvFileResponseCandidateEvaluationOneScoresEuropeJobReadinessMax = 100;
+
+export const uploadCvFileResponseCandidateEvaluationOneScoresMarketReadinessMin = 0;
+export const uploadCvFileResponseCandidateEvaluationOneScoresMarketReadinessMax = 100;
+
+export const uploadCvFileResponseCandidateEvaluationOneScoresCareerGapRiskMin = 0;
+export const uploadCvFileResponseCandidateEvaluationOneScoresCareerGapRiskMax = 100;
+
+export const uploadCvFileResponseCandidateEvaluationOneScoresUpskillingNeedsMin = 0;
+export const uploadCvFileResponseCandidateEvaluationOneScoresUpskillingNeedsMax = 100;
+
+export const uploadCvFileResponseCandidateEvaluationOneScoresOverallMin = 0;
+export const uploadCvFileResponseCandidateEvaluationOneScoresOverallMax = 100;
+
+export const uploadCvFileResponseCandidateEvaluationOneSkillGapMatchPctMin = 0;
+export const uploadCvFileResponseCandidateEvaluationOneSkillGapMatchPctMax = 100;
+
+export const uploadCvFileResponseCandidateCareerGapMonthsMin = 0;
+
+export const uploadCvFileResponseExtractedCareerGapMonthsMin = 0;
+
+export const UploadCvFileResponse = zod.object({
+  candidate: zod.object({
+    id: zod.string(),
+    fullName: zod.string(),
+    email: zod.string(),
+    phone: zod.string(),
+    country: zod.string(),
+    targetRole: zod.string(),
+    yearsExperience: zod.number(),
+    visaStatus: zod.enum([
+      "eu_citizen",
+      "work_permit",
+      "blue_card",
+      "requires_sponsorship",
+      "student_visa",
+    ]),
+    englishLevel: zod.enum(["A1", "A2", "B1", "B2", "C1", "C2"]),
+    euWorkEligible: zod.boolean(),
+    linkedinUrl: zod.string(),
+    createdAt: zod.coerce.date(),
+    cv: zod
+      .union([
+        zod.object({
+          fileName: zod.string(),
+          fileSize: zod.number(),
+          contentSummary: zod.string().optional(),
+        }),
+        zod.null(),
+      ])
+      .optional(),
+    evaluation: zod
+      .union([
+        zod.object({
+          candidateId: zod.string(),
+          evaluatedAt: zod.coerce.date(),
+          scores: zod.object({
+            cvQuality: zod
+              .number()
+              .min(uploadCvFileResponseCandidateEvaluationOneScoresCvQualityMin)
+              .max(
+                uploadCvFileResponseCandidateEvaluationOneScoresCvQualityMax,
+              ),
+            technicalSkillMatch: zod
+              .number()
+              .min(
+                uploadCvFileResponseCandidateEvaluationOneScoresTechnicalSkillMatchMin,
+              )
+              .max(
+                uploadCvFileResponseCandidateEvaluationOneScoresTechnicalSkillMatchMax,
+              ),
+            technicalRelevance: zod
+              .number()
+              .min(
+                uploadCvFileResponseCandidateEvaluationOneScoresTechnicalRelevanceMin,
+              )
+              .max(
+                uploadCvFileResponseCandidateEvaluationOneScoresTechnicalRelevanceMax,
+              ),
+            englishReadiness: zod
+              .number()
+              .min(
+                uploadCvFileResponseCandidateEvaluationOneScoresEnglishReadinessMin,
+              )
+              .max(
+                uploadCvFileResponseCandidateEvaluationOneScoresEnglishReadinessMax,
+              ),
+            europeJobReadiness: zod
+              .number()
+              .min(
+                uploadCvFileResponseCandidateEvaluationOneScoresEuropeJobReadinessMin,
+              )
+              .max(
+                uploadCvFileResponseCandidateEvaluationOneScoresEuropeJobReadinessMax,
+              ),
+            marketReadiness: zod
+              .number()
+              .min(
+                uploadCvFileResponseCandidateEvaluationOneScoresMarketReadinessMin,
+              )
+              .max(
+                uploadCvFileResponseCandidateEvaluationOneScoresMarketReadinessMax,
+              ),
+            careerGapRisk: zod
+              .number()
+              .min(
+                uploadCvFileResponseCandidateEvaluationOneScoresCareerGapRiskMin,
+              )
+              .max(
+                uploadCvFileResponseCandidateEvaluationOneScoresCareerGapRiskMax,
+              ),
+            upskillingNeeds: zod
+              .number()
+              .min(
+                uploadCvFileResponseCandidateEvaluationOneScoresUpskillingNeedsMin,
+              )
+              .max(
+                uploadCvFileResponseCandidateEvaluationOneScoresUpskillingNeedsMax,
+              ),
+            overall: zod
+              .number()
+              .min(uploadCvFileResponseCandidateEvaluationOneScoresOverallMin)
+              .max(uploadCvFileResponseCandidateEvaluationOneScoresOverallMax),
+          }),
+          strengths: zod.array(zod.string()),
+          gaps: zod.array(zod.string()),
+          recommendedUpskilling: zod.array(zod.string()),
+          insights: zod.array(
+            zod.object({
+              title: zod.string(),
+              detail: zod.string(),
+              severity: zod.enum(["strength", "opportunity", "gap"]),
+            }),
+          ),
+          readinessTier: zod.enum(["emerging", "developing", "ready", "elite"]),
+          classification: zod.enum([
+            "recruiter_ready",
+            "needs_upskilling",
+            "needs_reskilling",
+            "not_ready_yet",
+          ]),
+          skillGap: zod.object({
+            targetRole: zod.string(),
+            required: zod.array(zod.string()),
+            matched: zod.array(zod.string()),
+            missing: zod.array(zod.string()),
+            matchPct: zod
+              .number()
+              .min(
+                uploadCvFileResponseCandidateEvaluationOneSkillGapMatchPctMin,
+              )
+              .max(
+                uploadCvFileResponseCandidateEvaluationOneSkillGapMatchPctMax,
+              ),
+          }),
+        }),
+        zod.null(),
+      ])
+      .optional(),
+    skills: zod.array(zod.string()),
+    avatarUrl: zod.string(),
+    source: zod.enum(["direct", "recruiter"]),
+    lastRole: zod.union([zod.string(), zod.null()]).optional(),
+    domain: zod.union([zod.string(), zod.null()]).optional(),
+    careerGapMonths: zod
+      .number()
+      .min(uploadCvFileResponseCandidateCareerGapMonthsMin),
+    isShortlisted: zod.boolean(),
+    isClientReady: zod.boolean(),
+    isIndustryReady: zod.boolean(),
+    hasCvFile: zod.boolean(),
+  }),
+  extracted: zod.object({
+    fullName: zod.union([zod.string(), zod.null()]).optional(),
+    email: zod.union([zod.string(), zod.null()]).optional(),
+    phone: zod.union([zod.string(), zod.null()]).optional(),
+    location: zod.union([zod.string(), zod.null()]).optional(),
+    yearsExperience: zod.union([zod.number(), zod.null()]).optional(),
+    lastRole: zod.union([zod.string(), zod.null()]).optional(),
+    domain: zod.union([zod.string(), zod.null()]).optional(),
+    careerGapMonths: zod
+      .number()
+      .min(uploadCvFileResponseExtractedCareerGapMonthsMin),
+    skills: zod.array(zod.string()),
+  }),
+});
+
+/**
+ * @summary Download the candidate's transformed full CV as a branded PDF
+ */
+export const DownloadFullCvParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
+ * @summary Download an anonymised, recruiter-shareable PDF (no PII)
+ */
+export const DownloadMaskedCvParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
+ * @summary Toggle the recruiter shortlist flag on a candidate
+ */
+export const ShortlistCandidateParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ShortlistCandidateBody = zod.object({
+  shortlisted: zod.boolean(),
+});
+
+export const shortlistCandidateResponseEvaluationOneScoresCvQualityMin = 0;
+export const shortlistCandidateResponseEvaluationOneScoresCvQualityMax = 100;
+
+export const shortlistCandidateResponseEvaluationOneScoresTechnicalSkillMatchMin = 0;
+export const shortlistCandidateResponseEvaluationOneScoresTechnicalSkillMatchMax = 100;
+
+export const shortlistCandidateResponseEvaluationOneScoresTechnicalRelevanceMin = 0;
+export const shortlistCandidateResponseEvaluationOneScoresTechnicalRelevanceMax = 100;
+
+export const shortlistCandidateResponseEvaluationOneScoresEnglishReadinessMin = 0;
+export const shortlistCandidateResponseEvaluationOneScoresEnglishReadinessMax = 100;
+
+export const shortlistCandidateResponseEvaluationOneScoresEuropeJobReadinessMin = 0;
+export const shortlistCandidateResponseEvaluationOneScoresEuropeJobReadinessMax = 100;
+
+export const shortlistCandidateResponseEvaluationOneScoresMarketReadinessMin = 0;
+export const shortlistCandidateResponseEvaluationOneScoresMarketReadinessMax = 100;
+
+export const shortlistCandidateResponseEvaluationOneScoresCareerGapRiskMin = 0;
+export const shortlistCandidateResponseEvaluationOneScoresCareerGapRiskMax = 100;
+
+export const shortlistCandidateResponseEvaluationOneScoresUpskillingNeedsMin = 0;
+export const shortlistCandidateResponseEvaluationOneScoresUpskillingNeedsMax = 100;
+
+export const shortlistCandidateResponseEvaluationOneScoresOverallMin = 0;
+export const shortlistCandidateResponseEvaluationOneScoresOverallMax = 100;
+
+export const shortlistCandidateResponseEvaluationOneSkillGapMatchPctMin = 0;
+export const shortlistCandidateResponseEvaluationOneSkillGapMatchPctMax = 100;
+
+export const shortlistCandidateResponseCareerGapMonthsMin = 0;
+
+export const ShortlistCandidateResponse = zod.object({
+  id: zod.string(),
+  fullName: zod.string(),
+  email: zod.string(),
+  phone: zod.string(),
+  country: zod.string(),
+  targetRole: zod.string(),
+  yearsExperience: zod.number(),
+  visaStatus: zod.enum([
+    "eu_citizen",
+    "work_permit",
+    "blue_card",
+    "requires_sponsorship",
+    "student_visa",
+  ]),
+  englishLevel: zod.enum(["A1", "A2", "B1", "B2", "C1", "C2"]),
+  euWorkEligible: zod.boolean(),
+  linkedinUrl: zod.string(),
+  createdAt: zod.coerce.date(),
+  cv: zod
+    .union([
+      zod.object({
+        fileName: zod.string(),
+        fileSize: zod.number(),
+        contentSummary: zod.string().optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  evaluation: zod
+    .union([
+      zod.object({
+        candidateId: zod.string(),
+        evaluatedAt: zod.coerce.date(),
+        scores: zod.object({
+          cvQuality: zod
+            .number()
+            .min(shortlistCandidateResponseEvaluationOneScoresCvQualityMin)
+            .max(shortlistCandidateResponseEvaluationOneScoresCvQualityMax),
+          technicalSkillMatch: zod
+            .number()
+            .min(
+              shortlistCandidateResponseEvaluationOneScoresTechnicalSkillMatchMin,
+            )
+            .max(
+              shortlistCandidateResponseEvaluationOneScoresTechnicalSkillMatchMax,
+            ),
+          technicalRelevance: zod
+            .number()
+            .min(
+              shortlistCandidateResponseEvaluationOneScoresTechnicalRelevanceMin,
+            )
+            .max(
+              shortlistCandidateResponseEvaluationOneScoresTechnicalRelevanceMax,
+            ),
+          englishReadiness: zod
+            .number()
+            .min(
+              shortlistCandidateResponseEvaluationOneScoresEnglishReadinessMin,
+            )
+            .max(
+              shortlistCandidateResponseEvaluationOneScoresEnglishReadinessMax,
+            ),
+          europeJobReadiness: zod
+            .number()
+            .min(
+              shortlistCandidateResponseEvaluationOneScoresEuropeJobReadinessMin,
+            )
+            .max(
+              shortlistCandidateResponseEvaluationOneScoresEuropeJobReadinessMax,
+            ),
+          marketReadiness: zod
+            .number()
+            .min(
+              shortlistCandidateResponseEvaluationOneScoresMarketReadinessMin,
+            )
+            .max(
+              shortlistCandidateResponseEvaluationOneScoresMarketReadinessMax,
+            ),
+          careerGapRisk: zod
+            .number()
+            .min(shortlistCandidateResponseEvaluationOneScoresCareerGapRiskMin)
+            .max(shortlistCandidateResponseEvaluationOneScoresCareerGapRiskMax),
+          upskillingNeeds: zod
+            .number()
+            .min(
+              shortlistCandidateResponseEvaluationOneScoresUpskillingNeedsMin,
+            )
+            .max(
+              shortlistCandidateResponseEvaluationOneScoresUpskillingNeedsMax,
+            ),
+          overall: zod
+            .number()
+            .min(shortlistCandidateResponseEvaluationOneScoresOverallMin)
+            .max(shortlistCandidateResponseEvaluationOneScoresOverallMax),
+        }),
+        strengths: zod.array(zod.string()),
+        gaps: zod.array(zod.string()),
+        recommendedUpskilling: zod.array(zod.string()),
+        insights: zod.array(
+          zod.object({
+            title: zod.string(),
+            detail: zod.string(),
+            severity: zod.enum(["strength", "opportunity", "gap"]),
+          }),
+        ),
+        readinessTier: zod.enum(["emerging", "developing", "ready", "elite"]),
+        classification: zod.enum([
+          "recruiter_ready",
+          "needs_upskilling",
+          "needs_reskilling",
+          "not_ready_yet",
+        ]),
+        skillGap: zod.object({
+          targetRole: zod.string(),
+          required: zod.array(zod.string()),
+          matched: zod.array(zod.string()),
+          missing: zod.array(zod.string()),
+          matchPct: zod
+            .number()
+            .min(shortlistCandidateResponseEvaluationOneSkillGapMatchPctMin)
+            .max(shortlistCandidateResponseEvaluationOneSkillGapMatchPctMax),
+        }),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  skills: zod.array(zod.string()),
+  avatarUrl: zod.string(),
+  source: zod.enum(["direct", "recruiter"]),
+  lastRole: zod.union([zod.string(), zod.null()]).optional(),
+  domain: zod.union([zod.string(), zod.null()]).optional(),
+  careerGapMonths: zod
+    .number()
+    .min(shortlistCandidateResponseCareerGapMonthsMin),
+  isShortlisted: zod.boolean(),
+  isClientReady: zod.boolean(),
+  isIndustryReady: zod.boolean(),
+  hasCvFile: zod.boolean(),
+});
+
+/**
+ * @summary Mark a candidate as client-ready (visible to client portfolios)
+ */
+export const MarkClientReadyParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const MarkClientReadyBody = zod.object({
+  clientReady: zod.boolean(),
+});
+
+export const markClientReadyResponseEvaluationOneScoresCvQualityMin = 0;
+export const markClientReadyResponseEvaluationOneScoresCvQualityMax = 100;
+
+export const markClientReadyResponseEvaluationOneScoresTechnicalSkillMatchMin = 0;
+export const markClientReadyResponseEvaluationOneScoresTechnicalSkillMatchMax = 100;
+
+export const markClientReadyResponseEvaluationOneScoresTechnicalRelevanceMin = 0;
+export const markClientReadyResponseEvaluationOneScoresTechnicalRelevanceMax = 100;
+
+export const markClientReadyResponseEvaluationOneScoresEnglishReadinessMin = 0;
+export const markClientReadyResponseEvaluationOneScoresEnglishReadinessMax = 100;
+
+export const markClientReadyResponseEvaluationOneScoresEuropeJobReadinessMin = 0;
+export const markClientReadyResponseEvaluationOneScoresEuropeJobReadinessMax = 100;
+
+export const markClientReadyResponseEvaluationOneScoresMarketReadinessMin = 0;
+export const markClientReadyResponseEvaluationOneScoresMarketReadinessMax = 100;
+
+export const markClientReadyResponseEvaluationOneScoresCareerGapRiskMin = 0;
+export const markClientReadyResponseEvaluationOneScoresCareerGapRiskMax = 100;
+
+export const markClientReadyResponseEvaluationOneScoresUpskillingNeedsMin = 0;
+export const markClientReadyResponseEvaluationOneScoresUpskillingNeedsMax = 100;
+
+export const markClientReadyResponseEvaluationOneScoresOverallMin = 0;
+export const markClientReadyResponseEvaluationOneScoresOverallMax = 100;
+
+export const markClientReadyResponseEvaluationOneSkillGapMatchPctMin = 0;
+export const markClientReadyResponseEvaluationOneSkillGapMatchPctMax = 100;
+
+export const markClientReadyResponseCareerGapMonthsMin = 0;
+
+export const MarkClientReadyResponse = zod.object({
+  id: zod.string(),
+  fullName: zod.string(),
+  email: zod.string(),
+  phone: zod.string(),
+  country: zod.string(),
+  targetRole: zod.string(),
+  yearsExperience: zod.number(),
+  visaStatus: zod.enum([
+    "eu_citizen",
+    "work_permit",
+    "blue_card",
+    "requires_sponsorship",
+    "student_visa",
+  ]),
+  englishLevel: zod.enum(["A1", "A2", "B1", "B2", "C1", "C2"]),
+  euWorkEligible: zod.boolean(),
+  linkedinUrl: zod.string(),
+  createdAt: zod.coerce.date(),
+  cv: zod
+    .union([
+      zod.object({
+        fileName: zod.string(),
+        fileSize: zod.number(),
+        contentSummary: zod.string().optional(),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  evaluation: zod
+    .union([
+      zod.object({
+        candidateId: zod.string(),
+        evaluatedAt: zod.coerce.date(),
+        scores: zod.object({
+          cvQuality: zod
+            .number()
+            .min(markClientReadyResponseEvaluationOneScoresCvQualityMin)
+            .max(markClientReadyResponseEvaluationOneScoresCvQualityMax),
+          technicalSkillMatch: zod
+            .number()
+            .min(
+              markClientReadyResponseEvaluationOneScoresTechnicalSkillMatchMin,
+            )
+            .max(
+              markClientReadyResponseEvaluationOneScoresTechnicalSkillMatchMax,
+            ),
+          technicalRelevance: zod
+            .number()
+            .min(
+              markClientReadyResponseEvaluationOneScoresTechnicalRelevanceMin,
+            )
+            .max(
+              markClientReadyResponseEvaluationOneScoresTechnicalRelevanceMax,
+            ),
+          englishReadiness: zod
+            .number()
+            .min(markClientReadyResponseEvaluationOneScoresEnglishReadinessMin)
+            .max(markClientReadyResponseEvaluationOneScoresEnglishReadinessMax),
+          europeJobReadiness: zod
+            .number()
+            .min(
+              markClientReadyResponseEvaluationOneScoresEuropeJobReadinessMin,
+            )
+            .max(
+              markClientReadyResponseEvaluationOneScoresEuropeJobReadinessMax,
+            ),
+          marketReadiness: zod
+            .number()
+            .min(markClientReadyResponseEvaluationOneScoresMarketReadinessMin)
+            .max(markClientReadyResponseEvaluationOneScoresMarketReadinessMax),
+          careerGapRisk: zod
+            .number()
+            .min(markClientReadyResponseEvaluationOneScoresCareerGapRiskMin)
+            .max(markClientReadyResponseEvaluationOneScoresCareerGapRiskMax),
+          upskillingNeeds: zod
+            .number()
+            .min(markClientReadyResponseEvaluationOneScoresUpskillingNeedsMin)
+            .max(markClientReadyResponseEvaluationOneScoresUpskillingNeedsMax),
+          overall: zod
+            .number()
+            .min(markClientReadyResponseEvaluationOneScoresOverallMin)
+            .max(markClientReadyResponseEvaluationOneScoresOverallMax),
+        }),
+        strengths: zod.array(zod.string()),
+        gaps: zod.array(zod.string()),
+        recommendedUpskilling: zod.array(zod.string()),
+        insights: zod.array(
+          zod.object({
+            title: zod.string(),
+            detail: zod.string(),
+            severity: zod.enum(["strength", "opportunity", "gap"]),
+          }),
+        ),
+        readinessTier: zod.enum(["emerging", "developing", "ready", "elite"]),
+        classification: zod.enum([
+          "recruiter_ready",
+          "needs_upskilling",
+          "needs_reskilling",
+          "not_ready_yet",
+        ]),
+        skillGap: zod.object({
+          targetRole: zod.string(),
+          required: zod.array(zod.string()),
+          matched: zod.array(zod.string()),
+          missing: zod.array(zod.string()),
+          matchPct: zod
+            .number()
+            .min(markClientReadyResponseEvaluationOneSkillGapMatchPctMin)
+            .max(markClientReadyResponseEvaluationOneSkillGapMatchPctMax),
+        }),
+      }),
+      zod.null(),
+    ])
+    .optional(),
+  skills: zod.array(zod.string()),
+  avatarUrl: zod.string(),
+  source: zod.enum(["direct", "recruiter"]),
+  lastRole: zod.union([zod.string(), zod.null()]).optional(),
+  domain: zod.union([zod.string(), zod.null()]).optional(),
+  careerGapMonths: zod.number().min(markClientReadyResponseCareerGapMonthsMin),
+  isShortlisted: zod.boolean(),
+  isClientReady: zod.boolean(),
+  isIndustryReady: zod.boolean(),
+  hasCvFile: zod.boolean(),
+});
+
+/**
+ * @summary Skill gap analysis for a candidate against their target role
+ */
+export const GetSkillGapParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const getSkillGapResponseMatchPctMin = 0;
+export const getSkillGapResponseMatchPctMax = 100;
+
+export const GetSkillGapResponse = zod.object({
+  targetRole: zod.string(),
+  required: zod.array(zod.string()),
+  matched: zod.array(zod.string()),
+  missing: zod.array(zod.string()),
+  matchPct: zod
+    .number()
+    .min(getSkillGapResponseMatchPctMin)
+    .max(getSkillGapResponseMatchPctMax),
+});
+
+/**
+ * @summary List projects assigned to a candidate
+ */
+export const ListCandidateProjectsParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const listCandidateProjectsResponseDurationWeeksMax = 52;
+
+export const ListCandidateProjectsResponseItem = zod.object({
+  id: zod.string(),
+  candidateId: zod.string(),
+  name: zod.string(),
+  techStack: zod.array(zod.string()),
+  durationWeeks: zod
+    .number()
+    .min(1)
+    .max(listCandidateProjectsResponseDurationWeeksMax),
+  status: zod.enum(["in_progress", "completed", "cancelled"]),
+  feedback: zod.union([zod.string(), zod.null()]).optional(),
+  startDate: zod.coerce.date(),
+  endDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  createdAt: zod.coerce.date(),
+});
+export const ListCandidateProjectsResponse = zod.array(
+  ListCandidateProjectsResponseItem,
+);
+
+/**
+ * @summary Assign a new capstone project to a candidate
+ */
+export const AssignCandidateProjectParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const assignCandidateProjectBodyNameMin = 2;
+
+export const assignCandidateProjectBodyDurationWeeksMax = 52;
+
+export const AssignCandidateProjectBody = zod.object({
+  name: zod.string().min(assignCandidateProjectBodyNameMin),
+  techStack: zod.array(zod.string()),
+  durationWeeks: zod
+    .number()
+    .min(1)
+    .max(assignCandidateProjectBodyDurationWeeksMax),
+  startDate: zod.coerce.date(),
+});
+
+/**
+ * @summary Update project status, feedback or end date
+ */
+export const UpdateProjectParams = zod.object({
+  projectId: zod.coerce.string(),
+});
+
+export const UpdateProjectBody = zod.object({
+  status: zod.enum(["in_progress", "completed", "cancelled"]).optional(),
+  feedback: zod.string().optional(),
+  endDate: zod.coerce.date().optional(),
+});
+
+export const updateProjectResponseDurationWeeksMax = 52;
+
+export const UpdateProjectResponse = zod.object({
+  id: zod.string(),
+  candidateId: zod.string(),
+  name: zod.string(),
+  techStack: zod.array(zod.string()),
+  durationWeeks: zod.number().min(1).max(updateProjectResponseDurationWeeksMax),
+  status: zod.enum(["in_progress", "completed", "cancelled"]),
+  feedback: zod.union([zod.string(), zod.null()]).optional(),
+  startDate: zod.coerce.date(),
+  endDate: zod.union([zod.coerce.date(), zod.null()]).optional(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Recent platform audit log entries
+ */
+export const listAuditLogsQueryLimitMax = 200;
+
+export const ListAuditLogsQueryParams = zod.object({
+  limit: zod.coerce.number().min(1).max(listAuditLogsQueryLimitMax).optional(),
+});
+
+export const ListAuditLogsResponseItem = zod.object({
+  id: zod.string(),
+  actorUserId: zod.union([zod.string(), zod.null()]).optional(),
+  actorEmail: zod.union([zod.string(), zod.null()]).optional(),
+  actorRole: zod
+    .union([zod.enum(["candidate", "recruiter", "admin"]), zod.null()])
+    .optional(),
+  action: zod.string(),
+  entityType: zod.union([zod.string(), zod.null()]).optional(),
+  entityId: zod.union([zod.string(), zod.null()]).optional(),
+  metadata: zod.record(zod.string(), zod.unknown()),
+  createdAt: zod.coerce.date(),
+});
+export const ListAuditLogsResponse = zod.array(ListAuditLogsResponseItem);
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -61,17 +843,31 @@ export const listCandidatesResponseEvaluationOneScoresCvQualityMax = 100;
 export const listCandidatesResponseEvaluationOneScoresTechnicalSkillMatchMin = 0;
 export const listCandidatesResponseEvaluationOneScoresTechnicalSkillMatchMax = 100;
 
+export const listCandidatesResponseEvaluationOneScoresTechnicalRelevanceMin = 0;
+export const listCandidatesResponseEvaluationOneScoresTechnicalRelevanceMax = 100;
+
 export const listCandidatesResponseEvaluationOneScoresEnglishReadinessMin = 0;
 export const listCandidatesResponseEvaluationOneScoresEnglishReadinessMax = 100;
 
 export const listCandidatesResponseEvaluationOneScoresEuropeJobReadinessMin = 0;
 export const listCandidatesResponseEvaluationOneScoresEuropeJobReadinessMax = 100;
 
+export const listCandidatesResponseEvaluationOneScoresMarketReadinessMin = 0;
+export const listCandidatesResponseEvaluationOneScoresMarketReadinessMax = 100;
+
+export const listCandidatesResponseEvaluationOneScoresCareerGapRiskMin = 0;
+export const listCandidatesResponseEvaluationOneScoresCareerGapRiskMax = 100;
+
 export const listCandidatesResponseEvaluationOneScoresUpskillingNeedsMin = 0;
 export const listCandidatesResponseEvaluationOneScoresUpskillingNeedsMax = 100;
 
 export const listCandidatesResponseEvaluationOneScoresOverallMin = 0;
 export const listCandidatesResponseEvaluationOneScoresOverallMax = 100;
+
+export const listCandidatesResponseEvaluationOneSkillGapMatchPctMin = 0;
+export const listCandidatesResponseEvaluationOneSkillGapMatchPctMax = 100;
+
+export const listCandidatesResponseCareerGapMonthsMin = 0;
 
 export const ListCandidatesResponseItem = zod.object({
   id: zod.string(),
@@ -120,6 +916,12 @@ export const ListCandidatesResponseItem = zod.object({
             .max(
               listCandidatesResponseEvaluationOneScoresTechnicalSkillMatchMax,
             ),
+          technicalRelevance: zod
+            .number()
+            .min(listCandidatesResponseEvaluationOneScoresTechnicalRelevanceMin)
+            .max(
+              listCandidatesResponseEvaluationOneScoresTechnicalRelevanceMax,
+            ),
           englishReadiness: zod
             .number()
             .min(listCandidatesResponseEvaluationOneScoresEnglishReadinessMin)
@@ -130,6 +932,14 @@ export const ListCandidatesResponseItem = zod.object({
             .max(
               listCandidatesResponseEvaluationOneScoresEuropeJobReadinessMax,
             ),
+          marketReadiness: zod
+            .number()
+            .min(listCandidatesResponseEvaluationOneScoresMarketReadinessMin)
+            .max(listCandidatesResponseEvaluationOneScoresMarketReadinessMax),
+          careerGapRisk: zod
+            .number()
+            .min(listCandidatesResponseEvaluationOneScoresCareerGapRiskMin)
+            .max(listCandidatesResponseEvaluationOneScoresCareerGapRiskMax),
           upskillingNeeds: zod
             .number()
             .min(listCandidatesResponseEvaluationOneScoresUpskillingNeedsMin)
@@ -150,12 +960,36 @@ export const ListCandidatesResponseItem = zod.object({
           }),
         ),
         readinessTier: zod.enum(["emerging", "developing", "ready", "elite"]),
+        classification: zod.enum([
+          "recruiter_ready",
+          "needs_upskilling",
+          "needs_reskilling",
+          "not_ready_yet",
+        ]),
+        skillGap: zod.object({
+          targetRole: zod.string(),
+          required: zod.array(zod.string()),
+          matched: zod.array(zod.string()),
+          missing: zod.array(zod.string()),
+          matchPct: zod
+            .number()
+            .min(listCandidatesResponseEvaluationOneSkillGapMatchPctMin)
+            .max(listCandidatesResponseEvaluationOneSkillGapMatchPctMax),
+        }),
       }),
       zod.null(),
     ])
     .optional(),
   skills: zod.array(zod.string()),
   avatarUrl: zod.string(),
+  source: zod.enum(["direct", "recruiter"]),
+  lastRole: zod.union([zod.string(), zod.null()]).optional(),
+  domain: zod.union([zod.string(), zod.null()]).optional(),
+  careerGapMonths: zod.number().min(listCandidatesResponseCareerGapMonthsMin),
+  isShortlisted: zod.boolean(),
+  isClientReady: zod.boolean(),
+  isIndustryReady: zod.boolean(),
+  hasCvFile: zod.boolean(),
 });
 export const ListCandidatesResponse = zod.array(ListCandidatesResponseItem);
 
@@ -203,17 +1037,31 @@ export const getCandidateResponseEvaluationOneScoresCvQualityMax = 100;
 export const getCandidateResponseEvaluationOneScoresTechnicalSkillMatchMin = 0;
 export const getCandidateResponseEvaluationOneScoresTechnicalSkillMatchMax = 100;
 
+export const getCandidateResponseEvaluationOneScoresTechnicalRelevanceMin = 0;
+export const getCandidateResponseEvaluationOneScoresTechnicalRelevanceMax = 100;
+
 export const getCandidateResponseEvaluationOneScoresEnglishReadinessMin = 0;
 export const getCandidateResponseEvaluationOneScoresEnglishReadinessMax = 100;
 
 export const getCandidateResponseEvaluationOneScoresEuropeJobReadinessMin = 0;
 export const getCandidateResponseEvaluationOneScoresEuropeJobReadinessMax = 100;
 
+export const getCandidateResponseEvaluationOneScoresMarketReadinessMin = 0;
+export const getCandidateResponseEvaluationOneScoresMarketReadinessMax = 100;
+
+export const getCandidateResponseEvaluationOneScoresCareerGapRiskMin = 0;
+export const getCandidateResponseEvaluationOneScoresCareerGapRiskMax = 100;
+
 export const getCandidateResponseEvaluationOneScoresUpskillingNeedsMin = 0;
 export const getCandidateResponseEvaluationOneScoresUpskillingNeedsMax = 100;
 
 export const getCandidateResponseEvaluationOneScoresOverallMin = 0;
 export const getCandidateResponseEvaluationOneScoresOverallMax = 100;
+
+export const getCandidateResponseEvaluationOneSkillGapMatchPctMin = 0;
+export const getCandidateResponseEvaluationOneSkillGapMatchPctMax = 100;
+
+export const getCandidateResponseCareerGapMonthsMin = 0;
 
 export const GetCandidateResponse = zod.object({
   id: zod.string(),
@@ -258,6 +1106,10 @@ export const GetCandidateResponse = zod.object({
             .number()
             .min(getCandidateResponseEvaluationOneScoresTechnicalSkillMatchMin)
             .max(getCandidateResponseEvaluationOneScoresTechnicalSkillMatchMax),
+          technicalRelevance: zod
+            .number()
+            .min(getCandidateResponseEvaluationOneScoresTechnicalRelevanceMin)
+            .max(getCandidateResponseEvaluationOneScoresTechnicalRelevanceMax),
           englishReadiness: zod
             .number()
             .min(getCandidateResponseEvaluationOneScoresEnglishReadinessMin)
@@ -266,6 +1118,14 @@ export const GetCandidateResponse = zod.object({
             .number()
             .min(getCandidateResponseEvaluationOneScoresEuropeJobReadinessMin)
             .max(getCandidateResponseEvaluationOneScoresEuropeJobReadinessMax),
+          marketReadiness: zod
+            .number()
+            .min(getCandidateResponseEvaluationOneScoresMarketReadinessMin)
+            .max(getCandidateResponseEvaluationOneScoresMarketReadinessMax),
+          careerGapRisk: zod
+            .number()
+            .min(getCandidateResponseEvaluationOneScoresCareerGapRiskMin)
+            .max(getCandidateResponseEvaluationOneScoresCareerGapRiskMax),
           upskillingNeeds: zod
             .number()
             .min(getCandidateResponseEvaluationOneScoresUpskillingNeedsMin)
@@ -286,12 +1146,36 @@ export const GetCandidateResponse = zod.object({
           }),
         ),
         readinessTier: zod.enum(["emerging", "developing", "ready", "elite"]),
+        classification: zod.enum([
+          "recruiter_ready",
+          "needs_upskilling",
+          "needs_reskilling",
+          "not_ready_yet",
+        ]),
+        skillGap: zod.object({
+          targetRole: zod.string(),
+          required: zod.array(zod.string()),
+          matched: zod.array(zod.string()),
+          missing: zod.array(zod.string()),
+          matchPct: zod
+            .number()
+            .min(getCandidateResponseEvaluationOneSkillGapMatchPctMin)
+            .max(getCandidateResponseEvaluationOneSkillGapMatchPctMax),
+        }),
       }),
       zod.null(),
     ])
     .optional(),
   skills: zod.array(zod.string()),
   avatarUrl: zod.string(),
+  source: zod.enum(["direct", "recruiter"]),
+  lastRole: zod.union([zod.string(), zod.null()]).optional(),
+  domain: zod.union([zod.string(), zod.null()]).optional(),
+  careerGapMonths: zod.number().min(getCandidateResponseCareerGapMonthsMin),
+  isShortlisted: zod.boolean(),
+  isClientReady: zod.boolean(),
+  isIndustryReady: zod.boolean(),
+  hasCvFile: zod.boolean(),
 });
 
 /**
@@ -313,17 +1197,31 @@ export const uploadCvResponseEvaluationOneScoresCvQualityMax = 100;
 export const uploadCvResponseEvaluationOneScoresTechnicalSkillMatchMin = 0;
 export const uploadCvResponseEvaluationOneScoresTechnicalSkillMatchMax = 100;
 
+export const uploadCvResponseEvaluationOneScoresTechnicalRelevanceMin = 0;
+export const uploadCvResponseEvaluationOneScoresTechnicalRelevanceMax = 100;
+
 export const uploadCvResponseEvaluationOneScoresEnglishReadinessMin = 0;
 export const uploadCvResponseEvaluationOneScoresEnglishReadinessMax = 100;
 
 export const uploadCvResponseEvaluationOneScoresEuropeJobReadinessMin = 0;
 export const uploadCvResponseEvaluationOneScoresEuropeJobReadinessMax = 100;
 
+export const uploadCvResponseEvaluationOneScoresMarketReadinessMin = 0;
+export const uploadCvResponseEvaluationOneScoresMarketReadinessMax = 100;
+
+export const uploadCvResponseEvaluationOneScoresCareerGapRiskMin = 0;
+export const uploadCvResponseEvaluationOneScoresCareerGapRiskMax = 100;
+
 export const uploadCvResponseEvaluationOneScoresUpskillingNeedsMin = 0;
 export const uploadCvResponseEvaluationOneScoresUpskillingNeedsMax = 100;
 
 export const uploadCvResponseEvaluationOneScoresOverallMin = 0;
 export const uploadCvResponseEvaluationOneScoresOverallMax = 100;
+
+export const uploadCvResponseEvaluationOneSkillGapMatchPctMin = 0;
+export const uploadCvResponseEvaluationOneSkillGapMatchPctMax = 100;
+
+export const uploadCvResponseCareerGapMonthsMin = 0;
 
 export const UploadCvResponse = zod.object({
   id: zod.string(),
@@ -368,6 +1266,10 @@ export const UploadCvResponse = zod.object({
             .number()
             .min(uploadCvResponseEvaluationOneScoresTechnicalSkillMatchMin)
             .max(uploadCvResponseEvaluationOneScoresTechnicalSkillMatchMax),
+          technicalRelevance: zod
+            .number()
+            .min(uploadCvResponseEvaluationOneScoresTechnicalRelevanceMin)
+            .max(uploadCvResponseEvaluationOneScoresTechnicalRelevanceMax),
           englishReadiness: zod
             .number()
             .min(uploadCvResponseEvaluationOneScoresEnglishReadinessMin)
@@ -376,6 +1278,14 @@ export const UploadCvResponse = zod.object({
             .number()
             .min(uploadCvResponseEvaluationOneScoresEuropeJobReadinessMin)
             .max(uploadCvResponseEvaluationOneScoresEuropeJobReadinessMax),
+          marketReadiness: zod
+            .number()
+            .min(uploadCvResponseEvaluationOneScoresMarketReadinessMin)
+            .max(uploadCvResponseEvaluationOneScoresMarketReadinessMax),
+          careerGapRisk: zod
+            .number()
+            .min(uploadCvResponseEvaluationOneScoresCareerGapRiskMin)
+            .max(uploadCvResponseEvaluationOneScoresCareerGapRiskMax),
           upskillingNeeds: zod
             .number()
             .min(uploadCvResponseEvaluationOneScoresUpskillingNeedsMin)
@@ -396,12 +1306,36 @@ export const UploadCvResponse = zod.object({
           }),
         ),
         readinessTier: zod.enum(["emerging", "developing", "ready", "elite"]),
+        classification: zod.enum([
+          "recruiter_ready",
+          "needs_upskilling",
+          "needs_reskilling",
+          "not_ready_yet",
+        ]),
+        skillGap: zod.object({
+          targetRole: zod.string(),
+          required: zod.array(zod.string()),
+          matched: zod.array(zod.string()),
+          missing: zod.array(zod.string()),
+          matchPct: zod
+            .number()
+            .min(uploadCvResponseEvaluationOneSkillGapMatchPctMin)
+            .max(uploadCvResponseEvaluationOneSkillGapMatchPctMax),
+        }),
       }),
       zod.null(),
     ])
     .optional(),
   skills: zod.array(zod.string()),
   avatarUrl: zod.string(),
+  source: zod.enum(["direct", "recruiter"]),
+  lastRole: zod.union([zod.string(), zod.null()]).optional(),
+  domain: zod.union([zod.string(), zod.null()]).optional(),
+  careerGapMonths: zod.number().min(uploadCvResponseCareerGapMonthsMin),
+  isShortlisted: zod.boolean(),
+  isClientReady: zod.boolean(),
+  isIndustryReady: zod.boolean(),
+  hasCvFile: zod.boolean(),
 });
 
 /**
@@ -417,17 +1351,29 @@ export const runEvaluationResponseScoresCvQualityMax = 100;
 export const runEvaluationResponseScoresTechnicalSkillMatchMin = 0;
 export const runEvaluationResponseScoresTechnicalSkillMatchMax = 100;
 
+export const runEvaluationResponseScoresTechnicalRelevanceMin = 0;
+export const runEvaluationResponseScoresTechnicalRelevanceMax = 100;
+
 export const runEvaluationResponseScoresEnglishReadinessMin = 0;
 export const runEvaluationResponseScoresEnglishReadinessMax = 100;
 
 export const runEvaluationResponseScoresEuropeJobReadinessMin = 0;
 export const runEvaluationResponseScoresEuropeJobReadinessMax = 100;
 
+export const runEvaluationResponseScoresMarketReadinessMin = 0;
+export const runEvaluationResponseScoresMarketReadinessMax = 100;
+
+export const runEvaluationResponseScoresCareerGapRiskMin = 0;
+export const runEvaluationResponseScoresCareerGapRiskMax = 100;
+
 export const runEvaluationResponseScoresUpskillingNeedsMin = 0;
 export const runEvaluationResponseScoresUpskillingNeedsMax = 100;
 
 export const runEvaluationResponseScoresOverallMin = 0;
 export const runEvaluationResponseScoresOverallMax = 100;
+
+export const runEvaluationResponseSkillGapMatchPctMin = 0;
+export const runEvaluationResponseSkillGapMatchPctMax = 100;
 
 export const RunEvaluationResponse = zod.object({
   candidateId: zod.string(),
@@ -441,6 +1387,10 @@ export const RunEvaluationResponse = zod.object({
       .number()
       .min(runEvaluationResponseScoresTechnicalSkillMatchMin)
       .max(runEvaluationResponseScoresTechnicalSkillMatchMax),
+    technicalRelevance: zod
+      .number()
+      .min(runEvaluationResponseScoresTechnicalRelevanceMin)
+      .max(runEvaluationResponseScoresTechnicalRelevanceMax),
     englishReadiness: zod
       .number()
       .min(runEvaluationResponseScoresEnglishReadinessMin)
@@ -449,6 +1399,14 @@ export const RunEvaluationResponse = zod.object({
       .number()
       .min(runEvaluationResponseScoresEuropeJobReadinessMin)
       .max(runEvaluationResponseScoresEuropeJobReadinessMax),
+    marketReadiness: zod
+      .number()
+      .min(runEvaluationResponseScoresMarketReadinessMin)
+      .max(runEvaluationResponseScoresMarketReadinessMax),
+    careerGapRisk: zod
+      .number()
+      .min(runEvaluationResponseScoresCareerGapRiskMin)
+      .max(runEvaluationResponseScoresCareerGapRiskMax),
     upskillingNeeds: zod
       .number()
       .min(runEvaluationResponseScoresUpskillingNeedsMin)
@@ -469,6 +1427,22 @@ export const RunEvaluationResponse = zod.object({
     }),
   ),
   readinessTier: zod.enum(["emerging", "developing", "ready", "elite"]),
+  classification: zod.enum([
+    "recruiter_ready",
+    "needs_upskilling",
+    "needs_reskilling",
+    "not_ready_yet",
+  ]),
+  skillGap: zod.object({
+    targetRole: zod.string(),
+    required: zod.array(zod.string()),
+    matched: zod.array(zod.string()),
+    missing: zod.array(zod.string()),
+    matchPct: zod
+      .number()
+      .min(runEvaluationResponseSkillGapMatchPctMin)
+      .max(runEvaluationResponseSkillGapMatchPctMax),
+  }),
 });
 
 /**
@@ -484,17 +1458,29 @@ export const getEvaluationResponseScoresCvQualityMax = 100;
 export const getEvaluationResponseScoresTechnicalSkillMatchMin = 0;
 export const getEvaluationResponseScoresTechnicalSkillMatchMax = 100;
 
+export const getEvaluationResponseScoresTechnicalRelevanceMin = 0;
+export const getEvaluationResponseScoresTechnicalRelevanceMax = 100;
+
 export const getEvaluationResponseScoresEnglishReadinessMin = 0;
 export const getEvaluationResponseScoresEnglishReadinessMax = 100;
 
 export const getEvaluationResponseScoresEuropeJobReadinessMin = 0;
 export const getEvaluationResponseScoresEuropeJobReadinessMax = 100;
 
+export const getEvaluationResponseScoresMarketReadinessMin = 0;
+export const getEvaluationResponseScoresMarketReadinessMax = 100;
+
+export const getEvaluationResponseScoresCareerGapRiskMin = 0;
+export const getEvaluationResponseScoresCareerGapRiskMax = 100;
+
 export const getEvaluationResponseScoresUpskillingNeedsMin = 0;
 export const getEvaluationResponseScoresUpskillingNeedsMax = 100;
 
 export const getEvaluationResponseScoresOverallMin = 0;
 export const getEvaluationResponseScoresOverallMax = 100;
+
+export const getEvaluationResponseSkillGapMatchPctMin = 0;
+export const getEvaluationResponseSkillGapMatchPctMax = 100;
 
 export const GetEvaluationResponse = zod.object({
   candidateId: zod.string(),
@@ -508,6 +1494,10 @@ export const GetEvaluationResponse = zod.object({
       .number()
       .min(getEvaluationResponseScoresTechnicalSkillMatchMin)
       .max(getEvaluationResponseScoresTechnicalSkillMatchMax),
+    technicalRelevance: zod
+      .number()
+      .min(getEvaluationResponseScoresTechnicalRelevanceMin)
+      .max(getEvaluationResponseScoresTechnicalRelevanceMax),
     englishReadiness: zod
       .number()
       .min(getEvaluationResponseScoresEnglishReadinessMin)
@@ -516,6 +1506,14 @@ export const GetEvaluationResponse = zod.object({
       .number()
       .min(getEvaluationResponseScoresEuropeJobReadinessMin)
       .max(getEvaluationResponseScoresEuropeJobReadinessMax),
+    marketReadiness: zod
+      .number()
+      .min(getEvaluationResponseScoresMarketReadinessMin)
+      .max(getEvaluationResponseScoresMarketReadinessMax),
+    careerGapRisk: zod
+      .number()
+      .min(getEvaluationResponseScoresCareerGapRiskMin)
+      .max(getEvaluationResponseScoresCareerGapRiskMax),
     upskillingNeeds: zod
       .number()
       .min(getEvaluationResponseScoresUpskillingNeedsMin)
@@ -536,6 +1534,22 @@ export const GetEvaluationResponse = zod.object({
     }),
   ),
   readinessTier: zod.enum(["emerging", "developing", "ready", "elite"]),
+  classification: zod.enum([
+    "recruiter_ready",
+    "needs_upskilling",
+    "needs_reskilling",
+    "not_ready_yet",
+  ]),
+  skillGap: zod.object({
+    targetRole: zod.string(),
+    required: zod.array(zod.string()),
+    matched: zod.array(zod.string()),
+    missing: zod.array(zod.string()),
+    matchPct: zod
+      .number()
+      .min(getEvaluationResponseSkillGapMatchPctMin)
+      .max(getEvaluationResponseSkillGapMatchPctMax),
+  }),
 });
 
 /**
@@ -625,17 +1639,31 @@ export const runDemoJourneyResponseCandidateEvaluationOneScoresCvQualityMax = 10
 export const runDemoJourneyResponseCandidateEvaluationOneScoresTechnicalSkillMatchMin = 0;
 export const runDemoJourneyResponseCandidateEvaluationOneScoresTechnicalSkillMatchMax = 100;
 
+export const runDemoJourneyResponseCandidateEvaluationOneScoresTechnicalRelevanceMin = 0;
+export const runDemoJourneyResponseCandidateEvaluationOneScoresTechnicalRelevanceMax = 100;
+
 export const runDemoJourneyResponseCandidateEvaluationOneScoresEnglishReadinessMin = 0;
 export const runDemoJourneyResponseCandidateEvaluationOneScoresEnglishReadinessMax = 100;
 
 export const runDemoJourneyResponseCandidateEvaluationOneScoresEuropeJobReadinessMin = 0;
 export const runDemoJourneyResponseCandidateEvaluationOneScoresEuropeJobReadinessMax = 100;
 
+export const runDemoJourneyResponseCandidateEvaluationOneScoresMarketReadinessMin = 0;
+export const runDemoJourneyResponseCandidateEvaluationOneScoresMarketReadinessMax = 100;
+
+export const runDemoJourneyResponseCandidateEvaluationOneScoresCareerGapRiskMin = 0;
+export const runDemoJourneyResponseCandidateEvaluationOneScoresCareerGapRiskMax = 100;
+
 export const runDemoJourneyResponseCandidateEvaluationOneScoresUpskillingNeedsMin = 0;
 export const runDemoJourneyResponseCandidateEvaluationOneScoresUpskillingNeedsMax = 100;
 
 export const runDemoJourneyResponseCandidateEvaluationOneScoresOverallMin = 0;
 export const runDemoJourneyResponseCandidateEvaluationOneScoresOverallMax = 100;
+
+export const runDemoJourneyResponseCandidateEvaluationOneSkillGapMatchPctMin = 0;
+export const runDemoJourneyResponseCandidateEvaluationOneSkillGapMatchPctMax = 100;
+
+export const runDemoJourneyResponseCandidateCareerGapMonthsMin = 0;
 
 export const RunDemoJourneyResponse = zod.object({
   candidate: zod.object({
@@ -689,6 +1717,14 @@ export const RunDemoJourneyResponse = zod.object({
               .max(
                 runDemoJourneyResponseCandidateEvaluationOneScoresTechnicalSkillMatchMax,
               ),
+            technicalRelevance: zod
+              .number()
+              .min(
+                runDemoJourneyResponseCandidateEvaluationOneScoresTechnicalRelevanceMin,
+              )
+              .max(
+                runDemoJourneyResponseCandidateEvaluationOneScoresTechnicalRelevanceMax,
+              ),
             englishReadiness: zod
               .number()
               .min(
@@ -704,6 +1740,22 @@ export const RunDemoJourneyResponse = zod.object({
               )
               .max(
                 runDemoJourneyResponseCandidateEvaluationOneScoresEuropeJobReadinessMax,
+              ),
+            marketReadiness: zod
+              .number()
+              .min(
+                runDemoJourneyResponseCandidateEvaluationOneScoresMarketReadinessMin,
+              )
+              .max(
+                runDemoJourneyResponseCandidateEvaluationOneScoresMarketReadinessMax,
+              ),
+            careerGapRisk: zod
+              .number()
+              .min(
+                runDemoJourneyResponseCandidateEvaluationOneScoresCareerGapRiskMin,
+              )
+              .max(
+                runDemoJourneyResponseCandidateEvaluationOneScoresCareerGapRiskMax,
               ),
             upskillingNeeds: zod
               .number()
@@ -731,12 +1783,42 @@ export const RunDemoJourneyResponse = zod.object({
             }),
           ),
           readinessTier: zod.enum(["emerging", "developing", "ready", "elite"]),
+          classification: zod.enum([
+            "recruiter_ready",
+            "needs_upskilling",
+            "needs_reskilling",
+            "not_ready_yet",
+          ]),
+          skillGap: zod.object({
+            targetRole: zod.string(),
+            required: zod.array(zod.string()),
+            matched: zod.array(zod.string()),
+            missing: zod.array(zod.string()),
+            matchPct: zod
+              .number()
+              .min(
+                runDemoJourneyResponseCandidateEvaluationOneSkillGapMatchPctMin,
+              )
+              .max(
+                runDemoJourneyResponseCandidateEvaluationOneSkillGapMatchPctMax,
+              ),
+          }),
         }),
         zod.null(),
       ])
       .optional(),
     skills: zod.array(zod.string()),
     avatarUrl: zod.string(),
+    source: zod.enum(["direct", "recruiter"]),
+    lastRole: zod.union([zod.string(), zod.null()]).optional(),
+    domain: zod.union([zod.string(), zod.null()]).optional(),
+    careerGapMonths: zod
+      .number()
+      .min(runDemoJourneyResponseCandidateCareerGapMonthsMin),
+    isShortlisted: zod.boolean(),
+    isClientReady: zod.boolean(),
+    isIndustryReady: zod.boolean(),
+    hasCvFile: zod.boolean(),
   }),
   steps: zod.array(
     zod.object({

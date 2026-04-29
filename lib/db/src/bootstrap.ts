@@ -76,4 +76,74 @@ export async function ensureSchema(): Promise<void> {
     CREATE INDEX IF NOT EXISTS training_assignments_candidate_id_idx
       ON training_assignments (candidate_id);
   `);
+
+  // ---- Candidate column additions for the talent transformation engine ----
+  // Each ALTER is wrapped in an IF NOT EXISTS so reboots are idempotent.
+  await db.execute(sql`ALTER TABLE candidates
+    ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'direct',
+    ADD COLUMN IF NOT EXISTS last_role text,
+    ADD COLUMN IF NOT EXISTS domain text,
+    ADD COLUMN IF NOT EXISTS career_gap_months integer NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS is_shortlisted boolean NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS is_client_ready boolean NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS is_industry_ready boolean NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS owner_recruiter_id uuid,
+    ADD COLUMN IF NOT EXISTS cv_file_bytes bytea,
+    ADD COLUMN IF NOT EXISTS cv_file_name text,
+    ADD COLUMN IF NOT EXISTS cv_mime_type text;`);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS users (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      email text NOT NULL UNIQUE,
+      password_hash text NOT NULL,
+      full_name text NOT NULL,
+      role text NOT NULL,
+      candidate_id uuid,
+      gdpr_consent_at timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS users_email_idx ON users (lower(email));
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS projects (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      candidate_id uuid NOT NULL,
+      name text NOT NULL,
+      tech_stack text[] NOT NULL DEFAULT '{}',
+      duration_weeks integer NOT NULL,
+      status text NOT NULL DEFAULT 'in_progress',
+      feedback text,
+      start_date timestamptz NOT NULL,
+      end_date timestamptz,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS projects_candidate_id_idx ON projects (candidate_id);
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      actor_user_id uuid,
+      actor_email text,
+      actor_role text,
+      action text NOT NULL,
+      entity_type text,
+      entity_id text,
+      metadata jsonb,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS audit_logs_created_at_idx
+      ON audit_logs (created_at DESC);
+  `);
 }

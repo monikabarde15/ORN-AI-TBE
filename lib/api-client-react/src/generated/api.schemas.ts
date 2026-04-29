@@ -82,6 +82,11 @@ export interface EvaluationScores {
    * @minimum 0
    * @maximum 100
    */
+  technicalRelevance: number;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
   englishReadiness: number;
   /**
    * @minimum 0
@@ -92,12 +97,44 @@ export interface EvaluationScores {
    * @minimum 0
    * @maximum 100
    */
+  marketReadiness: number;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  careerGapRisk: number;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
   upskillingNeeds: number;
   /**
    * @minimum 0
    * @maximum 100
    */
   overall: number;
+}
+
+export type CandidateClassification =
+  (typeof CandidateClassification)[keyof typeof CandidateClassification];
+
+export const CandidateClassification = {
+  recruiter_ready: "recruiter_ready",
+  needs_upskilling: "needs_upskilling",
+  needs_reskilling: "needs_reskilling",
+  not_ready_yet: "not_ready_yet",
+} as const;
+
+export interface SkillGap {
+  targetRole: string;
+  required: string[];
+  matched: string[];
+  missing: string[];
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  matchPct: number;
 }
 
 export type EvaluationInsightSeverity =
@@ -134,7 +171,17 @@ export interface Evaluation {
   recommendedUpskilling: string[];
   insights: EvaluationInsight[];
   readinessTier: EvaluationReadinessTier;
+  classification: CandidateClassification;
+  skillGap: SkillGap;
 }
+
+export type CandidateSource =
+  (typeof CandidateSource)[keyof typeof CandidateSource];
+
+export const CandidateSource = {
+  direct: "direct",
+  recruiter: "recruiter",
+} as const;
 
 export interface Candidate {
   id: string;
@@ -153,6 +200,15 @@ export interface Candidate {
   evaluation?: Evaluation | null;
   skills: string[];
   avatarUrl: string;
+  source: CandidateSource;
+  lastRole?: string | null;
+  domain?: string | null;
+  /** @minimum 0 */
+  careerGapMonths: number;
+  isShortlisted: boolean;
+  isClientReady: boolean;
+  isIndustryReady: boolean;
+  hasCvFile: boolean;
 }
 
 export type RecruiterSummaryCountryBreakdownItem = {
@@ -454,6 +510,137 @@ export interface TrainingDashboard {
   trainerAllocation: TrainingDashboardTrainerAllocationItem[];
   upcomingLiveSessions: TrainingDashboardUpcomingLiveSessionsItem[];
 }
+
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
+
+export const UserRole = {
+  candidate: "candidate",
+  recruiter: "recruiter",
+  admin: "admin",
+} as const;
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  fullName: string;
+  role: UserRole;
+  candidateId: string | null;
+}
+
+export interface AuthSession {
+  user: AuthUser;
+}
+
+export interface AuthRegisterRequest {
+  email: string;
+  /** @minLength 8 */
+  password: string;
+  /** @minLength 2 */
+  fullName: string;
+  role: UserRole;
+  gdprConsent: boolean;
+  candidateProfile?: CandidateRegistration | null;
+}
+
+export interface AuthLoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface ExtractedProfile {
+  fullName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  yearsExperience?: number | null;
+  lastRole?: string | null;
+  domain?: string | null;
+  /** @minimum 0 */
+  careerGapMonths: number;
+  skills: string[];
+}
+
+export interface CvFileUploadResult {
+  candidate: Candidate;
+  extracted: ExtractedProfile;
+}
+
+export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
+
+export const ProjectStatus = {
+  in_progress: "in_progress",
+  completed: "completed",
+  cancelled: "cancelled",
+} as const;
+
+export interface Project {
+  id: string;
+  candidateId: string;
+  name: string;
+  techStack: string[];
+  /**
+   * @minimum 1
+   * @maximum 52
+   */
+  durationWeeks: number;
+  status: ProjectStatus;
+  feedback?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  createdAt: string;
+}
+
+export interface ProjectCreate {
+  /** @minLength 2 */
+  name: string;
+  techStack: string[];
+  /**
+   * @minimum 1
+   * @maximum 52
+   */
+  durationWeeks: number;
+  startDate: string;
+}
+
+export interface ProjectUpdate {
+  status?: ProjectStatus;
+  feedback?: string;
+  endDate?: string;
+}
+
+export type AuditLogMetadata = { [key: string]: unknown };
+
+export interface AuditLog {
+  id: string;
+  actorUserId?: string | null;
+  actorEmail?: string | null;
+  actorRole?: UserRole | null;
+  action: string;
+  entityType?: string | null;
+  entityId?: string | null;
+  metadata: AuditLogMetadata;
+  createdAt: string;
+}
+
+export interface CvFileUploadRequest {
+  file: Blob;
+}
+
+export interface ShortlistRequest {
+  shortlisted: boolean;
+}
+
+export interface ClientReadyRequest {
+  clientReady: boolean;
+}
+
+export type ListAuditLogsParams = {
+  /**
+   * @minimum 1
+   * @maximum 200
+   */
+  limit?: number;
+};
 
 export type ListCandidatesParams = {
   country?: string;

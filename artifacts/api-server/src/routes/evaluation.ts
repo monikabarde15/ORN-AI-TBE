@@ -8,10 +8,12 @@ import {
   GetEvaluationResponse,
 } from "@workspace/api-zod";
 import { evaluate } from "../lib/evaluation";
+import { requireAuth, requireRole } from "../lib/auth";
+import { backfillEvaluation } from "../lib/serialize";
 
 const router: IRouter = Router();
 
-router.post("/candidates/:id/evaluation", async (req, res): Promise<void> => {
+router.post("/candidates/:id/evaluation", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
   const params = RunEvaluationParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -37,6 +39,7 @@ router.post("/candidates/:id/evaluation", async (req, res): Promise<void> => {
     targetRole: row.targetRole,
     country: row.country,
     skills: row.skills,
+    careerGapMonths: row.careerGapMonths ?? 0,
     cv: row.cv as { fileName?: string; contentSummary?: string } | null,
   });
 
@@ -55,7 +58,7 @@ router.post("/candidates/:id/evaluation", async (req, res): Promise<void> => {
   res.json(RunEvaluationResponse.parse(result));
 });
 
-router.get("/candidates/:id/evaluation", async (req, res): Promise<void> => {
+router.get("/candidates/:id/evaluation", requireAuth, async (req, res): Promise<void> => {
   const params = GetEvaluationParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -69,11 +72,18 @@ router.get("/candidates/:id/evaluation", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Candidate not found" });
     return;
   }
+  if (
+    req.user!.role === "candidate" &&
+    req.user!.candidateId !== row.id
+  ) {
+    res.status(403).json({ error: "Insufficient permissions" });
+    return;
+  }
   if (!row.evaluation) {
     res.status(404).json({ error: "Evaluation not yet generated" });
     return;
   }
-  res.json(GetEvaluationResponse.parse(row.evaluation));
+  res.json(GetEvaluationResponse.parse(backfillEvaluation(row.evaluation, row)));
 });
 
 export default router;

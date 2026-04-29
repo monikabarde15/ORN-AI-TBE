@@ -1,0 +1,194 @@
+Refine and finalize the ORN-AI Talent Infrastructure Platform as a production-ready application.
+
+This platform is a Talent Transformation Engine that converts raw candidates into recruiter-ready professionals.
+
+CORE WORKFLOW:
+Sourcing → CV Upload → Profile Extraction → Assessment → Skill Gap → Training → Project → CV Transformation → Recruiter Pipeline
+
+--------------------------------------
+
+1. USER ROLES
+- Candidate (self-registration)
+- Internal Recruiter
+- Admin
+
+--------------------------------------
+
+2. SOURCING MODULE
+- Candidates can be added by:
+  a. Recruiter (manual upload)
+  b. Candidate (self-registration)
+- Store source type (Recruiter / Direct)
+
+--------------------------------------
+
+3. AUTHENTICATION
+- Secure login/signup (JWT)
+- Role-based access control
+- Password hashing
+- Session handling
+
+--------------------------------------
+
+4. CV UPLOAD & PROFILE EXTRACTION
+- Upload CV (PDF/DOC)
+- Extract:
+  - Name
+  - Location
+  - Email
+  - Phone
+  - Key Skills
+  - Years of Experience
+  - Current/Last Role
+  - Domain/Technology
+  - Career Gap
+
+--------------------------------------
+
+5. ASSESSMENT ENGINE
+Generate scores (0–100):
+- CV Quality Score
+- Technical Relevance Score
+- Market Readiness Score
+- Europe Job Readiness Score
+- Career Gap Risk Score
+- Overall Readiness Score
+
+--------------------------------------
+
+6. CLASSIFICATION ENGINE
+Classify:
+- Recruiter Ready
+- Needs Upskilling
+- Needs Reskilling
+- Not Ready Yet
+
+Rules:
+- Relevant experience + no major gap → Upskilling
+- Career gap > 2 years → Reskilling
+
+--------------------------------------
+
+7. SKILL GAP ANALYSIS
+- Identify missing skills vs target role
+- Show recommended skills
+
+Example:
+DevOps → Cloud Security, Kubernetes Advanced, Terraform, CI/CD Security
+
+--------------------------------------
+
+8. TRAINING MODULE (HYBRID MODEL)
+- Assign training program:
+  - Upskilling or Reskilling
+- Structure:
+  a. Pre-recorded modules
+  b. Live trainer sessions
+  c. Weekly assessments
+  d. Final evaluation
+
+Fields:
+- Program Name
+- Modules
+- Trainer
+- Start/End Date
+- Status
+
+Statuses:
+- Not Started
+- In Progress
+- Assessment Pending
+- Completed
+- Recruiter Ready
+
+--------------------------------------
+
+9. PROJECT / ASSIGNMENT PHASE
+- Assign real-time project after training
+- Capture:
+  - Project name
+  - Tech stack
+  - Duration
+  - Feedback
+- Mark candidate as Industry Ready
+
+--------------------------------------
+
+10. CV TRANSFORMATION ENGINE
+Generate:
+1. Customised CV:
+   - Optimised for target role
+   - Includes training + project
+2. Masked CV:
+   - Remove personal details
+   - Keep skills, experience, location
+
+Download options:
+- Full CV
+- Masked CV
+
+--------------------------------------
+
+11. RECRUITER DASHBOARD
+View:
+- Candidate list
+- Skills, experience, location
+- Readiness status
+- Training status
+
+Filters:
+- Country
+- Role
+- Experience
+- Readiness
+
+Actions:
+- Shortlist
+- Send to training
+- Mark client-ready
+- Download masked CV
+
+--------------------------------------
+
+12. ADMIN DASHBOARD
+Metrics:
+- Total candidates
+- Recruiter-ready candidates
+- Candidates in training
+- Upskilling vs Reskilling ratio
+- Top skills demand
+- Country-wise pipeline
+
+Also:
+- Training tracking
+- Recruiter activity tracking
+
+--------------------------------------
+
+13. TECHNICAL REQUIREMENTS
+- React frontend
+- Node.js + Express backend
+- PostgreSQL database
+- JWT authentication
+- File upload support
+- Environment variables
+- Modular code
+- Ready for deployment on Render
+
+--------------------------------------
+
+14. SECURITY & BASIC COMPLIANCE
+- Password hashing
+- Basic input validation
+- File upload validation
+- GDPR consent checkbox (placeholder)
+- Audit logs for key actions
+
+--------------------------------------
+
+15. IMPORTANT
+- Do not add demo-only features
+- Ensure full end-to-end workflow works
+- Use real database structure
+- Use sample data only for testing
+- Keep UI clean, professional, SaaS-style

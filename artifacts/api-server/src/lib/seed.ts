@@ -3,8 +3,10 @@ import {
   candidatesTable,
   activityTable,
   trainingAssignmentsTable,
+  usersTable,
 } from "@workspace/db";
 import { sql } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 import { REGIONS, ROLES } from "./regions";
 import { evaluate, pickSkillsFor, type CandidateLike } from "./evaluation";
 import { logger } from "./logger";
@@ -130,7 +132,49 @@ async function ensureTrainingSeed(): Promise<void> {
   );
 }
 
+async function ensureSeedUsers(): Promise<void> {
+  // Demo accounts only run in non-production environments. In production a real
+  // admin must bootstrap accounts manually so we never leak default credentials.
+  if (process.env["NODE_ENV"] === "production") {
+    return;
+  }
+  const passwordHash = await bcrypt.hash("Password123!", 10);
+  const seeds = [
+    {
+      email: "admin@orn-ai.example",
+      passwordHash,
+      fullName: "Platform Admin",
+      role: "admin" as const,
+      gdprConsentAt: new Date(),
+    },
+    {
+      email: "recruiter@orn-ai.example",
+      passwordHash,
+      fullName: "Demo Recruiter",
+      role: "recruiter" as const,
+      gdprConsentAt: new Date(),
+    },
+  ];
+  await db
+    .insert(usersTable)
+    .values(seeds)
+    .onConflictDoUpdate({
+      target: usersTable.email,
+      set: {
+        passwordHash: sql`excluded.password_hash`,
+        role: sql`excluded.role`,
+        fullName: sql`excluded.full_name`,
+      },
+    });
+
+  logger.info(
+    "Demo admin and recruiter accounts ensured (development environment).",
+  );
+}
+
 export async function ensureSeedData(): Promise<void> {
+  await ensureSeedUsers();
+
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(candidatesTable);

@@ -2,10 +2,11 @@ import { Router, type IRouter } from "express";
 import { sql } from "drizzle-orm";
 import { db, candidatesTable } from "@workspace/db";
 import { RecruiterSummaryResponse } from "@workspace/api-zod";
+import { requireAuth, requireRole } from "../lib/auth";
 
 const router: IRouter = Router();
 
-router.get("/recruiter/summary", async (_req, res): Promise<void> => {
+router.get("/recruiter/summary", requireAuth, requireRole("recruiter", "admin"), async (_req, res): Promise<void> => {
   const totalRow = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(candidatesTable);

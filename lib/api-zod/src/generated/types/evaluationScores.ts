@@ -21,12 +21,27 @@ export interface EvaluationScores {
    * @minimum 0
    * @maximum 100
    */
+  technicalRelevance: number;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
   englishReadiness: number;
   /**
    * @minimum 0
    * @maximum 100
    */
   europeJobReadiness: number;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  marketReadiness: number;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  careerGapRisk: number;
   /**
    * @minimum 0
    * @maximum 100

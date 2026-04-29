@@ -37,11 +37,12 @@ import {
   serializeTrainingAssignment,
   type LiveSessionState,
 } from "../lib/training";
+import { requireAuth, requireRole, requireCandidateAccess } from "../lib/auth";
 
 const router: IRouter = Router();
 
 // ----- Catalog -----
-router.get("/training/catalog", async (_req, res): Promise<void> => {
+router.get("/training/catalog", requireAuth, async (_req, res): Promise<void> => {
   res.json(
     ListTrainingCatalogResponse.parse({
       programs: TRAINING_PROGRAMS,
@@ -53,6 +54,8 @@ router.get("/training/catalog", async (_req, res): Promise<void> => {
 // ----- Recommendation -----
 router.get(
   "/training/recommend/:candidateId",
+  requireAuth,
+  requireCandidateAccess("candidateId"),
   async (req, res): Promise<void> => {
     const params = RecommendTrainingForCandidateParams.safeParse(req.params);
     if (!params.success) {
@@ -94,7 +97,14 @@ router.get(
 );
 
 // ----- List assignments -----
-router.get("/training/assignments", async (req, res): Promise<void> => {
+router.get("/training/assignments", requireAuth, async (req, res): Promise<void> => {
+  if (req.user!.role === "candidate") {
+    if (!req.user!.candidateId) {
+      res.json(ListTrainingAssignmentsResponse.parse({ items: [] }));
+      return;
+    }
+    req.query["candidateId"] = req.user!.candidateId;
+  }
   const parsed = ListTrainingAssignmentsQueryParams.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -137,7 +147,7 @@ router.get("/training/assignments", async (req, res): Promise<void> => {
 });
 
 // ----- Create assignment -----
-router.post("/training/assignments", async (req, res): Promise<void> => {
+router.post("/training/assignments", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
   const body = CreateTrainingAssignmentBody.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: body.error.message });
@@ -213,7 +223,7 @@ router.post("/training/assignments", async (req, res): Promise<void> => {
 });
 
 // ----- Get one -----
-router.get("/training/assignments/:id", async (req, res): Promise<void> => {
+router.get("/training/assignments/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetTrainingAssignmentParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -235,6 +245,13 @@ router.get("/training/assignments/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Candidate not found" });
     return;
   }
+  if (
+    req.user!.role === "candidate" &&
+    req.user!.candidateId !== row.candidateId
+  ) {
+    res.status(403).json({ error: "Insufficient permissions" });
+    return;
+  }
   res.json(
     GetTrainingAssignmentResponse.parse(
       serializeTrainingAssignment(row, candidate),
@@ -243,7 +260,7 @@ router.get("/training/assignments/:id", async (req, res): Promise<void> => {
 });
 
 // ----- Patch progress -----
-router.patch("/training/assignments/:id", async (req, res): Promise<void> => {
+router.patch("/training/assignments/:id", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
   const params = UpdateTrainingAssignmentParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -299,6 +316,8 @@ router.patch("/training/assignments/:id", async (req, res): Promise<void> => {
 // ----- Candidate's assignment -----
 router.get(
   "/candidates/:id/training",
+  requireAuth,
+  requireCandidateAccess(),
   async (req, res): Promise<void> => {
     const params = GetCandidateTrainingParams.safeParse(req.params);
     if (!params.success) {
@@ -332,7 +351,7 @@ router.get(
 );
 
 // ----- Dashboard aggregates -----
-router.get("/training/dashboard", async (_req, res): Promise<void> => {
+router.get("/training/dashboard", requireAuth, requireRole("recruiter", "admin"), async (_req, res): Promise<void> => {
   const allRows = await db.select().from(trainingAssignmentsTable);
 
   const totalInTraining = allRows.filter(

@@ -2,9 +2,11 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import express, { type Express } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { attachUser } from "./lib/auth";
 
 const app: Express = express();
 
@@ -43,6 +45,8 @@ app.use(cors(corsOptions));
 
 app.use(express.json({ limit: "256kb" }));
 app.use(express.urlencoded({ extended: true, limit: "256kb" }));
+app.use(cookieParser());
+app.use(attachUser);
 
 app.use("/api", router);
 

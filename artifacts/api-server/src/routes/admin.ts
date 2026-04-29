@@ -1,16 +1,22 @@
 import { Router, type IRouter } from "express";
 import { sql, desc } from "drizzle-orm";
-import { db, candidatesTable, activityTable } from "@workspace/db";
+import {
+  db,
+  candidatesTable,
+  activityTable,
+  auditLogsTable,
+} from "@workspace/db";
 import {
   AdminPipelineResponse,
   AdminActivityResponse,
 } from "@workspace/api-zod";
 import { REGIONS, UPSKILLING_AREAS } from "../lib/regions";
-import { serializeActivity } from "../lib/serialize";
+import { serializeActivity, serializeAuditLog } from "../lib/serialize";
+import { requireAuth, requireRole } from "../lib/auth";
 
 const router: IRouter = Router();
 
-router.get("/admin/pipeline", async (_req, res): Promise<void> => {
+router.get("/admin/pipeline", requireAuth, requireRole("admin"), async (_req, res): Promise<void> => {
   const totalRow = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(candidatesTable);
@@ -120,7 +126,7 @@ router.get("/admin/pipeline", async (_req, res): Promise<void> => {
   );
 });
 
-router.get("/admin/activity", async (_req, res): Promise<void> => {
+router.get("/admin/activity", requireAuth, requireRole("admin"), async (_req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(activityTable)
@@ -128,5 +134,23 @@ router.get("/admin/activity", async (_req, res): Promise<void> => {
     .limit(20);
   res.json(AdminActivityResponse.parse(rows.map(serializeActivity)));
 });
+
+router.get(
+  "/admin/audit-logs",
+  requireAuth,
+  requireRole("admin"),
+  async (req, res): Promise<void> => {
+    const limit = Math.min(
+      200,
+      Math.max(1, Number(req.query["limit"] ?? 50) || 50),
+    );
+    const rows = await db
+      .select()
+      .from(auditLogsTable)
+      .orderBy(desc(auditLogsTable.createdAt))
+      .limit(limit);
+    res.status(200).json(rows.map(serializeAuditLog));
+  },
+);
 
 export default router;

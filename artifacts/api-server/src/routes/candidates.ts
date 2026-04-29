@@ -13,10 +13,11 @@ import {
 } from "@workspace/api-zod";
 import { serializeCandidate } from "../lib/serialize";
 import { pickSkillsFor } from "../lib/evaluation";
+import { requireAuth, requireRole, requireCandidateAccess } from "../lib/auth";
 
 const router: IRouter = Router();
 
-router.get("/candidates", async (req, res): Promise<void> => {
+router.get("/candidates", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
   const parsed = ListCandidatesQueryParams.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -54,7 +55,7 @@ router.get("/candidates", async (req, res): Promise<void> => {
   res.json(ListCandidatesResponse.parse(rows.map(serializeCandidate)));
 });
 
-router.post("/candidates", async (req, res): Promise<void> => {
+router.post("/candidates", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
   const parsed = RegisterCandidateBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -94,10 +95,17 @@ router.post("/candidates", async (req, res): Promise<void> => {
   res.status(201).json(GetCandidateResponse.parse(serializeCandidate(row)));
 });
 
-router.get("/candidates/:id", async (req, res): Promise<void> => {
+router.get("/candidates/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetCandidateParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
+    return;
+  }
+  if (
+    req.user!.role === "candidate" &&
+    req.user!.candidateId !== params.data.id
+  ) {
+    res.status(403).json({ error: "Insufficient permissions" });
     return;
   }
   const [row] = await db
@@ -111,7 +119,7 @@ router.get("/candidates/:id", async (req, res): Promise<void> => {
   res.json(GetCandidateResponse.parse(serializeCandidate(row)));
 });
 
-router.post("/candidates/:id/cv", async (req, res): Promise<void> => {
+router.post("/candidates/:id/cv", requireAuth, requireCandidateAccess(), async (req, res): Promise<void> => {
   const params = UploadCvParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

@@ -45,8 +45,12 @@ import {
   getListRegionsQueryKey,
   useListRoles,
   getListRolesQueryKey,
+  useShortlistCandidate,
+  useMarkClientReady,
+  getDownloadMaskedCvUrl,
   type Candidate,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Search,
   Users,
@@ -166,6 +170,41 @@ export default function RecruiterDashboard() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { statuses, setStatus } = useCandidateStatuses();
+  const qc = useQueryClient();
+
+  const shortlistMut = useShortlistCandidate({
+    mutation: {
+      onSuccess: (_d, vars) => {
+        qc.invalidateQueries({ queryKey: getListCandidatesQueryKey() });
+        qc.invalidateQueries({ queryKey: getRecruiterSummaryQueryKey() });
+        const cand = candidates?.find((c) => c.id === vars.id);
+        toast.success(
+          `${cand?.fullName ?? "Candidate"} ${vars.data.shortlisted ? "shortlisted" : "removed from shortlist"}`,
+        );
+      },
+      onError: (err) =>
+        toast.error("Could not update shortlist", {
+          description: (err as Error).message,
+        }),
+    },
+  });
+
+  const clientReadyMut = useMarkClientReady({
+    mutation: {
+      onSuccess: (_d, vars) => {
+        qc.invalidateQueries({ queryKey: getListCandidatesQueryKey() });
+        qc.invalidateQueries({ queryKey: getRecruiterSummaryQueryKey() });
+        const cand = candidates?.find((c) => c.id === vars.id);
+        toast.success(
+          `${cand?.fullName ?? "Candidate"} ${vars.data.clientReady ? "marked client-ready" : "unmarked client-ready"}`,
+        );
+      },
+      onError: (err) =>
+        toast.error("Could not update client-ready flag", {
+          description: (err as Error).message,
+        }),
+    },
+  });
 
   const { data: summary, isLoading: isLoadingSummary } = useRecruiterSummary({
     query: { queryKey: getRecruiterSummaryQueryKey() },
@@ -713,9 +752,37 @@ export default function RecruiterDashboard() {
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                onClick={() => handleStatusChange(c.id, "shortlisted", c.fullName)}
+                                onClick={() => {
+                                  handleStatusChange(c.id, "shortlisted", c.fullName);
+                                  shortlistMut.mutate({
+                                    id: c.id,
+                                    data: { shortlisted: !c.isShortlisted },
+                                  });
+                                }}
+                                data-testid={`menu-shortlist-${c.id}`}
                               >
-                                <CheckCircle2 className="size-4 text-emerald-500" /> Recommend for client
+                                <CheckCircle2 className="size-4 text-emerald-500" />{" "}
+                                {c.isShortlisted ? "Remove from shortlist" : "Shortlist"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  clientReadyMut.mutate({
+                                    id: c.id,
+                                    data: { clientReady: !c.isClientReady },
+                                  })
+                                }
+                                data-testid={`menu-client-ready-${c.id}`}
+                              >
+                                <Star className="size-4 text-primary" />{" "}
+                                {c.isClientReady ? "Unmark client-ready" : "Mark client-ready"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  window.open(getDownloadMaskedCvUrl(c.id), "_blank")
+                                }
+                                data-testid={`menu-masked-cv-${c.id}`}
+                              >
+                                <FileText className="size-4 text-primary" /> Download masked CV
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleStatusChange(c.id, "needs_training", c.fullName)}
@@ -1018,6 +1085,17 @@ function CandidateDetailSheet({
                 <X className="size-4" /> Clear status
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 col-span-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+              data-testid={`btn-download-masked-cv-${candidate.id}`}
+              onClick={() =>
+                window.open(getDownloadMaskedCvUrl(candidate.id), "_blank")
+              }
+            >
+              <FileText className="size-4" /> Download masked CV
+            </Button>
           </div>
         </div>
 

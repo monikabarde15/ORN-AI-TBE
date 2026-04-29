@@ -18,7 +18,15 @@ import {
   getGetCandidateTrainingQueryKey,
   getTrainingDashboardQueryKey,
   getListTrainingAssignmentsQueryKey,
+  useListCandidateProjects,
+  useAssignCandidateProject,
+  useUpdateProject,
+  getListCandidateProjectsQueryKey,
+  getGetCandidateQueryKey,
+  type Project,
 } from "@workspace/api-client-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { AssignTrainingDialog } from "@/components/training/AssignTrainingDialog";
@@ -445,6 +453,12 @@ export default function CandidateTraining() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Project assignment section (recruiter-ready) */}
+              {(training.status === "recruiter_ready" ||
+                training.status === "completed") && (
+                <ProjectSection candidateId={candidate.id} />
+              )}
             </motion.div>
           )}
         </div>
@@ -591,6 +605,219 @@ function ModuleActions({
     <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0">
       Done
     </Badge>
+  );
+}
+
+function ProjectSection({ candidateId }: { candidateId: string }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [name, setName] = useState("");
+  const [techStack, setTechStack] = useState("");
+  const [duration, setDuration] = useState("4");
+
+  const projectsQuery = useListCandidateProjects(candidateId, {
+    query: { queryKey: getListCandidateProjectsQueryKey(candidateId) },
+  });
+
+  const assignMut = useAssignCandidateProject({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Project assigned" });
+        setName("");
+        setTechStack("");
+        setDuration("4");
+        qc.invalidateQueries({
+          queryKey: getListCandidateProjectsQueryKey(candidateId),
+        });
+        qc.invalidateQueries({
+          queryKey: getGetCandidateQueryKey(candidateId),
+        });
+      },
+      onError: (err) =>
+        toast({
+          title: "Could not assign project",
+          description: (err as Error).message,
+          variant: "destructive",
+        }),
+    },
+  });
+
+  const updateMut = useUpdateProject({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Project updated" });
+        qc.invalidateQueries({
+          queryKey: getListCandidateProjectsQueryKey(candidateId),
+        });
+        qc.invalidateQueries({
+          queryKey: getGetCandidateQueryKey(candidateId),
+        });
+      },
+    },
+  });
+
+  const projects: Project[] = projectsQuery.data ?? [];
+  const allCompleted =
+    projects.length > 0 && projects.every((p) => p.status === "completed");
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Award className="size-4" />
+          Industry projects
+        </CardTitle>
+        <CardDescription>
+          Hands-on, paid project placements that move recruiter-ready candidates
+          to industry-ready
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {projects.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic">
+            No projects assigned yet.
+          </p>
+        ) : (
+          <div className="divide-y">
+            {projects.map((p) => (
+              <div
+                key={p.id}
+                className="flex items-start gap-3 py-3 first:pt-0 last:pb-0"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold">{p.name}</div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        p.status === "completed"
+                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                          : p.status === "cancelled"
+                            ? "bg-muted text-muted-foreground"
+                            : "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30"
+                      }
+                    >
+                      {p.status.replace(/_/g, " ")}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {p.durationWeeks} weeks · {p.techStack.join(", ")}
+                  </div>
+                  {p.feedback && (
+                    <p className="text-xs text-muted-foreground mt-2 italic">
+                      Feedback: {p.feedback}
+                    </p>
+                  )}
+                </div>
+                {p.status === "in_progress" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={updateMut.isPending}
+                    onClick={() =>
+                      updateMut.mutate({
+                        projectId: p.id,
+                        data: {
+                          status: "completed",
+                          feedback:
+                            p.feedback ??
+                            "Project delivered successfully on schedule.",
+                        },
+                      })
+                    }
+                    data-testid={`button-complete-project-${p.id}`}
+                  >
+                    Mark complete
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {allCompleted && (
+          <div className="rounded-md bg-emerald-500/10 border border-emerald-500/30 p-3 text-sm flex items-center gap-2">
+            <CheckCircle2 className="size-4 text-emerald-600" />
+            <span className="font-medium text-emerald-700 dark:text-emerald-400">
+              Industry-ready
+            </span>
+            <span className="text-muted-foreground text-xs">
+              Candidate has completed all assigned projects.
+            </span>
+          </div>
+        )}
+
+        <div className="border-t pt-4 space-y-3">
+          <div className="text-sm font-semibold">Assign new project</div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-1">
+              <Label htmlFor="proj-name" className="text-xs">
+                Name
+              </Label>
+              <Input
+                id="proj-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Payments Microservice"
+                data-testid="input-project-name"
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <Label htmlFor="proj-stack" className="text-xs">
+                Tech stack (comma separated)
+              </Label>
+              <Input
+                id="proj-stack"
+                value={techStack}
+                onChange={(e) => setTechStack(e.target.value)}
+                placeholder="Node, Postgres, Kafka"
+                data-testid="input-project-stack"
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <Label htmlFor="proj-weeks" className="text-xs">
+                Duration (weeks)
+              </Label>
+              <Input
+                id="proj-weeks"
+                type="number"
+                min={1}
+                max={52}
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                data-testid="input-project-duration"
+              />
+            </div>
+          </div>
+          <Button
+            size="sm"
+            disabled={
+              assignMut.isPending ||
+              !name.trim() ||
+              !techStack.trim() ||
+              !duration
+            }
+            onClick={() =>
+              assignMut.mutate({
+                id: candidateId,
+                data: {
+                  name: name.trim(),
+                  techStack: techStack
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                  durationWeeks: Number(duration) || 1,
+                  startDate: new Date().toISOString().slice(0, 10),
+                },
+              })
+            }
+            data-testid="button-assign-project"
+          >
+            Assign project
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

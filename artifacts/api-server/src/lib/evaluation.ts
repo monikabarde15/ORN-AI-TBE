@@ -1,4 +1,5 @@
 import { REGIONS, SKILL_POOL, UPSKILLING_AREAS } from "./regions";
+import { analyzeSkillGap, type SkillGapResult } from "./skill-gap";
 
 const ENGLISH_SCORE: Record<string, number> = {
   A1: 28,
@@ -42,16 +43,26 @@ export interface CandidateLike {
   country: string;
   skills?: string[] | null;
   cv?: { fileName?: string; contentSummary?: string } | null;
+  careerGapMonths?: number | null;
 }
 
 export interface EvaluationScores {
   cvQuality: number;
-  technicalSkillMatch: number;
+  technicalSkillMatch: number; // legacy alias for technicalRelevance
+  technicalRelevance: number;
   englishReadiness: number;
   europeJobReadiness: number;
-  upskillingNeeds: number;
+  marketReadiness: number;
+  careerGapRisk: number;
+  upskillingNeeds: number; // legacy: 100 - marketReadiness
   overall: number;
 }
+
+export type CandidateClassification =
+  | "recruiter_ready"
+  | "needs_upskilling"
+  | "needs_reskilling"
+  | "not_ready_yet";
 
 export interface EvaluationInsight {
   title: string;
@@ -68,6 +79,8 @@ export interface EvaluationResult {
   recommendedUpskilling: string[];
   insights: EvaluationInsight[];
   readinessTier: "emerging" | "developing" | "ready" | "elite";
+  classification: CandidateClassification;
+  skillGap: SkillGapResult;
 }
 
 export function pickSkillsFor(role: string, seed: number): string[] {
@@ -95,9 +108,47 @@ export function pickSkillsFor(role: string, seed: number): string[] {
   return Array.from(out);
 }
 
+function classify(args: {
+  overall: number;
+  technicalRelevance: number;
+  europeJobReadiness: number;
+  englishReadiness: number;
+  careerGapMonths: number;
+  yearsExperience: number;
+}): CandidateClassification {
+  const {
+    overall,
+    technicalRelevance,
+    europeJobReadiness,
+    englishReadiness,
+    careerGapMonths,
+    yearsExperience,
+  } = args;
+
+  // Career gap > 24 months → reskilling regardless of other factors.
+  if (careerGapMonths > 24) return "needs_reskilling";
+
+  // Strong scores across the board → recruiter ready.
+  if (
+    overall >= 80 &&
+    technicalRelevance >= 75 &&
+    europeJobReadiness >= 70 &&
+    englishReadiness >= 70
+  ) {
+    return "recruiter_ready";
+  }
+
+  // Has relevant experience and decent baseline → upskilling.
+  if (yearsExperience >= 1 && overall >= 50) return "needs_upskilling";
+
+  return "not_ready_yet";
+}
+
 export function evaluate(candidate: CandidateLike): EvaluationResult {
   const seed = hashSeed(candidate.id + candidate.email);
   const noise = (n: number) => ((seed >> n) & 0x1f) - 15; // -15..16
+
+  const careerGapMonths = candidate.careerGapMonths ?? 0;
 
   const cvQuality = clamp(
     62 +
@@ -105,7 +156,7 @@ export function evaluate(candidate: CandidateLike): EvaluationResult {
       (candidate.cv ? 8 : -10) +
       noise(2),
   );
-  const technicalSkillMatch = clamp(
+  const technicalRelevance = clamp(
     55 + Math.min(30, candidate.yearsExperience * 2.2) + noise(4),
   );
   const englishReadiness = clamp(
@@ -117,16 +168,26 @@ export function evaluate(candidate: CandidateLike): EvaluationResult {
       Math.min(15, candidate.yearsExperience) +
       noise(8) / 2,
   );
-  const upskillingNeeds = clamp(
-    100 -
-      (technicalSkillMatch * 0.45 + englishReadiness * 0.35 + cvQuality * 0.2),
+  // Career gap risk: 0 (no gap) → 100 (>3 years out)
+  const careerGapRisk = clamp(
+    careerGapMonths === 0 ? 5 : Math.min(95, 18 + careerGapMonths * 2.2),
   );
+  // Market readiness — rolls up technical + English + EU + gap into a single
+  // top-line "is this candidate placeable today?" score.
+  const marketReadiness = clamp(
+    technicalRelevance * 0.4 +
+      englishReadiness * 0.25 +
+      europeJobReadiness * 0.25 +
+      (100 - careerGapRisk) * 0.1,
+  );
+  const upskillingNeeds = clamp(100 - marketReadiness);
   const overall = clamp(
-    cvQuality * 0.18 +
-      technicalSkillMatch * 0.32 +
+    cvQuality * 0.15 +
+      technicalRelevance * 0.3 +
       englishReadiness * 0.18 +
-      europeJobReadiness * 0.22 +
-      (100 - upskillingNeeds) * 0.1,
+      europeJobReadiness * 0.2 +
+      marketReadiness * 0.1 +
+      (100 - careerGapRisk) * 0.07,
   );
 
   const tier: EvaluationResult["readinessTier"] =
@@ -138,10 +199,19 @@ export function evaluate(candidate: CandidateLike): EvaluationResult {
           ? "developing"
           : "emerging";
 
+  const classification = classify({
+    overall,
+    technicalRelevance,
+    europeJobReadiness,
+    englishReadiness,
+    careerGapMonths,
+    yearsExperience: candidate.yearsExperience,
+  });
+
   const strengths: string[] = [];
   const gaps: string[] = [];
 
-  if (technicalSkillMatch >= 75)
+  if (technicalRelevance >= 75)
     strengths.push(`Strong technical alignment with ${candidate.targetRole}`);
   if (englishReadiness >= 80)
     strengths.push(`Professional English proficiency (${candidate.englishLevel})`);
@@ -151,17 +221,25 @@ export function evaluate(candidate: CandidateLike): EvaluationResult {
     strengths.push(`${candidate.yearsExperience} years of relevant experience`);
   if (cvQuality >= 78)
     strengths.push("Well-structured CV with quantified outcomes");
+  if (careerGapMonths === 0 && candidate.yearsExperience > 1)
+    strengths.push("Continuous, recent professional engagement");
 
   if (englishReadiness < 65)
     gaps.push("English fluency below the threshold for client-facing roles");
   if (europeJobReadiness < 60)
     gaps.push("Visa or work-authorization friction for EU placement");
-  if (technicalSkillMatch < 65)
+  if (technicalRelevance < 65)
     gaps.push("Core technical stack needs deeper hands-on coverage");
   if (cvQuality < 65)
     gaps.push("CV lacks measurable outcomes and recent project depth");
   if (upskillingNeeds > 60)
     gaps.push("Significant upskilling required before recruiter shortlist");
+  if (careerGapMonths > 24)
+    gaps.push(
+      `Career gap of ${Math.round(careerGapMonths / 12)} years — full reskilling recommended`,
+    );
+  else if (careerGapMonths >= 6)
+    gaps.push(`Career gap of ${careerGapMonths} months requires bridge program`);
 
   if (strengths.length === 0)
     strengths.push("Open to a structured upskilling track");
@@ -170,7 +248,7 @@ export function evaluate(candidate: CandidateLike): EvaluationResult {
   const recommendedUpskilling: string[] = [];
   if (englishReadiness < 80) recommendedUpskilling.push(UPSKILLING_AREAS[0]!);
   if (europeJobReadiness < 75) recommendedUpskilling.push(UPSKILLING_AREAS[1]!);
-  if (technicalSkillMatch < 80) recommendedUpskilling.push(UPSKILLING_AREAS[3]!);
+  if (technicalRelevance < 80) recommendedUpskilling.push(UPSKILLING_AREAS[3]!);
   if (upskillingNeeds > 50) recommendedUpskilling.push(UPSKILLING_AREAS[4]!);
   if (candidate.yearsExperience >= 7 && overall >= 75)
     recommendedUpskilling.push(UPSKILLING_AREAS[6]!);
@@ -184,7 +262,7 @@ export function evaluate(candidate: CandidateLike): EvaluationResult {
     {
       title: "Market positioning",
       detail: `${candidate.targetRole} talent from ${region.name} is in active demand across DACH and Nordics, with median time-to-shortlist of 9 days.`,
-      severity: technicalSkillMatch >= 75 ? "strength" : "opportunity",
+      severity: technicalRelevance >= 75 ? "strength" : "opportunity",
     },
     {
       title: "Compensation band",
@@ -201,14 +279,19 @@ export function evaluate(candidate: CandidateLike): EvaluationResult {
     },
   ];
 
+  const skillGap = analyzeSkillGap(candidate.targetRole, candidate.skills ?? []);
+
   return {
     candidateId: candidate.id,
     evaluatedAt: new Date().toISOString(),
     scores: {
       cvQuality,
-      technicalSkillMatch,
+      technicalSkillMatch: technicalRelevance,
+      technicalRelevance,
       englishReadiness,
       europeJobReadiness,
+      marketReadiness,
+      careerGapRisk,
       upskillingNeeds,
       overall,
     },
@@ -217,5 +300,7 @@ export function evaluate(candidate: CandidateLike): EvaluationResult {
     recommendedUpskilling,
     insights,
     readinessTier: tier,
+    classification,
+    skillGap,
   };
 }

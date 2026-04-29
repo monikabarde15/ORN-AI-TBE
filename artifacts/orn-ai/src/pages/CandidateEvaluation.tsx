@@ -8,6 +8,10 @@ import {
   getGetCandidateQueryKey,
   useGetEvaluation,
   getGetEvaluationQueryKey,
+  useGetSkillGap,
+  getGetSkillGapQueryKey,
+  getDownloadFullCvUrl,
+  getDownloadMaskedCvUrl,
 } from "@workspace/api-client-react";
 import {
   Loader2,
@@ -26,6 +30,8 @@ import {
   AlertTriangle,
   Briefcase,
   Linkedin,
+  Download,
+  ListChecks,
 } from "lucide-react";
 import {
   Radar,
@@ -145,13 +151,14 @@ function readinessLabel(overall: number): {
 }
 
 // ----- Score card metadata -----
-type ScoreId = "cv" | "tech" | "english" | "europe" | "upskill";
+type ScoreId = "cv" | "tech" | "english" | "europe" | "market" | "gap";
 
 interface ScoreCardConfig {
   id: ScoreId;
   label: string;
   blurb: string;
   icon: typeof FileText;
+  invert?: boolean; // true = lower is better (e.g. career gap risk)
 }
 
 const SCORE_CARDS: ScoreCardConfig[] = [
@@ -163,7 +170,7 @@ const SCORE_CARDS: ScoreCardConfig[] = [
   },
   {
     id: "tech",
-    label: "Technical Skill Match",
+    label: "Technical Relevance",
     blurb: "Stack alignment with target role",
     icon: Cpu,
   },
@@ -180,10 +187,17 @@ const SCORE_CARDS: ScoreCardConfig[] = [
     icon: Globe2,
   },
   {
-    id: "upskill",
-    label: "Upskilling Priority",
-    blurb: "How urgent further training is",
-    icon: GraduationCap,
+    id: "market",
+    label: "Market Readiness",
+    blurb: "How shortlist-ready you are right now",
+    icon: TrendingUp,
+  },
+  {
+    id: "gap",
+    label: "Career Gap Risk",
+    blurb: "Recency of professional experience",
+    icon: AlertTriangle,
+    invert: true,
   },
 ];
 
@@ -244,6 +258,10 @@ export default function CandidateEvaluation() {
     query: { enabled: !!id, queryKey: getGetEvaluationQueryKey(id || "") },
   });
 
+  const { data: skillGap } = useGetSkillGap(id || "", {
+    query: { enabled: !!id, queryKey: getGetSkillGapQueryKey(id || "") },
+  });
+
   if (!id || isLoadingCandidate || isLoadingEvaluation) {
     return (
       <Shell>
@@ -270,10 +288,11 @@ export default function CandidateEvaluation() {
 
   const scores = {
     cv: evaluation.scores.cvQuality,
-    tech: evaluation.scores.technicalSkillMatch,
+    tech: evaluation.scores.technicalRelevance,
     english: evaluation.scores.englishReadiness,
     europe: evaluation.scores.europeJobReadiness,
-    upskill: evaluation.scores.upskillingNeeds,
+    market: evaluation.scores.marketReadiness,
+    gap: evaluation.scores.careerGapRisk,
   };
 
   const overall = evaluation.scores.overall;
@@ -285,7 +304,8 @@ export default function CandidateEvaluation() {
     { subject: "Technical", value: scores.tech },
     { subject: "English", value: scores.english },
     { subject: "EU Ready", value: scores.europe },
-    { subject: "Trained", value: 100 - scores.upskill },
+    { subject: "Market", value: scores.market },
+    { subject: "Recency", value: 100 - scores.gap },
   ];
 
   const overallRingCircumference = 2 * Math.PI * 52;
@@ -458,10 +478,10 @@ export default function CandidateEvaluation() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {SCORE_CARDS.map((card, i) => {
               const value = scores[card.id];
-              const colors = card.id === "upskill" ? priorityColor(value) : scoreColor(value);
+              const colors = card.invert ? priorityColor(value) : scoreColor(value);
               const Icon = card.icon;
               return (
                 <motion.div
@@ -665,6 +685,146 @@ export default function CandidateEvaluation() {
             </CardContent>
           </Card>
         </div>
+
+        {/* ============ CLASSIFICATION + DOWNLOADS ============ */}
+        <div className="grid md:grid-cols-2 gap-6 mt-6">
+          <Card className="border shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Sparkles className="size-4 text-primary" /> Talent Classification
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Engine verdict on next best action
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3">
+                <Badge
+                  className={`text-sm px-3 py-1.5 font-semibold ${
+                    evaluation.classification === "recruiter_ready"
+                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+                      : evaluation.classification === "needs_upskilling"
+                        ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30"
+                        : evaluation.classification === "needs_reskilling"
+                          ? "bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-500/30"
+                          : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30"
+                  }`}
+                  variant="outline"
+                >
+                  {evaluation.classification.replace(/_/g, " ")}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Career gap risk: {scores.gap}/100
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Download className="size-4 text-primary" /> Generated CVs
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Full and recruiter-masked PDF, generated from the latest profile
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
+              <a
+                href={getDownloadFullCvUrl(candidate.id)}
+                target="_blank"
+                rel="noreferrer"
+                download
+              >
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Download className="size-4" /> Full CV
+                </Button>
+              </a>
+              <a
+                href={getDownloadMaskedCvUrl(candidate.id)}
+                target="_blank"
+                rel="noreferrer"
+                download
+              >
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Download className="size-4" /> Masked CV
+                </Button>
+              </a>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ============ SKILL GAP ============ */}
+        {skillGap && (
+          <Card className="border shadow-sm mt-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ListChecks className="size-4 text-primary" /> Skill Gap vs.{" "}
+                {skillGap.targetRole}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {skillGap.matched.length} of {skillGap.required.length} required skills
+                matched ({skillGap.matchPct}%)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-primary rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${skillGap.matchPct}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                />
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    Matched ({skillGap.matched.length})
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {skillGap.matched.length === 0 ? (
+                      <span className="text-xs italic text-muted-foreground">
+                        None matched yet.
+                      </span>
+                    ) : (
+                      skillGap.matched.map((s) => (
+                        <Badge
+                          key={s}
+                          variant="outline"
+                          className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 font-normal"
+                        >
+                          {s}
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    Missing ({skillGap.missing.length})
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {skillGap.missing.length === 0 ? (
+                      <span className="text-xs italic text-muted-foreground">
+                        No gaps identified for this role.
+                      </span>
+                    ) : (
+                      skillGap.missing.map((s) => (
+                        <Badge
+                          key={s}
+                          variant="outline"
+                          className="bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30 font-normal"
+                        >
+                          {s}
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* ============ FOOTER METADATA ============ */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground border-t pt-6">

@@ -5,9 +5,11 @@
  * ORN-AI Talent Infrastructure Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { CandidateClassification } from "./candidateClassification";
 import type { EvaluationInsight } from "./evaluationInsight";
 import type { EvaluationReadinessTier } from "./evaluationReadinessTier";
 import type { EvaluationScores } from "./evaluationScores";
+import type { SkillGap } from "./skillGap";
 
 export interface Evaluation {
   candidateId: string;
@@ -18,4 +20,6 @@ export interface Evaluation {
   recommendedUpskilling: string[];
   insights: EvaluationInsight[];
   readinessTier: EvaluationReadinessTier;
+  classification: CandidateClassification;
+  skillGap: SkillGap;
 }

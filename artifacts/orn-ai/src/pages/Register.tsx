@@ -16,10 +16,12 @@ import {
   getListRegionsQueryKey,
   useListRoles,
   getListRolesQueryKey,
-  useRegisterCandidate,
-  useUploadCv,
+  useUploadCvFile,
   useRunEvaluation,
+  ApiError,
 } from "@workspace/api-client-react";
+import { useAuth } from "@/hooks/use-auth";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Loader2,
   ArrowRight,
@@ -87,6 +89,11 @@ const formSchema = z.object({
   skills: z.array(z.string().min(1)).max(20, "Maximum 20 skills"),
   // Step 4
   englishLevel: z.enum(ENGLISH_VALUES),
+  // Step 5 (account credentials)
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  gdprConsent: z.literal(true, {
+    errorMap: () => ({ message: "You must accept the privacy terms to continue" }),
+  }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -97,7 +104,7 @@ const STEPS = [
   { id: 2, title: "Location & Eligibility", icon: Globe2, fields: ["country", "visaStatus", "euWorkEligible"] as const },
   { id: 3, title: "Skills & Target Role", icon: Wrench, fields: ["targetRole", "yearsExperience", "skills"] as const },
   { id: 4, title: "Language Readiness", icon: Languages, fields: ["englishLevel"] as const },
-  { id: 5, title: "Upload CV", icon: FileUp, fields: [] as const },
+  { id: 5, title: "Upload CV", icon: FileUp, fields: ["password", "gdprConsent"] as const },
 ] as const;
 
 export default function Register() {
@@ -117,8 +124,8 @@ export default function Register() {
     query: { queryKey: getListRolesQueryKey() },
   });
 
-  const registerMutation = useRegisterCandidate();
-  const uploadCvMutation = useUploadCv();
+  const auth = useAuth();
+  const uploadCvMutation = useUploadCvFile();
   const evaluateMutation = useRunEvaluation();
 
   const form = useForm<FormValues>({
@@ -136,6 +143,8 @@ export default function Register() {
       yearsExperience: 3,
       skills: [],
       englishLevel: "B2",
+      password: "",
+      gdprConsent: false as unknown as true,
     },
   });
 
@@ -182,8 +191,8 @@ export default function Register() {
 
   // ----- File upload helpers -----
   const handleFileSelected = (selected: File) => {
-    if (selected.size > 10 * 1024 * 1024) {
-      toast.error("File must be smaller than 10MB");
+    if (selected.size > 5 * 1024 * 1024) {
+      toast.error("File must be smaller than 5MB");
       return;
     }
     setFile(selected);
@@ -196,6 +205,7 @@ export default function Register() {
   };
 
   // ----- Final submit -----
+  const [authPending, setAuthPending] = useState(false);
   const handleFinalSubmit = async () => {
     const valid = await form.trigger();
     if (!valid) {
@@ -203,31 +213,59 @@ export default function Register() {
       return;
     }
     const values = form.getValues();
+    setAuthPending(true);
     try {
-      const candidate = await registerMutation.mutateAsync({ data: values });
-      setCreatedCandidateId(candidate.id);
+      const session = await auth.register({
+        email: values.email,
+        password: values.password,
+        fullName: values.fullName,
+        role: "candidate",
+        gdprConsent: true,
+        candidateProfile: {
+          fullName: values.fullName,
+          email: values.email,
+          phone: values.phone,
+          country: values.country,
+          targetRole: values.targetRole,
+          yearsExperience: values.yearsExperience,
+          visaStatus: values.visaStatus,
+          englishLevel: values.englishLevel,
+          euWorkEligible: values.euWorkEligible,
+          linkedinUrl: values.linkedinUrl,
+          skills: values.skills,
+        },
+      });
+      // Backend creates a candidate row from the embedded profile or via the
+      // auth route; for richer profile fields we still create one explicitly.
+      const candidateId = session.user.candidateId;
+      if (!candidateId) {
+        throw new Error("Account created without a candidate profile");
+      }
+      setCreatedCandidateId(candidateId);
 
       if (file) {
         await uploadCvMutation.mutateAsync({
-          id: candidate.id,
-          data: {
-            fileName: file.name,
-            fileSize: file.size,
-            contentSummary: `CV uploaded: ${file.name}`,
-          },
+          id: candidateId,
+          data: { file },
         });
       }
 
-      await evaluateMutation.mutateAsync({ id: candidate.id });
+      await evaluateMutation.mutateAsync({ id: candidateId });
       setSubmitted(true);
     } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong. Please try again.");
+      const message = err instanceof ApiError && typeof err.data === "object" && err.data && "message" in err.data
+        ? String((err.data as { message?: string }).message)
+        : err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.";
+      toast.error(message);
+    } finally {
+      setAuthPending(false);
     }
   };
 
   const isSubmitting =
-    registerMutation.isPending || uploadCvMutation.isPending || evaluateMutation.isPending;
+    authPending || uploadCvMutation.isPending || evaluateMutation.isPending;
 
   // ===========================================================
   // SUCCESS SCREEN
@@ -884,10 +922,59 @@ export default function Register() {
                             <div>
                               <div className="font-medium">What happens next</div>
                               <div className="text-muted-foreground text-xs mt-1">
-                                When you submit, ORN-AI will register your profile, ingest your CV, and run the 5-dimension AI evaluation. You'll see your scores immediately.
+                                When you submit, ORN-AI will create your account, ingest your CV, and run the 5-dimension AI evaluation. You'll see your scores immediately.
                               </div>
                             </div>
                           </div>
+                        </div>
+
+                        <div className="grid gap-4 pt-2 border-t">
+                          <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Account password</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="password"
+                                    autoComplete="new-password"
+                                    placeholder="At least 8 characters"
+                                    data-testid="input-register-password"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Used to sign in later and review your evaluation.
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="gdprConsent"
+                            render={({ field }) => (
+                              <FormItem className="flex items-start gap-3 rounded-lg border p-3">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value as unknown as boolean}
+                                    onCheckedChange={(v) => field.onChange(v === true)}
+                                    data-testid="checkbox-register-gdpr"
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-tight">
+                                  <FormLabel className="text-sm font-medium">
+                                    I consent to ORN-AI processing my profile and CV
+                                  </FormLabel>
+                                  <FormDescription className="text-xs">
+                                    Required under GDPR. You can revoke consent and request deletion at any time.
+                                  </FormDescription>
+                                  <FormMessage />
+                                </div>
+                              </FormItem>
+                            )}
+                          />
                         </div>
                       </div>
                     )}
@@ -924,7 +1011,7 @@ export default function Register() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    {registerMutation.isPending && "Registering..."}
+                    {authPending && "Registering..."}
                     {uploadCvMutation.isPending && "Uploading CV..."}
                     {evaluateMutation.isPending && "Running AI evaluation..."}
                   </>
