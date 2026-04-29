@@ -3,20 +3,29 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: ORN-AI Talent Infrastructure Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: candidates
+    description: Candidate registration and lifecycle
+  - name: evaluation
+    description: AI CV evaluation and scoring
+  - name: recruiter
+    description: Recruiter dashboard endpoints
+  - name: admin
+    description: Admin dashboard endpoints
+  - name: meta
+    description: Reference data (countries, roles, levels)
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +33,499 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /meta/regions:
+    get:
+      operationId: listRegions
+      tags: [meta]
+      summary: List supported countries grouped by phase
+      responses:
+        "200":
+          description: Regions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegionList"
+
+  /meta/roles:
+    get:
+      operationId: listRoles
+      tags: [meta]
+      summary: List target roles available
+      responses:
+        "200":
+          description: Roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: string }
+
+  /candidates:
+    get:
+      operationId: listCandidates
+      tags: [candidates]
+      summary: List candidates with filters (recruiter/admin view)
+      parameters:
+        - name: country
+          in: query
+          schema: { type: string }
+        - name: role
+          in: query
+          schema: { type: string }
+        - name: experienceMin
+          in: query
+          schema: { type: integer }
+        - name: experienceMax
+          in: query
+          schema: { type: integer }
+        - name: englishLevel
+          in: query
+          schema: { type: string }
+        - name: minReadiness
+          in: query
+          schema: { type: integer }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Candidates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Candidate"
+
+    post:
+      operationId: registerCandidate
+      tags: [candidates]
+      summary: Register a new candidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CandidateRegistration"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Candidate"
+
+  /candidates/{id}:
+    get:
+      operationId: getCandidate
+      tags: [candidates]
+      summary: Get a candidate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Candidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Candidate"
+
+  /candidates/{id}/cv:
+    post:
+      operationId: uploadCv
+      tags: [candidates]
+      summary: Attach CV metadata to a candidate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CvUpload"
+      responses:
+        "200":
+          description: Updated candidate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Candidate"
+
+  /candidates/{id}/evaluation:
+    post:
+      operationId: runEvaluation
+      tags: [evaluation]
+      summary: Run AI evaluation against a candidate's CV
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Evaluation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evaluation"
+    get:
+      operationId: getEvaluation
+      tags: [evaluation]
+      summary: Get the latest evaluation for a candidate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Evaluation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evaluation"
+
+  /recruiter/summary:
+    get:
+      operationId: recruiterSummary
+      tags: [recruiter]
+      summary: Headline metrics for the recruiter dashboard
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecruiterSummary"
+
+  /admin/pipeline:
+    get:
+      operationId: adminPipeline
+      tags: [admin]
+      summary: Talent pipeline aggregates by country, skill, readiness, and upskilling
+      responses:
+        "200":
+          description: Pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPipeline"
+
+  /admin/activity:
+    get:
+      operationId: adminActivity
+      tags: [admin]
+      summary: Recent platform activity feed
+      responses:
+        "200":
+          description: Activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /demo/seed:
+    post:
+      operationId: runDemoJourney
+      tags: [admin]
+      summary: Generate a fresh demo candidate journey for investor presentation
+      responses:
+        "200":
+          description: Demo journey result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoJourney"
+
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
+      required: [status]
 
+    Region:
+      type: object
+      properties:
+        code: { type: string }
+        name: { type: string }
+        phase: { type: integer }
+        flag: { type: string }
+      required: [code, name, phase, flag]
+
+    RegionList:
+      type: object
+      properties:
+        phase1:
+          type: array
+          items: { $ref: "#/components/schemas/Region" }
+        phase2:
+          type: array
+          items: { $ref: "#/components/schemas/Region" }
+      required: [phase1, phase2]
+
+    EnglishLevel:
+      type: string
+      enum: [A1, A2, B1, B2, C1, C2]
+
+    VisaStatus:
+      type: string
+      enum: [eu_citizen, work_permit, blue_card, requires_sponsorship, student_visa]
+
+    CandidateRegistration:
+      type: object
+      properties:
+        fullName: { type: string, minLength: 2 }
+        email: { type: string, format: email }
+        phone: { type: string }
+        country: { type: string }
+        targetRole: { type: string }
+        yearsExperience: { type: integer, minimum: 0, maximum: 50 }
+        visaStatus: { $ref: "#/components/schemas/VisaStatus" }
+        englishLevel: { $ref: "#/components/schemas/EnglishLevel" }
+        euWorkEligible: { type: boolean }
+        linkedinUrl: { type: string }
+      required:
+        - fullName
+        - email
+        - phone
+        - country
+        - targetRole
+        - yearsExperience
+        - visaStatus
+        - englishLevel
+        - euWorkEligible
+        - linkedinUrl
+
+    CvUpload:
+      type: object
+      properties:
+        fileName: { type: string }
+        fileSize: { type: integer }
+        contentSummary: { type: string }
+      required: [fileName, fileSize]
+
+    EvaluationScores:
+      type: object
+      properties:
+        cvQuality: { type: integer, minimum: 0, maximum: 100 }
+        technicalSkillMatch: { type: integer, minimum: 0, maximum: 100 }
+        englishReadiness: { type: integer, minimum: 0, maximum: 100 }
+        europeJobReadiness: { type: integer, minimum: 0, maximum: 100 }
+        upskillingNeeds: { type: integer, minimum: 0, maximum: 100 }
+        overall: { type: integer, minimum: 0, maximum: 100 }
+      required:
+        - cvQuality
+        - technicalSkillMatch
+        - englishReadiness
+        - europeJobReadiness
+        - upskillingNeeds
+        - overall
+
+    EvaluationInsight:
+      type: object
+      properties:
+        title: { type: string }
+        detail: { type: string }
+        severity: { type: string, enum: [strength, opportunity, gap] }
+      required: [title, detail, severity]
+
+    Evaluation:
+      type: object
+      properties:
+        candidateId: { type: string }
+        evaluatedAt: { type: string, format: date-time }
+        scores: { $ref: "#/components/schemas/EvaluationScores" }
+        strengths:
+          type: array
+          items: { type: string }
+        gaps:
+          type: array
+          items: { type: string }
+        recommendedUpskilling:
+          type: array
+          items: { type: string }
+        insights:
+          type: array
+          items: { $ref: "#/components/schemas/EvaluationInsight" }
+        readinessTier: { type: string, enum: [emerging, developing, ready, elite] }
+      required:
+        - candidateId
+        - evaluatedAt
+        - scores
+        - strengths
+        - gaps
+        - recommendedUpskilling
+        - insights
+        - readinessTier
+
+    Candidate:
+      type: object
+      properties:
+        id: { type: string }
+        fullName: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        country: { type: string }
+        targetRole: { type: string }
+        yearsExperience: { type: integer }
+        visaStatus: { $ref: "#/components/schemas/VisaStatus" }
+        englishLevel: { $ref: "#/components/schemas/EnglishLevel" }
+        euWorkEligible: { type: boolean }
+        linkedinUrl: { type: string }
+        createdAt: { type: string, format: date-time }
+        cv:
+          oneOf:
+            - $ref: "#/components/schemas/CvUpload"
+            - type: "null"
+        evaluation:
+          oneOf:
+            - $ref: "#/components/schemas/Evaluation"
+            - type: "null"
+        skills:
+          type: array
+          items: { type: string }
+        avatarUrl: { type: string }
+      required:
+        - id
+        - fullName
+        - email
+        - phone
+        - country
+        - targetRole
+        - yearsExperience
+        - visaStatus
+        - englishLevel
+        - euWorkEligible
+        - linkedinUrl
+        - createdAt
+        - skills
+        - avatarUrl
+
+    RecruiterSummary:
+      type: object
+      properties:
+        totalCandidates: { type: integer }
+        readyCandidates: { type: integer }
+        newThisWeek: { type: integer }
+        avgReadiness: { type: integer }
+        countryBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              country: { type: string }
+              count: { type: integer }
+              avgReadiness: { type: integer }
+            required: [country, count, avgReadiness]
+        topRoles:
+          type: array
+          items:
+            type: object
+            properties:
+              role: { type: string }
+              count: { type: integer }
+            required: [role, count]
+      required:
+        - totalCandidates
+        - readyCandidates
+        - newThisWeek
+        - avgReadiness
+        - countryBreakdown
+        - topRoles
+
+    AdminPipeline:
+      type: object
+      properties:
+        totalCandidates: { type: integer }
+        evaluated: { type: integer }
+        upskillingActive: { type: integer }
+        placementsThisQuarter: { type: integer }
+        byCountry:
+          type: array
+          items:
+            type: object
+            properties:
+              country: { type: string }
+              count: { type: integer }
+              flag: { type: string }
+            required: [country, count, flag]
+        bySkill:
+          type: array
+          items:
+            type: object
+            properties:
+              skill: { type: string }
+              count: { type: integer }
+            required: [skill, count]
+        byReadiness:
+          type: array
+          items:
+            type: object
+            properties:
+              tier: { type: string }
+              count: { type: integer }
+            required: [tier, count]
+        byUpskilling:
+          type: array
+          items:
+            type: object
+            properties:
+              area: { type: string }
+              count: { type: integer }
+            required: [area, count]
+        monthlyGrowth:
+          type: array
+          items:
+            type: object
+            properties:
+              month: { type: string }
+              registrations: { type: integer }
+              evaluations: { type: integer }
+            required: [month, registrations, evaluations]
+      required:
+        - totalCandidates
+        - evaluated
+        - upskillingActive
+        - placementsThisQuarter
+        - byCountry
+        - bySkill
+        - byReadiness
+        - byUpskilling
+        - monthlyGrowth
+
+    ActivityItem:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [registration, evaluation, upskilling, placement] }
+        candidateName: { type: string }
+        country: { type: string }
+        message: { type: string }
+        timestamp: { type: string, format: date-time }
+      required: [id, kind, candidateName, country, message, timestamp]
+
+    DemoJourney:
+      type: object
+      properties:
+        candidate: { $ref: "#/components/schemas/Candidate" }
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              label: { type: string }
+              detail: { type: string }
+              status: { type: string, enum: [done, active, pending] }
+            required: [label, detail, status]
+      required: [candidate, steps]
