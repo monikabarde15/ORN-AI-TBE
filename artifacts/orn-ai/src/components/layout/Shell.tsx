@@ -91,7 +91,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <img
                 src={ornAiLogo}
                 alt="ORN-AI — Optimize, Revolutionize, Navigate"
-                className="h-9 w-auto object-contain"
+                className="h-9 w-auto object-contain rounded-lg"
               />
             </Link>
           </div>
@@ -158,7 +158,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <img
               src={ornAiLogo}
               alt="ORN-AI — Optimize, Revolutionize, Navigate"
-              className="h-10 w-auto object-contain"
+              className="h-10 w-auto object-contain rounded-lg"
             />
           </Link>
           
@@ -198,7 +198,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <img
                   src={ornAiLogo}
                   alt="ORN-AI — Optimize, Revolutionize, Navigate"
-                  className="h-12 w-auto object-contain"
+                  className="h-12 w-auto object-contain rounded-lg"
                 />
               </Link>
               <p className="text-sm text-muted-foreground max-w-sm">
