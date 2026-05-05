@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
-import { Search, UserPlus, Presentation, Settings2, BarChart3, Database, GraduationCap, LogIn, LogOut, User as UserIcon } from "lucide-react";
+import { Search, UserPlus, Settings2, BarChart3, Database, GraduationCap, LogIn, LogOut, User as UserIcon } from "lucide-react";
 
 function UserMenu({ compact = false }: { compact?: boolean }) {
   const { user, logout } = useAuth();
@@ -169,12 +169,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </nav>
           
           <div className="flex items-center gap-3">
-            <Link href="/demo" className="hidden sm:inline-flex">
-              <Button variant="ghost" className="gap-2 text-primary hover:text-primary hover:bg-primary/10">
-                <Presentation className="size-4" />
-                Investor Demo
-              </Button>
-            </Link>
             <Link href="/register">
               <Button className="gap-2">
                 <UserPlus className="size-4" />
@@ -210,7 +204,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <ul className="space-y-3 text-sm text-muted-foreground">
                 <li><Link href="/recruiter" className="hover:text-foreground">Recruiter Access</Link></li>
                 <li><Link href="/admin" className="hover:text-foreground">Admin Pipeline</Link></li>
-                <li><Link href="/demo" className="hover:text-foreground">Investor Demo</Link></li>
               </ul>
             </div>
             <div>

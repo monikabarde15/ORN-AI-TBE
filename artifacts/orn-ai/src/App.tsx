@@ -14,7 +14,6 @@ import CandidateEvaluation from "@/pages/CandidateEvaluation";
 import RecruiterDashboard from "@/pages/RecruiterDashboard";
 import RecruiterAddCandidate from "@/pages/RecruiterAddCandidate";
 import AdminDashboard from "@/pages/AdminDashboard";
-import DemoJourney from "@/pages/DemoJourney";
 import TrainingDashboard from "@/pages/TrainingDashboard";
 import CandidateTraining from "@/pages/CandidateTraining";
 import { Loader2 } from "lucide-react";
@@ -79,7 +78,6 @@ function Router() {
           <TrainingDashboard />
         </ProtectedRoute>
       </Route>
-      <Route path="/demo" component={DemoJourney} />
       <Route component={NotFound} />
     </Switch>
   );

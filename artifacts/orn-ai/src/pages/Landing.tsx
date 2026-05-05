@@ -2,8 +2,6 @@ import { Link } from "wouter";
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/button";
 import {
-  ArrowRight,
-  Presentation,
   UserPlus,
   LayoutDashboard,
   SearchX,
@@ -105,12 +103,6 @@ export default function Landing() {
               <Link href="/recruiter">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-7 text-base font-semibold gap-2">
                   <LayoutDashboard className="size-4" /> View Recruiter Dashboard
-                </Button>
-              </Link>
-              <Link href="/demo">
-                <Button size="lg" variant="ghost" className="w-full sm:w-auto h-12 px-7 text-base font-semibold gap-2 text-primary hover:text-primary hover:bg-primary/10">
-                  <Presentation className="size-4" /> View Investor Demo
-                  <ArrowRight className="size-4" />
                 </Button>
               </Link>
             </div>
@@ -317,12 +309,6 @@ export default function Landing() {
             <Link href="/recruiter">
               <Button size="lg" variant="outline" className="h-12 px-7 text-base font-semibold gap-2 bg-transparent text-background border-background/30 hover:bg-background/10 hover:text-background">
                 <LayoutDashboard className="size-4" /> View Recruiter Dashboard
-              </Button>
-            </Link>
-            <Link href="/demo">
-              <Button size="lg" variant="ghost" className="h-12 px-7 text-base font-semibold gap-2 text-background hover:bg-background/10 hover:text-background">
-                <Presentation className="size-4" /> View Investor Demo
-                <ArrowRight className="size-4" />
               </Button>
             </Link>
           </div>
