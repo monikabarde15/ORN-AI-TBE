@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import ornAiLogo from "@assets/logo_1777984164420.jpg";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
-import { Network, Search, UserPlus, Presentation, Settings2, BarChart3, Database, GraduationCap, LogIn, LogOut, User as UserIcon } from "lucide-react";
+import { Search, UserPlus, Presentation, Settings2, BarChart3, Database, GraduationCap, LogIn, LogOut, User as UserIcon } from "lucide-react";
 
 function UserMenu({ compact = false }: { compact?: boolean }) {
   const { user, logout } = useAuth();
@@ -86,11 +87,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
         {/* Sidebar */}
         <aside className="w-64 border-r bg-background flex flex-col fixed inset-y-0 z-10">
           <div className="h-16 flex items-center px-6 border-b">
-            <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-lg">
-              <div className="size-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground">
-                <Network className="size-5" />
-              </div>
-              <span>ORN-AI</span>
+            <Link href="/" className="flex items-center" aria-label="ORN-AI home">
+              <img
+                src={ornAiLogo}
+                alt="ORN-AI — Optimize, Revolutionize, Navigate"
+                className="h-9 w-auto object-contain"
+              />
             </Link>
           </div>
           
@@ -152,11 +154,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] flex flex-col font-sans">
       <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
         <div className="container mx-auto h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-lg">
-            <div className="size-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground">
-              <Network className="size-5" />
-            </div>
-            <span>ORN-AI</span>
+          <Link href="/" className="flex items-center" aria-label="ORN-AI home">
+            <img
+              src={ornAiLogo}
+              alt="ORN-AI — Optimize, Revolutionize, Navigate"
+              className="h-10 w-auto object-contain"
+            />
           </Link>
           
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
@@ -191,11 +194,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="col-span-2">
-              <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-lg mb-4">
-                <div className="size-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground">
-                  <Network className="size-5" />
-                </div>
-                <span>ORN-AI</span>
+              <Link href="/" className="flex items-center mb-4" aria-label="ORN-AI home">
+                <img
+                  src={ornAiLogo}
+                  alt="ORN-AI — Optimize, Revolutionize, Navigate"
+                  className="h-12 w-auto object-contain"
+                />
               </Link>
               <p className="text-sm text-muted-foreground max-w-sm">
                 Building Eastern & Central Europe's next-generation AI-enabled talent infrastructure.
