@@ -47,7 +47,9 @@ app.use(express.json({ limit: "256kb" }));
 app.use(express.urlencoded({ extended: true, limit: "256kb" }));
 app.use(cookieParser());
 app.use(attachUser);
-
+app.get("/", (_req, res) => {
+  res.json({ status: "Backend running" });
+});
 app.use("/api", router);
 
 // Optional: serve the built SPA from the same Express process. This lets a

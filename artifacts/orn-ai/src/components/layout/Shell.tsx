@@ -15,7 +15,9 @@ import { Search, UserPlus, Settings2, BarChart3, Database, GraduationCap, LogIn,
 
 function UserMenu({ compact = false }: { compact?: boolean }) {
   const { user, logout } = useAuth();
-  if (!user) {
+  // if (!user) {
+
+  if (!user || !user.fullName) {
     return (
       <Link href="/login">
         <Button variant={compact ? "ghost" : "outline"} size={compact ? "sm" : "default"} className="gap-2" data-testid="button-header-login">
