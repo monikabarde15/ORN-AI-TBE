@@ -162,12 +162,12 @@ You'll need two terminals plus `PORT` and `BASE_PATH` set in `.env`:
 PORT=8080 pnpm --filter @workspace/api-server run dev
 
 # Terminal 2 — web app
-PORT=5173 BASE_PATH=/ pnpm --filter @workspace/orn-ai run dev
+PORT=44 BASE_PATH=/ pnpm --filter @workspace/orn-ai run dev
 ```
 
 The Vite dev server makes relative `/api/*` calls. To make those reach the API server, either:
 
-- Run both services behind a single reverse proxy (Caddy/Nginx) routing `/api` to `:8080` and everything else to `:5173`, **or**
+- Run both services behind a single reverse proxy (Caddy/Nginx) routing `/api` to `:8080` and everything else to `:44`, **or**
 - Build the SPA once (`pnpm --filter @workspace/orn-ai run build`) and serve everything from the API process by setting `WEB_DIST_PATH=artifacts/orn-ai/dist/public` (see Render single-service pattern below).
 
 ### Useful root commands

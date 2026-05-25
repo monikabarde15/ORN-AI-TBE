@@ -148,7 +148,17 @@ export default function Register() {
     },
   });
 
-  const allCountries = regions ? [...regions.phase1, ...regions.phase2] : [];
+console.log("regions data =>", regions);
+
+const phase1 = Array.isArray((regions as any)?.phase1)
+  ? (regions as any).phase1
+  : [];
+
+const phase2 = Array.isArray((regions as any)?.phase2)
+  ? (regions as any).phase2
+  : [];
+
+const allCountries = [...phase1, ...phase2];
 
   // ----- Skills helpers -----
   const addSkill = () => {
