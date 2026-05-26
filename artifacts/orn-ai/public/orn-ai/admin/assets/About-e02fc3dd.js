@@ -1,0 +1,1 @@
+import{e,r as a,s as o,j as r,b as s,L as c}from"./index-ff12c0bc.js";const n=()=>{const t=e();return a.useEffect(()=>{t(o("About"))}),r("div",{children:[s(c,{to:"/",children:"Home"}),s("h1",{children:"About!"})]})};export{n as default};

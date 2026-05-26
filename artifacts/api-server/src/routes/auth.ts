@@ -72,8 +72,13 @@ router.post("/auth/register", async (req, res) => {
   // Self-service registration is always "candidate" — recruiter/admin
   // accounts must be provisioned via /api/admin/users by an existing admin.
   // We accept (and ignore) any requestedRole to keep clients backward-compatible.
-  const role: UserRole = "candidate";
-  void requestedRole;
+const allowedRoles: UserRole[] = ["candidate", "recruiter", "admin"];
+
+const role: UserRole =
+  requestedRole && allowedRoles.includes(requestedRole)
+    ? requestedRole
+    : "candidate";
+      void requestedRole;
 
   const existing = await findUserByEmail(email);
   if (existing) {
@@ -132,7 +137,14 @@ router.post("/auth/register", async (req, res) => {
     entityId: user.id,
     metadata: { role: user.role, hasCandidate: !!candidateId },
   });
-  res.status(201).json({ user: publicUser(user) });
+  console.log("ROLE =>", role);
+console.log("USER =>", user);
+  res.status(201).json({
+    user: {
+      ...publicUser(user),
+      role,
+    },
+  });
 });
 
 router.post("/auth/login", async (req, res) => {

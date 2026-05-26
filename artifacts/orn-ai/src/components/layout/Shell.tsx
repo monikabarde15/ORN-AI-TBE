@@ -186,7 +186,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <footer className="border-t bg-background py-12 md:py-16">
+      <footer className="bg-[#17122A] text-white py-12 px-6 md:px-16 lg:px-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="col-span-2">
@@ -198,22 +198,48 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 />
               </Link>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Building Eastern & Central Europe's next-generation AI-enabled talent infrastructure.
+                An ISO-certified training partner committed to your skills, growth, and career success.
               </p>
             </div>
             <div>
+              <h3 className="font-semibold mb-4 text-sm">Quick Links</h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li><Link href="/recruiter" className="hover:text-foreground">Platform</Link></li>
+                <li><Link href="/admin" className="hover:text-foreground">About Us</Link></li>
+                <li><Link href="/admin" className="hover:text-foreground">Contact Us</Link></li>
+                <li><Link href="/admin" className="hover:text-foreground">Blog</Link></li>
+                <li><Link href="/login" className="hover:text-foreground">Login</Link></li>
+                <li><Link href="/register" className="hover:text-foreground">Signup</Link></li>
+                <li><Link href="/register" className="hover:text-foreground">Join Talent Pool</Link></li>
+              </ul>
+            </div>
+            {/* <div>
               <h3 className="font-semibold mb-4 text-sm">Platform</h3>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 <li><Link href="/recruiter" className="hover:text-foreground">Recruiter Access</Link></li>
                 <li><Link href="/admin" className="hover:text-foreground">Admin Pipeline</Link></li>
               </ul>
+            </div> */}
+            <div>
+              <h3 className="font-semibold mb-4 text-sm">Resources</h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li><Link href="/register" className="hover:text-foreground">Cyber Security</Link></li>
+                <li><span className="cursor-not-allowed opacity-50">Data Science & AI</span></li>
+                <li><span className="cursor-not-allowed opacity-50">Advanced Programs</span></li>
+                <li><span className="cursor-not-allowed opacity-50">Business Analytics</span></li>
+                <li><span className="cursor-not-allowed opacity-50">Technology Programs</span></li>
+                <li><span className="cursor-not-allowed opacity-50">Telecommunication</span></li>
+                <li><span className="cursor-not-allowed opacity-50">Science Programs</span></li>
+              </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4 text-sm">Talent</h3>
+              <h3 className="font-semibold mb-4 text-sm">Help</h3>
               <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><Link href="/register" className="hover:text-foreground">Join Network</Link></li>
-                <li><span className="cursor-not-allowed opacity-50">Evaluation Criteria</span></li>
-                <li><span className="cursor-not-allowed opacity-50">Upskilling Partners</span></li>
+                <li><Link href="/register" className="hover:text-foreground">Privacy Policy</Link></li>
+                <li><span className="cursor-not-allowed opacity-50">Terms and Condition</span></li>
+                <li><span className="cursor-not-allowed opacity-50">Support</span></li>
+                <li><span className="cursor-not-allowed opacity-50">Contact Us</span></li>
+                <li><span className="cursor-not-allowed opacity-50">Refund Policy</span></li>
               </ul>
             </div>
           </div>

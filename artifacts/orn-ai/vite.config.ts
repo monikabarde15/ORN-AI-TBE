@@ -1,8 +1,10 @@
 import 'dotenv/config';
+import fs from "fs";
+import path from "path";
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 const rawPort = process.env.PORT;
@@ -30,23 +32,45 @@ if (!basePath) {
 export default defineConfig({
   base: basePath,
   plugins: [
-    react(),
-    tailwindcss(),
-    runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer({
-              root: path.resolve(import.meta.dirname, ".."),
-            }),
-          ),
-          await import("@replit/vite-plugin-dev-banner").then((m) =>
-            m.devBanner(),
-          ),
-        ]
-      : []),
-  ],
+  react(),
+  tailwindcss(),
+
+  {
+    name: "orn-ai-fallback",
+
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+
+        if (
+          req.url?.startsWith("/orn-ai") &&
+          !req.url.includes(".js") &&
+          !req.url.includes(".css")
+        ) {
+
+          // const fs = require("fs");
+
+          const filePath = path.resolve(
+            import.meta.dirname,
+            "public",
+            "orn-ai",
+            "index.html"
+          );
+
+          const html = fs.readFileSync(filePath, "utf-8");
+
+          res.setHeader("Content-Type", "text/html");
+          res.end(html);
+
+          return;
+        }
+
+        next();
+      });
+    },
+  },
+
+  runtimeErrorOverlay(),
+],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),

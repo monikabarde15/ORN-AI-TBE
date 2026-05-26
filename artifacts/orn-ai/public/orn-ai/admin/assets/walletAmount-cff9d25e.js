@@ -1,0 +1,1 @@
+const t=e=>{const A=Number(e);return Number.isFinite(A)?Number.isInteger(A)?A<100?"Minimum amount is ₹100.":A>5e4?"Maximum amount is ₹50000.":null:"Amount must be a whole number.":"Please enter a valid amount."};export{t as v};
