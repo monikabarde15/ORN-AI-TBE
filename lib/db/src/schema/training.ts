@@ -52,3 +52,134 @@ export type TrainingAssignmentRow =
   typeof trainingAssignmentsTable.$inferSelect;
 export type InsertTrainingAssignmentRow =
   typeof trainingAssignmentsTable.$inferInsert;
+export const coursesTable = pgTable("courses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+
+  title: text("title").notNull(),
+
+  subtitle: text("subtitle"),
+
+  description: text("description").notNull(),
+
+  category: text("category"),
+
+  difficulty: text("difficulty"),
+
+  duration: text("duration"),
+
+  instructor: text("instructor"),
+
+  subscriptionName: text("subscription_name"),
+
+  price: text("price"),
+
+  thumbnail: text("thumbnail"),
+
+  promotionalVideo: text("promotional_video"),
+
+  ebook: text("ebook"),
+
+  status: text("status").notNull().default("Draft"),
+
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
+
+  updatedAt: timestamp("updated_at", {
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
+});
+export const sectionsTable = pgTable("sections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+
+  courseId: uuid("course_id").notNull(),
+
+  sectionName: text("section_name").notNull(),
+
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
+});
+export const subSectionsTable = pgTable("sub_sections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+
+  sectionId: uuid("section_id").notNull(),
+
+  title: text("title").notNull(),
+
+  description: text("description"),
+
+  timeDuration: text("time_duration"),
+
+  videoUrl: text("video_url"),
+
+  pdfUrl: text("pdf_url"),
+
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
+});
+export type CourseRow =
+  typeof coursesTable.$inferSelect;
+
+export type InsertCourseRow =
+  typeof coursesTable.$inferInsert;
+
+
+
+export type SectionRow =
+  typeof sectionsTable.$inferSelect;
+
+export type InsertSectionRow =
+  typeof sectionsTable.$inferInsert;
+
+
+
+export type SubSectionRow =
+  typeof subSectionsTable.$inferSelect;
+
+export type InsertSubSectionRow =
+  typeof subSectionsTable.$inferInsert;
+  /* =========================================================
+   MCQ TABLE
+========================================================= */
+
+export const mcqTable = pgTable("mcq_questions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+
+  courseId: uuid("course_id").notNull(),
+
+  subsectionId: uuid("subsection_id").notNull(),
+
+  question: text("question").notNull(),
+
+  options: jsonb("options").notNull(),
+
+  correctAnswer: integer("correct_answer").notNull(),
+
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
+})
+
+
+
+/* =========================================================
+   TYPES
+========================================================= */
+
+export type McqRow =
+  typeof mcqTable.$inferSelect
+
+export type InsertMcqRow =
+  typeof mcqTable.$inferInsert

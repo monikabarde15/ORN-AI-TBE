@@ -1,10 +1,16 @@
+import multer from "multer";
+
 import { Router, type IRouter } from "express";
 import { eq, desc, and, inArray } from "drizzle-orm";
 import {
   db,
+  coursesTable,
+  sectionsTable,
+  subSectionsTable,
   candidatesTable,
   trainingAssignmentsTable,
   activityTable,
+  mcqTable,
   type CandidateRow,
 } from "@workspace/db";
 import {
@@ -40,7 +46,9 @@ import {
 import { requireAuth, requireRole, requireCandidateAccess } from "../lib/auth";
 
 const router: IRouter = Router();
-
+const upload = multer({
+  dest: "uploads/",
+});
 // ----- Catalog -----
 router.get("/training/catalog", requireAuth, async (_req, res): Promise<void> => {
   res.json(
@@ -480,5 +488,843 @@ router.get("/training/dashboard", requireAuth, requireRole("recruiter", "admin")
     }),
   );
 });
+
+router.post(
+  "/course/createCourse",
+  upload.fields([
+    { name: "thumbnailImage", maxCount: 1 },
+    { name: "promotionalVideo", maxCount: 1 },
+  ]),
+  async (req, res): Promise<void> => {
+    try {
+      const body = req.body;
+
+      const thumbnail =
+        (req.files as any)?.thumbnailImage?.[0];
+
+      const promoVideo =
+        (req.files as any)?.promotionalVideo?.[0];
+
+      const [course] = await db
+        .insert(coursesTable)
+        .values({
+          title: body.courseName,
+          description: body.courseDescription,
+          category: body.category,
+          price: body.price,
+          status: "Draft",
+          thumbnail: thumbnail?.path || null,
+          promotionalVideo: promoVideo?.path || null,
+        })
+        .returning();
+
+      res.status(201).json({
+        success: true,
+        data: {
+          _id: course.id,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+
+      res.status(500).json({
+        success: false,
+        message: "Failed to create course",
+      });
+    }
+  }
+);
+router.post(
+  "/course/addSection",
+  async (req, res): Promise<void> => {
+    try {
+      const { sectionName, courseId } = req.body;
+
+      const [section] = await db
+        .insert(sectionsTable)
+        .values({
+          courseId,
+          sectionName,
+        })
+        .returning();
+
+      res.status(201).json({
+        success: true,
+        updatedCourse: {
+          courseContent: [
+            {
+              _id: section.id,
+            },
+          ],
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to add section",
+      });
+    }
+  }
+);
+router.post(
+  "/course/addSubSection",
+  upload.fields([
+    { name: "video", maxCount: 1 },
+    { name: "pdf", maxCount: 1 },
+  ]),
+  async (req, res): Promise<void> => {
+    try {
+      const body = req.body;
+
+      const video =
+        (req.files as any)?.video?.[0];
+
+      const pdf =
+        (req.files as any)?.pdf?.[0];
+
+      const [lesson] = await db
+        .insert(subSectionsTable)
+        .values({
+          sectionId: body.sectionId,
+          title: body.title,
+          description: body.description,
+          timeDuration: body.timeDuration,
+          videoUrl: video?.path || null,
+          pdfUrl: pdf?.path || null,
+        })
+        .returning();
+
+      res.status(201).json({
+        success: true,
+        data: {
+          subSection: [
+            {
+              _id: lesson.id,
+            },
+          ],
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to add lesson",
+      });
+    }
+  }
+);
+router.post(
+  "/course/publishCourse",
+  async (req, res): Promise<void> => {
+    try {
+      const { courseId } = req.body;
+
+      await db
+        .update(coursesTable)
+        .set({
+          status: "Published",
+        })
+        .where(eq(coursesTable.id, courseId));
+
+      res.json({
+        success: true,
+        message: "Course published",
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to publish course",
+      });
+    }
+  }
+);
+router.post(
+  "/mcq/create",
+  async (req, res): Promise<void> => {
+
+    try {
+
+      const {
+        question,
+        options,
+        correctAnswer,
+        courseId,
+        subsectionId,
+      } = req.body
+
+
+
+      if (!subsectionId) {
+
+        res.status(400).json({
+          success:false,
+          message:"subsectionId missing",
+        })
+
+        return
+      }
+
+
+
+      const [mcq] =
+        await db
+          .insert(mcqTable)
+          .values({
+            question,
+
+            options:
+              typeof options === "string"
+                ? JSON.parse(options)
+                : options,
+
+            correctAnswer,
+
+            courseId,
+
+            subsectionId,
+          })
+          .returning()
+
+
+
+      res.status(201).json({
+        success:true,
+        data:mcq,
+      })
+
+    } catch (error:any) {
+
+      console.log(
+        "MCQ CREATE ERROR =>",
+        error
+      )
+
+      res.status(500).json({
+        success:false,
+        message:error?.message,
+      })
+    }
+  }
+);
+
+// ======================================================
+// GET ALL COURSES
+// ======================================================
+
+router.get(
+  "/courses",
+  async (_req, res): Promise<void> => {
+    try {
+
+      const courses =
+        await db
+          .select()
+          .from(coursesTable)
+          .orderBy(desc(coursesTable.createdAt));
+
+      const finalCourses =
+        await Promise.all(
+          courses.map(async (course) => {
+
+            // =========================
+            // SECTIONS
+            // =========================
+
+            const sections =
+              await db
+                .select()
+                .from(sectionsTable)
+                .where(
+                  eq(
+                    sectionsTable.courseId,
+                    course.id
+                  )
+                );
+
+            const sectionIds =
+              sections.map((s) => s.id);
+
+            // =========================
+            // LESSONS
+            // =========================
+
+            let lessons: any[] = [];
+
+            if (sectionIds.length > 0) {
+
+              lessons =
+                await db
+                  .select()
+                  .from(subSectionsTable)
+                  .where(
+                    inArray(
+                      subSectionsTable.sectionId,
+                      sectionIds
+                    )
+                  );
+            }
+
+            // =========================
+            // QUIZ COUNT
+            // =========================
+
+            let quizzes: any[] = [];
+
+            if (lessons.length > 0) {
+
+              quizzes =
+                await db
+                  .select()
+                  .from(mcqTable)
+                  .where(
+                    eq(
+                      mcqTable.courseId,
+                      course.id
+                    )
+                  );
+            }
+
+            // =========================
+            // VIDEO COUNT
+            // =========================
+
+            const videoCount =
+              lessons.filter(
+                (l) => l.videoUrl
+              ).length;
+
+            // =========================
+            // FINAL
+            // =========================
+
+            return {
+              _id: course.id,
+
+              title: course.title,
+
+              description:
+                course.description,
+
+              thumbnail:
+                course.thumbnail,
+
+              promotionalVideo:
+                course.promotionalVideo,
+
+              category:
+                course.category,
+
+              price: course.price,
+
+              status: course.status,
+
+              instructor:
+                "Admin",
+
+              studentsCount: 0,
+
+              lessonCount:
+                lessons.length,
+
+              quizCount:
+                quizzes.length,
+
+              videoCount,
+
+              createdAt:
+                course.createdAt,
+            };
+          })
+        );
+
+      res.json(finalCourses);
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Failed to fetch courses",
+      });
+    }
+  }
+);
+
+// ======================================================
+// DELETE COURSE
+// ======================================================
+
+router.delete(
+  "/courses/:id",
+  async (req, res): Promise<void> => {
+
+    try {
+
+      const { id } = req.params;
+
+      // =========================
+      // FIND SECTIONS
+      // =========================
+
+      const sections =
+        await db
+          .select()
+          .from(sectionsTable)
+          .where(
+            eq(
+              sectionsTable.courseId,
+              id
+            )
+          );
+
+      const sectionIds =
+        sections.map((s) => s.id);
+
+      // =========================
+      // DELETE LESSONS
+      // =========================
+
+      if (sectionIds.length > 0) {
+
+        await db
+          .delete(subSectionsTable)
+          .where(
+            inArray(
+              subSectionsTable.sectionId,
+              sectionIds
+            )
+          );
+      }
+
+      // =========================
+      // DELETE QUIZ
+      // =========================
+
+      await db
+        .delete(mcqTable)
+        .where(
+          eq(
+            mcqTable.courseId,
+            id
+          )
+        );
+
+      // =========================
+      // DELETE SECTIONS
+      // =========================
+
+      await db
+        .delete(sectionsTable)
+        .where(
+          eq(
+            sectionsTable.courseId,
+            id
+          )
+        );
+
+      // =========================
+      // DELETE COURSE
+      // =========================
+
+      await db
+        .delete(coursesTable)
+        .where(
+          eq(
+            coursesTable.id,
+            id
+          )
+        );
+
+      res.json({
+        success: true,
+        message:
+          "Course deleted successfully",
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Failed to delete course",
+      });
+    }
+  }
+);
+
+// ======================================================
+// GET SINGLE COURSE
+// ======================================================
+
+router.get(
+  "/courses/:id",
+  async (req, res): Promise<void> => {
+
+    try {
+
+      const { id } = req.params;
+
+      // ==================================================
+      // COURSE
+      // ==================================================
+
+      const [course] =
+        await db
+          .select()
+          .from(coursesTable)
+          .where(
+            eq(
+              coursesTable.id,
+              id
+            )
+          );
+
+      if (!course) {
+
+        res.status(404).json({
+          success: false,
+          message:
+            "Course not found",
+        });
+
+        return;
+      }
+
+      // ==================================================
+      // SECTIONS
+      // ==================================================
+
+      const sections =
+        await db
+          .select()
+          .from(sectionsTable)
+          .where(
+            eq(
+              sectionsTable.courseId,
+              id
+            )
+          );
+
+      // ==================================================
+      // FINAL SECTIONS
+      // ==================================================
+
+      const finalSections =
+        await Promise.all(
+
+          sections.map(
+            async (section) => {
+
+              // ============================================
+              // LESSONS
+              // ============================================
+
+              const lessons =
+                await db
+                  .select()
+                  .from(subSectionsTable)
+                  .where(
+                    eq(
+                      subSectionsTable.sectionId,
+                      section.id
+                    )
+                  );
+
+              // ============================================
+              // FINAL LESSONS
+              // ============================================
+
+              const finalLessons =
+  await Promise.all(
+    lessons.map(async (lesson) => {
+
+      const quizzes =
+        await db
+          .select()
+          .from(mcqTable)
+          .where(
+            eq(
+              mcqTable.subsectionId,
+              lesson.id
+            )
+          )
+
+      return {
+
+        id:
+          lesson.id,
+
+        title:
+          lesson.title,
+
+        description:
+          lesson.description,
+
+        timeDuration:
+          lesson.timeDuration,
+
+        videoUrl:
+          lesson.videoUrl,
+
+        pdfUrl:
+          lesson.pdfUrl,
+
+        quizzes,
+      }
+    })
+  )
+
+              return {
+
+                id:
+                  section.id,
+
+                sectionName:
+                  section.sectionName,
+
+                lessons:
+                  finalLessons,
+              };
+            }
+          )
+        );
+
+      // ==================================================
+      // COUNTS
+      // ==================================================
+
+      const totalModules =
+        finalSections.length;
+
+      const totalLessons =
+        finalSections.reduce(
+          (acc, section) =>
+            acc +
+            section.lessons.length,
+          0
+        );
+
+      const totalQuizzes =
+        finalSections.reduce(
+          (acc, section) =>
+            acc +
+            section.lessons.reduce(
+              (quizAcc, lesson) =>
+                quizAcc +
+                lesson.quizzes.length,
+              0
+            ),
+          0
+        );
+
+      const totalVideos =
+        finalSections.reduce(
+          (acc, section) =>
+            acc +
+            section.lessons.filter(
+              (lesson) =>
+                lesson.videoUrl
+            ).length,
+          0
+        );
+
+      const totalPdfs =
+        finalSections.reduce(
+          (acc, section) =>
+            acc +
+            section.lessons.filter(
+              (lesson) =>
+                lesson.pdfUrl
+            ).length,
+          0
+        );
+
+      // ==================================================
+      // RESPONSE
+      // ==================================================
+
+      res.json({
+
+        success: true,
+
+        data: {
+
+          // ==============================================
+          // COURSE
+          // ==============================================
+
+          id:
+            course.id,
+
+          title:
+            course.title,
+
+          subtitle:
+            course.subtitle,
+
+          description:
+            course.description,
+
+          category:
+            course.category,
+
+          difficulty:
+            course.difficulty,
+
+          duration:
+            course.duration,
+
+          instructor:
+            course.instructor,
+
+          subscriptionName:
+            course.subscriptionName,
+
+          price:
+            course.price,
+
+          thumbnail:
+            course.thumbnail,
+
+          promotionalVideo:
+            course.promotionalVideo,
+
+          ebook:
+            course.ebook,
+
+          status:
+            course.status,
+
+          createdAt:
+            course.createdAt,
+
+          updatedAt:
+            course.updatedAt,
+
+          // ==============================================
+          // COUNTS
+          // ==============================================
+
+          totalModules,
+
+          totalLessons,
+
+          totalQuizzes,
+
+          totalVideos,
+
+          totalPdfs,
+
+          // ==============================================
+          // SECTIONS
+          // ==============================================
+
+          sections:
+            finalSections,
+        },
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Failed to fetch course",
+      });
+    }
+  }
+);
+
+
+
+// ======================================================
+// UPDATE COURSE
+// ======================================================
+
+router.put(
+  "/courses/:id",
+
+  upload.fields([
+    {
+      name: "thumbnailImage",
+      maxCount: 1,
+    },
+    {
+      name: "promotionalVideo",
+      maxCount: 1,
+    },
+  ]),
+
+  async (req, res): Promise<void> => {
+
+    try {
+
+      const { id } = req.params;
+
+      const body = req.body;
+
+      const thumbnail =
+        (req.files as any)
+          ?.thumbnailImage?.[0];
+
+      const promoVideo =
+        (req.files as any)
+          ?.promotionalVideo?.[0];
+
+      await db
+        .update(coursesTable)
+        .set({
+          title: body.title,
+          description:
+            body.description,
+
+          category:
+            body.category,
+
+          price: body.price,
+
+          ...(thumbnail && {
+            thumbnail:
+              thumbnail.path,
+          }),
+
+          ...(promoVideo && {
+            promotionalVideo:
+              promoVideo.path,
+          }),
+        })
+        .where(
+          eq(
+            coursesTable.id,
+            id
+          )
+        );
+
+     return res.status(200).json({
+  success: true,
+  message: "Course updated successfully",
+  data: updatedCourse
+});
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Failed to update course",
+      });
+    }
+  }
+);
+
 
 export default router;

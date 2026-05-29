@@ -90,7 +90,9 @@ app.get("/", (_req, res) => {
     message: "Backend running",
   });
 });
-
+router.get("/test", (_req, res) => {
+  res.json({ success: true });
+});
 /**
  * API routes
  */

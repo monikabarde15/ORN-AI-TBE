@@ -13,6 +13,11 @@ import CandidateUpload from "@/pages/CandidateUpload";
 import CandidateEvaluation from "@/pages/CandidateEvaluation";
 import RecruiterDashboard from "@/pages/RecruiterDashboard";
 import RecruiterAddCandidate from "@/pages/RecruiterAddCandidate";
+import CoursesAddCandidate from "@/pages/CreateCourseForm";
+import EditCourseForm from "@/pages/EditCourseForm";
+
+import CourseManagementPage from "@/pages/CourseManagementPage";
+
 import AdminDashboard from "@/pages/AdminDashboard";
 import TrainingDashboard from "@/pages/TrainingDashboard";
 import CandidateTraining from "@/pages/CandidateTraining";
@@ -61,6 +66,21 @@ function Router() {
       <Route path="/recruiter/add">
         <ProtectedRoute roles={["recruiter", "admin"]}>
           <RecruiterAddCandidate />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/recruiter/course/add">
+        <ProtectedRoute roles={["recruiter", "admin"]}>
+          <CoursesAddCandidate />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/recruiter/course/edit/:id">
+        <ProtectedRoute roles={["recruiter", "admin"]}>
+          <EditCourseForm />
+        </ProtectedRoute>
+      </Route>
+       <Route path="/recruiter/courses">
+        <ProtectedRoute roles={["recruiter", "admin"]}>
+          <CourseManagementPage />
         </ProtectedRoute>
       </Route>
       <Route path="/recruiter">

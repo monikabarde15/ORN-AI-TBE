@@ -110,6 +110,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <UserPlus className="size-4" />
               Add Candidate
             </Link>
+            <Link href="/recruiter/courses" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/courses" || location === "/recruiter/course/add" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
+              <UserPlus className="size-4" />
+               Courses
+            </Link>
 
             <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Career Transformation
