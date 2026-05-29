@@ -129,7 +129,7 @@ export default function CourseManagementPage() {
 
   return (
     <Shell>
-      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto w-full">
 
         {/* ================================================= */}
         {/* HEADER */}
@@ -304,9 +304,9 @@ export default function CourseManagementPage() {
                       Course
                     </TableHead>
 
-                    <TableHead>
+                    {/* <TableHead>
                       Students
-                    </TableHead>
+                    </TableHead> */}
 
                     <TableHead>
                       Lessons
@@ -320,9 +320,9 @@ export default function CourseManagementPage() {
                       Videos
                     </TableHead>
 
-                    <TableHead>
+                    {/* <TableHead>
                       Price
-                    </TableHead>
+                    </TableHead> */}
 
                     <TableHead>
                       Status
@@ -365,22 +365,22 @@ export default function CourseManagementPage() {
                                 {course.title}
                               </h3>
 
-                              <p className="text-xs text-muted-foreground mt-1">
+                              {/* <p className="text-xs text-muted-foreground mt-1">
                                 Instructor: {course.instructor}
-                              </p>
+                              </p> */}
                             </div>
                           </div>
                         </TableCell>
 
                         {/* STUDENTS */}
 
-                        <TableCell>
+                        {/* <TableCell>
                           <div className="flex items-center gap-2 font-medium">
                             <Users className="size-4 text-muted-foreground" />
 
                             {course.studentsCount}
                           </div>
-                        </TableCell>
+                        </TableCell> */}
 
                         {/* LESSONS */}
 
@@ -408,11 +408,11 @@ export default function CourseManagementPage() {
 
                         {/* PRICE */}
 
-                        <TableCell>
+                        {/* <TableCell>
                           <span className="font-bold">
                             ${course.price}
                           </span>
-                        </TableCell>
+                        </TableCell> */}
 
                         {/* STATUS */}
 
@@ -444,7 +444,7 @@ export default function CourseManagementPage() {
                               variant="outline"
                               onClick={() =>
                                 navigate(
-                                  `/courses/${course._id}`
+                                  `/course/details/${course._id}`
                                 )
                               }
                             >

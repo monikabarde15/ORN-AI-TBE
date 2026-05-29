@@ -860,13 +860,10 @@ if (!lessonForm.documentFile) {
         lessonForm.duration
       )
 
-
-
-   if (
+      if (
   lessonForm.documentFile &&
   typeof lessonForm.documentFile !== "string"
 ) {
-
   form.append(
     "pdf",
     lessonForm.documentFile
@@ -875,16 +872,7 @@ if (!lessonForm.documentFile) {
 
 
 
-      if (
-        lessonForm.documentFile
-      ) {
-
-        form.append(
-          "pdf",
-          lessonForm.documentFile
-        )
-      }
-
+  
 
 
      const res =
@@ -1275,7 +1263,7 @@ const handleAddQuiz =
 
       <Toaster position="top-right" />
 
-      <div className=" max-w-[1400px] mx-auto p-4 md:p-8">
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto w-full">
 
         {/* =========================================================
            STEP 1
@@ -2411,40 +2399,40 @@ md:text-[24px]
 
                            {lesson.isEditing ? (
 
-  <input
-    value={lesson.title}
+                            <input
+                              value={lesson.title}
 
-    onChange={(e)=>
-      setModules((prev)=>
-        prev.map((m)=>
-          m.id === module.id
-            ? {
-                ...m,
+                              onChange={(e)=>
+                                setModules((prev)=>
+                                  prev.map((m)=>
+                                    m.id === module.id
+                                      ? {
+                                          ...m,
 
-                lessons:
-                  m.lessons.map((l)=>
-                    l.id === lesson.id
-                      ? {
-                          ...l,
-                          title:e.target.value,
-                        }
-                      : l
-                  ),
-              }
-            : m
-        )
-      )
-    }
+                                          lessons:
+                                            m.lessons.map((l)=>
+                                              l.id === lesson.id
+                                                ? {
+                                                    ...l,
+                                                    title:e.target.value,
+                                                  }
+                                                : l
+                                            ),
+                                        }
+                                      : m
+                                  )
+                                )
+                              }
 
-    className="premium-input h-[42px] w-[260px]"
-  />
+                              className="premium-input h-[42px] w-[260px]"
+                            />
 
-) : (
+                          ) : (
 
-  <span>
-    {lesson.title}
-  </span>
-)}
+                            <span>
+                              {lesson.title}
+                            </span>
+                          )}
 
                           </div>
 
@@ -2452,60 +2440,60 @@ md:text-[24px]
 
                           <div className="flex gap-4 mt-4 flex-wrap">
 
-  {lesson.videoFile && (
+                            {lesson.videoFile && (
 
-    <video
-      controls
-      className="
-        w-[240px]
-        h-[140px]
-        rounded-[14px]
-        border
-        object-cover
-      "
-    >
-      <source
-        src={
-          typeof lesson.videoFile === "string"
-            ? `http://localhost:8080/${lesson.videoFile.replaceAll("\\","/")}`
-            : URL.createObjectURL(
-                lesson.videoFile
-              )
-        }
-        type="video/mp4"
-      />
-    </video>
-  )}
+                              <video
+                                controls
+                                className="
+                                  w-[240px]
+                                  h-[140px]
+                                  rounded-[14px]
+                                  border
+                                  object-cover
+                                "
+                              >
+                                <source
+                                  src={
+                                    typeof lesson.videoFile === "string"
+                                      ? `http://localhost:8080/${lesson.videoFile.replaceAll("\\","/")}`
+                                      : URL.createObjectURL(
+                                          lesson.videoFile
+                                        )
+                                  }
+                                  type="video/mp4"
+                                />
+                              </video>
+                            )}
 
-  {lesson.documentFile && (
+                            {lesson.documentFile && (
 
-    <a
-      href={
-        typeof lesson.documentFile === "string"
-          ? `http://localhost:8080/${lesson.documentFile.replaceAll("\\","/")}`
-          : URL.createObjectURL(
-              lesson.documentFile
-            )
-      }
-      target="_blank"
-      className="
-        px-5
-        h-[48px]
-        rounded-[12px]
-        border
-        border-red-200
-        bg-red-50
-        text-red-600
-        font-semibold
-        flex
-        items-center
-      "
-    >
-      View PDF
-    </a>
-  )}
+                              <a
+                                href={
+                                  typeof lesson.documentFile === "string"
+                                    ? `http://localhost:8080/${lesson.documentFile.replaceAll("\\","/")}`
+                                    : URL.createObjectURL(
+                                        lesson.documentFile
+                                      )
+                                }
+                                target="_blank"
+                                className="
+                                  px-5
+                                  h-[48px]
+                                  rounded-[12px]
+                                  border
+                                  border-red-200
+                                  bg-red-50
+                                  text-red-600
+                                  font-semibold
+                                  flex
+                                  items-center
+                                "
+                              >
+                                View PDF
+                              </a>
+                            )}
 
-</div>
+                          </div>
 
                         </div>
 

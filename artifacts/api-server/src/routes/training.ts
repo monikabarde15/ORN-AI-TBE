@@ -612,6 +612,7 @@ router.post(
     }
   }
 );
+
 router.post(
   "/course/publishCourse",
   async (req, res): Promise<void> => {
@@ -1248,9 +1249,9 @@ router.get(
 // UPDATE COURSE
 // ======================================================
 
+
 router.put(
   "/courses/:id",
-
   upload.fields([
     {
       name: "thumbnailImage",
@@ -1261,34 +1262,57 @@ router.put(
       maxCount: 1,
     },
   ]),
-
   async (req, res): Promise<void> => {
-
     try {
-
       const { id } = req.params;
+
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          message: "Course ID is required",
+        });
+        return;
+      }
 
       const body = req.body;
 
       const thumbnail =
-        (req.files as any)
-          ?.thumbnailImage?.[0];
+        (req.files as any)?.thumbnailImage?.[0];
 
       const promoVideo =
-        (req.files as any)
-          ?.promotionalVideo?.[0];
+        (req.files as any)?.promotionalVideo?.[0];
+
+      const [existingCourse] = await db
+        .select()
+        .from(coursesTable)
+        .where(eq(coursesTable.id, id));
+
+      if (!existingCourse) {
+        res.status(404).json({
+          success: false,
+          message: "Course not found",
+        });
+        return;
+      }
 
       await db
         .update(coursesTable)
         .set({
-          title: body.title,
+          title:
+            body.title ??
+            existingCourse.title,
+
           description:
-            body.description,
+            body.description ??
+            existingCourse.description,
 
           category:
-            body.category,
+            body.category ??
+            existingCourse.category,
 
-          price: body.price,
+          price:
+            body.price ??
+            existingCourse.price,
 
           ...(thumbnail && {
             thumbnail:
@@ -1299,6 +1323,8 @@ router.put(
             promotionalVideo:
               promoVideo.path,
           }),
+
+          updatedAt: new Date(),
         })
         .where(
           eq(
@@ -1307,24 +1333,42 @@ router.put(
           )
         );
 
-     return res.status(200).json({
-  success: true,
-  message: "Course updated successfully",
-  data: updatedCourse
-});
+      const [updatedCourse] =
+        await db
+          .select()
+          .from(coursesTable)
+          .where(
+            eq(
+              coursesTable.id,
+              id
+            )
+          );
+
+      res.status(200).json({
+        success: true,
+        message:
+          "Course updated successfully",
+        data: updatedCourse,
+      });
 
     } catch (error) {
 
-      console.log(error);
+      console.error(
+        "UPDATE COURSE ERROR =>",
+        error
+      );
 
       res.status(500).json({
         success: false,
         message:
           "Failed to update course",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown error",
       });
     }
   }
 );
-
 
 export default router;

@@ -76,6 +76,8 @@ function UserMenu({ compact = false }: { compact?: boolean }) {
 }
 
 export function Shell({ children }: { children: React.ReactNode }) {
+    const { user } = useAuth(); // <-- ADD THIS
+
   const [location] = useLocation();
   const isDashboard =
     location.startsWith("/recruiter") ||
@@ -128,8 +130,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </Link>
 
             <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Platform
+              Platform 1
             </div>
+            
             <Link href="/admin" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/admin" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <BarChart3 className="size-4" />
               Overview
@@ -170,6 +173,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
           
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">Platform</Link>
+            {user?.role === "candidate" && (
+            <Link
+              href="/courses"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              My Courses
+            </Link>
+          )}
             <Link href="/recruiter" className="text-muted-foreground hover:text-foreground transition-colors">Recruiters</Link>
             <Link href="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Admin</Link>
           </nav>
@@ -208,7 +219,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <div>
               <h3 className="font-semibold mb-4 text-sm">Quick Links</h3>
               <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><Link href="/recruiter" className="hover:text-foreground">Platform</Link></li>
+                <li><Link href="/recruiter" className="hover:text-foreground">Platform 2</Link></li>
                 <li><Link href="/admin" className="hover:text-foreground">About Us</Link></li>
                 <li><Link href="/admin" className="hover:text-foreground">Contact Us</Link></li>
                 <li><Link href="/admin" className="hover:text-foreground">Blog</Link></li>

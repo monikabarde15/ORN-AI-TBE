@@ -1018,7 +1018,7 @@ const handleAddQuiz =
 
       <Toaster position="top-right" />
 
-      <div className=" max-w-[1400px] mx-auto p-4 md:p-8">
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto w-full">
 
         {/* =========================================================
            STEP 1

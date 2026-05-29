@@ -15,8 +15,11 @@ import RecruiterDashboard from "@/pages/RecruiterDashboard";
 import RecruiterAddCandidate from "@/pages/RecruiterAddCandidate";
 import CoursesAddCandidate from "@/pages/CreateCourseForm";
 import EditCourseForm from "@/pages/EditCourseForm";
+import VideoPlayer from "@/pages/VideoPlayer";
 
 import CourseManagementPage from "@/pages/CourseManagementPage";
+import MyFeed from "@/pages/MyFeed";
+
 
 import AdminDashboard from "@/pages/AdminDashboard";
 import TrainingDashboard from "@/pages/TrainingDashboard";
@@ -63,6 +66,7 @@ function Router() {
       <Route path="/candidate/:id/upload" component={CandidateUpload} />
       <Route path="/candidate/:id/evaluation" component={CandidateEvaluation} />
       <Route path="/candidate/:id/training" component={CandidateTraining} />
+      <Route path="/courses" component={MyFeed} />
       <Route path="/recruiter/add">
         <ProtectedRoute roles={["recruiter", "admin"]}>
           <RecruiterAddCandidate />
@@ -73,6 +77,12 @@ function Router() {
           <CoursesAddCandidate />
         </ProtectedRoute>
       </Route>
+      {/* <Route path="/recruiter/course/details/:id">
+        <ProtectedRoute roles={["recruiter", "admin"]}>
+          <VideoPlayer />
+        </ProtectedRoute>
+      </Route> */}
+      <Route path="/course/details/:id" component={VideoPlayer} />
       <Route path="/recruiter/course/edit/:id">
         <ProtectedRoute roles={["recruiter", "admin"]}>
           <EditCourseForm />
