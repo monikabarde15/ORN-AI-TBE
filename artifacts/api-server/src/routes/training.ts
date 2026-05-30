@@ -1,5 +1,4 @@
-import multer from "multer";
-
+import { upload } from "../lib/upload";
 import { Router, type IRouter } from "express";
 import { eq, desc, and, inArray } from "drizzle-orm";
 import {
@@ -46,9 +45,7 @@ import {
 import { requireAuth, requireRole, requireCandidateAccess } from "../lib/auth";
 
 const router: IRouter = Router();
-const upload = multer({
-  dest: "uploads/",
-});
+
 // ----- Catalog -----
 router.get("/training/catalog", requireAuth, async (_req, res): Promise<void> => {
   res.json(
@@ -153,7 +150,6 @@ router.get("/training/assignments", requireAuth, async (req, res): Promise<void>
 
   res.json(ListTrainingAssignmentsResponse.parse(out));
 });
-
 // ----- Create assignment -----
 router.post("/training/assignments", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
   const body = CreateTrainingAssignmentBody.safeParse(req.body);
@@ -513,8 +509,11 @@ router.post(
           category: body.category,
           price: body.price,
           status: "Draft",
-          thumbnail: thumbnail?.path || null,
-          promotionalVideo: promoVideo?.path || null,
+          thumbnail:
+            (thumbnail as any)?.location || null,
+
+          promotionalVideo:
+            (promoVideo as any)?.location || null,
         })
         .returning();
 
@@ -589,8 +588,11 @@ router.post(
           title: body.title,
           description: body.description,
           timeDuration: body.timeDuration,
-          videoUrl: video?.path || null,
-          pdfUrl: pdf?.path || null,
+          videoUrl:
+            (video as any)?.location || null,
+
+          pdfUrl:
+            (pdf as any)?.location || null,
         })
         .returning();
 
@@ -1316,12 +1318,12 @@ router.put(
 
           ...(thumbnail && {
             thumbnail:
-              thumbnail.path,
+              (thumbnail as any).location,
           }),
 
           ...(promoVideo && {
             promotionalVideo:
-              promoVideo.path,
+              (promoVideo as any).location,
           }),
 
           updatedAt: new Date(),

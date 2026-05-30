@@ -137,13 +137,7 @@ const fetchCourse = async () => {
     );
   }
 };
-const BASE_URL = "http://localhost:8080";
 
-const getFileUrl = (filePath?: string | null) => {
-  if (!filePath) return "";
-
-  return `${BASE_URL}/${filePath.replace(/\\/g, "/")}`;
-};
 
 console.log("course", course);
 console.log("sections", sections);
@@ -247,9 +241,7 @@ console.log("currentLecture", currentLecture);
                    {currentLecture?.videoUrl ? (
                       <video
                         ref={videoRef}
-                        src={getFileUrl(
-                          currentLecture.videoUrl
-                        )}
+                        src={currentLecture.videoUrl}
                         controls
                         onEnded={playNextLecture}
                         className="w-full h-full"
@@ -257,26 +249,20 @@ console.log("currentLecture", currentLecture);
                     ) : currentLecture?.pdfUrl ? (
                       <iframe
                         src={`https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
-                          getFileUrl(
-                            currentLecture.pdfUrl
-                          )
+                          currentLecture.pdfUrl
                         )}`}
                         className="w-full h-full min-h-[750px] bg-white"
                         title="PDF"
                       />
                     ) : course?.promotionalVideo ? (
                       <video
-                        src={getFileUrl(
-                          course.promotionalVideo
-                        )}
+                        src={course.promotionalVideo}
                         controls
                         className="w-full h-full"
                       />
                     ) : (
                       <img
-                        src={getFileUrl(
-                          course?.thumbnail
-                        )}
+                        src={course?.thumbnail}
                         alt={course?.title}
                         className="w-full h-full object-cover"
                       />
@@ -403,6 +389,109 @@ console.log("currentLecture", currentLecture);
 
                     </div>
                     </div>
+
+                    <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+  <h2 className="text-3xl font-bold mb-8">
+    Complete Course Data
+  </h2>
+
+  <div className="space-y-8">
+
+    {course?.sections?.map((section: any) => (
+      <div
+        key={section.id}
+        className="border rounded-2xl p-6"
+      >
+        <h3 className="text-2xl font-bold mb-4">
+          📚 {section.sectionName}
+        </h3>
+
+        {section.lessons?.map((lesson: any) => (
+          <div
+            key={lesson.id}
+            className="border rounded-xl p-5 mb-5 bg-gray-50"
+          >
+            <h4 className="text-lg font-bold">
+              {lesson.title}
+            </h4>
+
+            <p className="mt-2 text-gray-600">
+              {lesson.description}
+            </p>
+
+            <div className="mt-2">
+              Duration: {lesson.timeDuration}
+            </div>
+
+            {lesson.videoUrl && (
+              <video
+                controls
+                src={lesson.videoUrl}
+                className="w-full rounded-xl mt-4"
+              />
+            )}
+
+            {lesson.pdfUrl && (
+              <a
+                href={lesson.pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg"
+              >
+                Download PDF
+              </a>
+            )}
+
+            {lesson.quizzes?.length > 0 && (
+              <div className="mt-6">
+                <h5 className="font-bold text-xl mb-4">
+                  Quiz Questions
+                </h5>
+
+                {lesson.quizzes.map(
+                  (quiz: any, index: number) => (
+                    <div
+                      key={quiz.id}
+                      className="border rounded-xl p-4 mb-4 bg-white"
+                    >
+                      <p className="font-semibold">
+                        Q{index + 1}. {quiz.question}
+                      </p>
+
+                      <div className="mt-3">
+                        {quiz.options?.map(
+                          (
+                            option: string,
+                            idx: number
+                          ) => (
+                            <div key={idx}>
+                              • {option}
+                            </div>
+                          )
+                        )}
+                      </div>
+
+                      <div className="mt-3 text-green-600 font-semibold">
+                        Correct:
+                        {" "}
+                        {
+                          quiz.options[
+                            quiz.correctAnswer
+                          ]
+                        }
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    ))}
+
+  </div>
+</div>
 
                     {/* INSTRUCTOR */}
                     {/* <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
