@@ -1,6 +1,12 @@
+// artifacts\orn-ai\src\components\layout\Shell.tsx
+import { ChevronDown } from "lucide-react";
+import { FaInstagram, FaLinkedin, FaYoutube } from "react-icons/fa";
+
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import ornAiLogo from "@assets/logo_1777984164420.jpg";
+import logoimg from "../../../public/logo.jpg";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,9 +82,11 @@ function UserMenu({ compact = false }: { compact?: boolean }) {
 }
 
 export function Shell({ children }: { children: React.ReactNode }) {
-    const { user } = useAuth(); // <-- ADD THIS
+  const { user } = useAuth(); // <-- ADD THIS
 
   const [location] = useLocation();
+  const [coursesOpen, setCoursesOpen] = useState(false);
+
   const isDashboard =
     location.startsWith("/recruiter") ||
     location.startsWith("/admin") ||
@@ -99,7 +107,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               />
             </Link>
           </div>
-          
+
           <div className="flex-1 py-6 px-3 flex flex-col gap-1 overflow-y-auto">
             <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Recruitment
@@ -114,7 +122,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </Link>
             <Link href="/recruiter/courses" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/courses" || location === "/recruiter/course/add" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
               <UserPlus className="size-4" />
-               Courses
+              Courses
             </Link>
 
             <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -132,7 +140,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Platform 1
             </div>
-            
+
             <Link href="/admin" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/admin" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <BarChart3 className="size-4" />
               Overview
@@ -150,7 +158,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <UserMenu />
           </div>
         </aside>
-        
+
         <main className="flex-1 pl-64 flex flex-col">
           {children}
         </main>
@@ -170,21 +178,94 @@ export function Shell({ children }: { children: React.ReactNode }) {
               className="h-10 w-auto object-contain rounded-lg"
             />
           </Link>
-          
+
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">Platform</Link>
             {user?.role === "candidate" && (
-            <Link
-              href="/courses"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              My Courses
-            </Link>
-          )}
+              <Link
+                href="/courses"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                My Courses
+              </Link>
+            )}
+            
+              <div
+                className="relative"
+                onMouseEnter={() => setCoursesOpen(true)}
+              >
+                <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                  Courses
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+
+                {coursesOpen && (
+                  <div className="absolute left-1/2 top-full z-50 mt-3 w-[1100px] -translate-x-1/2 rounded-3xl border bg-white shadow-2xl" onMouseLeave={() => setCoursesOpen(false)}>
+                    <div className="grid grid-cols-3 gap-4 p-6">
+
+                      <Link href="/courses/cyber-security">
+                        <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
+                          <h4 className="font-semibold text-[#001858]">Cyber Security</h4>
+                          <p className="text-sm text-[#595959]">
+                            Learn to secure systems and networks.
+                          </p>
+                        </div>
+                      </Link>
+
+                      <Link href="/courses/data-science-ai">
+                        <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
+                          <h4 className="font-semibold text-[#001858]">Data Science & AI</h4>
+                          <p className="text-sm text-[#595959]">
+                            Machine Learning, AI and Analytics.
+                          </p>
+                        </div>
+                      </Link>
+
+                      <Link href="/courses/advanced-programs">
+                        <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
+                          <h4 className="font-semibold text-[#001858]">Advanced Programs</h4>
+                          <p className="text-sm text-[#595959]">
+                            Cloud, DevOps and emerging tech.
+                          </p>
+                        </div>
+                      </Link>
+
+                      <Link href="/courses/business-analytics">
+                        <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
+                          <h4 className="font-semibold text-[#001858]">Business Analytics</h4>
+                          <p className="text-sm text-[#595959]">
+                            Data-driven decision making.
+                          </p>
+                        </div>
+                      </Link>
+
+                      <Link href="/courses/technology-programs">
+                        <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
+                          <h4 className="font-semibold text-[#001858]">Technology Programs</h4>
+                          <p className="text-sm text-[#595959]">
+                            Modern IT and software skills.
+                          </p>
+                        </div>
+                      </Link>
+
+                      <Link href="/courses/science-programs">
+                        <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
+                          <h4 className="font-semibold text-[#001858]">Science Programs</h4>
+                          <p className="text-sm text-[#595959]">
+                            Research and scientific learning.
+                          </p>
+                        </div>
+                      </Link>
+
+                    </div>
+                  </div>
+                )}
+              </div>
+            
             <Link href="/recruiter" className="text-muted-foreground hover:text-foreground transition-colors">Recruiters</Link>
             <Link href="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Admin</Link>
           </nav>
-          
+
           <div className="flex items-center gap-3">
             <Link href="/register">
               <Button className="gap-2">
@@ -196,76 +277,196 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      
+
       <main className="flex-1 flex flex-col">
         {children}
       </main>
 
       <footer className="bg-[#17122A] text-white py-12 px-6 md:px-16 lg:px-24">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="col-span-2">
-              <Link href="/" className="flex items-center mb-4" aria-label="ORN-AI home">
-                <img
-                  src={ornAiLogo}
-                  alt="ORN-AI — Optimize, Revolutionize, Navigate"
-                  className="h-12 w-auto object-contain rounded-lg"
-                />
-              </Link>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                An ISO-certified training partner committed to your skills, growth, and career success.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4 text-sm">Quick Links</h3>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><Link href="/recruiter" className="hover:text-foreground">Platform 2</Link></li>
-                <li><Link href="/admin" className="hover:text-foreground">About Us</Link></li>
-                <li><Link href="/admin" className="hover:text-foreground">Contact Us</Link></li>
-                <li><Link href="/admin" className="hover:text-foreground">Blog</Link></li>
-                <li><Link href="/login" className="hover:text-foreground">Login</Link></li>
-                <li><Link href="/register" className="hover:text-foreground">Signup</Link></li>
-                <li><Link href="/register" className="hover:text-foreground">Join Talent Pool</Link></li>
-              </ul>
-            </div>
-            {/* <div>
-              <h3 className="font-semibold mb-4 text-sm">Platform</h3>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><Link href="/recruiter" className="hover:text-foreground">Recruiter Access</Link></li>
-                <li><Link href="/admin" className="hover:text-foreground">Admin Pipeline</Link></li>
-              </ul>
-            </div> */}
-            <div>
-              <h3 className="font-semibold mb-4 text-sm">Resources</h3>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><Link href="/register" className="hover:text-foreground">Cyber Security</Link></li>
-                <li><span className="cursor-not-allowed opacity-50">Data Science & AI</span></li>
-                <li><span className="cursor-not-allowed opacity-50">Advanced Programs</span></li>
-                <li><span className="cursor-not-allowed opacity-50">Business Analytics</span></li>
-                <li><span className="cursor-not-allowed opacity-50">Technology Programs</span></li>
-                <li><span className="cursor-not-allowed opacity-50">Telecommunication</span></li>
-                <li><span className="cursor-not-allowed opacity-50">Science Programs</span></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4 text-sm">Help</h3>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li><Link href="/register" className="hover:text-foreground">Privacy Policy</Link></li>
-                <li><span className="cursor-not-allowed opacity-50">Terms and Condition</span></li>
-                <li><span className="cursor-not-allowed opacity-50">Support</span></li>
-                <li><span className="cursor-not-allowed opacity-50">Contact Us</span></li>
-                <li><span className="cursor-not-allowed opacity-50">Refund Policy</span></li>
-              </ul>
+        {/* Top Section */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 border-b border-gray-700 pb-10 text-center md:text-left">
+        {/* Logo + Description */}
+        <div>
+          <div className="flex justify-center md:justify-start mb-4">
+            <div className="bg-white p-2 rounded-xl inline-flex items-center justify-center shadow-md">
+              <img
+                src={logoimg}
+                alt="ORN-AI"
+                width={180}
+                height={100}
+                className="object-contain"
+              />
             </div>
           </div>
-          <div className="mt-12 pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-            <p>© {new Date().getFullYear()} ORN-AI Infrastructure. All rights reserved.</p>
-            <div className="flex gap-4">
-              <span className="cursor-not-allowed hover:text-foreground">Privacy</span>
-              <span className="cursor-not-allowed hover:text-foreground">Terms</span>
-            </div>
+
+
+          <p className="text-sm text-gray-400 mb-6 max-w-xs mx-auto md:mx-0">
+            An ISO-certified training partner committed to your skills, growth, and career success.
+          </p>
+
+          {/* Social Icons */}
+          <div className="flex justify-center md:justify-start gap-3">
+            {[
+              // {
+              //   Icon: Facebook,
+              //   link: "#",
+              // },
+
+                {
+                  Icon: FaInstagram,
+                  link: "https://www.instagram.com/ornai_official/",
+                },
+                {
+                  Icon: FaLinkedin,
+                  link: "https://www.linkedin.com/company/orn-ai/",
+                },
+                {
+                  Icon: FaYoutube,
+                  link: "https://www.youtube.com/@ORN-AILearning",
+                },
+            ].map(({ Icon, link }, idx) => (
+              <a
+                key={idx}
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#1a132b] p-2.5 rounded-lg hover:bg-[#7c4dff] transition-colors"
+              >
+                <Icon className="w-4 h-4 text-white" />
+              </a>
+            ))}
           </div>
+
         </div>
+
+        {/* Quick Links */}
+        <div>
+          <h3 className="font-semibold mb-4 text-white">Quick Links</h3>
+          <ul className="space-y-2 text-gray-400 text-sm">
+            <li>
+              <a href="/" className="hover:text-white">
+                Platform
+              </a>
+            </li>
+
+            <li>
+              <a href="/about-us" className="hover:text-white">
+                About Us
+              </a>
+            </li>
+            <li>
+              <a href="contact-us" className="hover:text-white">
+                Contact Us
+              </a>
+            </li>
+            <li>
+              <a href="blogs" className="hover:text-white">
+                Blog
+              </a>
+            </li>
+            <li>
+              <a href="/admin" className="hover:text-white">
+                Login
+              </a>
+            </li>
+            <li>
+              <a href="/admin/register" className="hover:text-white">
+                Signup
+              </a>
+            </li>
+            <li>
+              <a href="https://hire.orn-ai.com/register" className="hover:text-white">
+                Join Talent Pool
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        {/* Resources */}
+        <div>
+          <h3 className="font-semibold mb-4 text-white">Resources</h3>
+          <ul className="space-y-2 text-gray-400 text-sm">
+
+            <li>
+              <a href="/cyber-security" className="hover:text-white">
+                Cyber Security
+              </a>
+            </li>
+            <li>
+              <a href="/data-science-ai" className="hover:text-white">
+                Data Science & AI
+              </a>
+            </li>
+            <li>
+              <a href="/advanced-programs" className="hover:text-white">
+                Advanced Programs
+              </a>
+            </li>
+            <li>
+              <a href="/business-analytics" className="hover:text-white">
+                Business Analytics
+              </a>
+            </li>
+            <li>
+              <a href="/technology-programs" className="hover:text-white">
+                Technology Programs
+              </a>
+            </li>
+            <li>
+              <a href="/telecommunication" className="hover:text-white">
+                Telecommunication
+              </a>
+            </li>
+            <li>
+              <a href="/science-programs" className="hover:text-white">
+                Science Programs
+              </a>
+            </li>
+
+          </ul>
+        </div>
+
+        {/* Help */}
+        <div>
+          <h3 className="font-semibold mb-4 text-white">Help</h3>
+          <ul className="space-y-2 text-gray-400 text-sm">
+            <li>
+              <a href="privacy-policy" className="hover:text-white">
+                Privacy Policy
+              </a>
+            </li>
+            <li>
+              <a href="terms-and-conditions" className="hover:text-white">
+                Terms and Condition
+              </a>
+            </li>
+            <li>
+              <a href="support" className="hover:text-white">
+                Support
+              </a>
+            </li>
+            <li>
+              <a href="contact-us" className="hover:text-white">
+                Contact Us
+              </a>
+            </li>
+            <li>
+              <a href="refund-policy" className="hover:text-white">
+                Refund Policy
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+       {/* Bottom Section */}
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 pt-6 text-center">
+        <p>© 2025 ORN-AI. All rights reserved.</p>
+        <p className="mt-3 md:mt-0">
+          Design By{" "}
+          <span className="text-[#A7004C]"><a href="https://cybite.in/" target="_blank">Cybite</a></span> team
+        </p>
+      </div>
       </footer>
     </div>
   );

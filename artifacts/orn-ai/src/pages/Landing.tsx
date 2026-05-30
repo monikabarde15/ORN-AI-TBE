@@ -2,11 +2,9 @@ import { Link } from "wouter";
 import { Shell } from "@/components/layout/Shell";
 import { HeroSection } from "@/components/layout/HeroSection";
 import { VideoSection } from "@/components/layout/VideoSection";
-import { LearningSection } from "@/components/layout/LearningSection";
-import { CourseGrid } from "@/components/layout/CourseGrid";
-import { TalentInfrastructure } from "@/components/layout/TalentInfrastructure";
-import { SolutionTimeline } from "@/components/layout/SolutionTimeline";
-
+// import { CourseGrid } from "@/components/layout/CourseGrid";
+import LearningSection from "@/components/layout/LearningSection";
+import TalentInfrastructure from "@/components/layout/TalentInfrastructure";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +21,11 @@ import {
 } from "lucide-react";
 import { useListRegions, getListRegionsQueryKey, useRecruiterSummary, getRecruiterSummaryQueryKey } from "@workspace/api-client-react";
 import { motion } from "framer-motion";
+import SolutionTimeline from "@/components/layout/SolutionTimeline";
+import OurBlog from "@/components/layout/BlogSection";
+import Testimonials from "@/components/layout/TestimonialSection";
+import ContactUs from "@/components/layout/ContactUs";
+
 
 const PROBLEMS = [
   {
@@ -76,13 +79,16 @@ export default function Landing() {
   return (
    <>
     <Shell>
-      <HeroSection />
+      <HeroSection/>
       <VideoSection />
       <LearningSection />
-      <CourseGrid />
+      {/* <CourseGrid /> */}
       <TalentInfrastructure />
       <SolutionTimeline />
-      </Shell>
+      <OurBlog/>
+      <Testimonials/>
+      <ContactUs/>
+    </Shell>
     </>
   );
 }
