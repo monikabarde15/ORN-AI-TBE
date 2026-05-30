@@ -93,6 +93,7 @@ app.get("/", (_req, res) => {
 router.get("/test", (_req, res) => {
   res.json({ success: true });
 });
+
 /**
  * API routes
  */

@@ -259,7 +259,7 @@
 .contactus-grid {
   margin-top: 0; /* gap remove between heading and form */
   width: 100%;
-  max-width: 1100px; /* center alignment fix */
+  /* max-width: 1100px; center alignment fix */
 }
 /* Make first & last name fields equal width */
 .contact-row {

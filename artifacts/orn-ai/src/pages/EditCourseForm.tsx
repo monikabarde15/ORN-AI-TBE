@@ -1467,7 +1467,7 @@ const handleAddQuiz =
         <img
           src={
   typeof formData.thumbnailImage === "string"
-    ? `http://localhost:8080/${formData.thumbnailImage.replaceAll("\\","/")}`
+    ? `${formData.thumbnailImage.replaceAll("\\","/")}`
     : URL.createObjectURL(
         formData.thumbnailImage
       )
@@ -1628,7 +1628,7 @@ const handleAddQuiz =
   <source
     src={
       typeof formData.promotionalVideo === "string"
-        ? `http://localhost:8080/${formData.promotionalVideo.replaceAll("\\","/")}`
+        ? `${formData.promotionalVideo.replaceAll("\\","/")}`
         : URL.createObjectURL(
             formData.promotionalVideo
           )
@@ -2455,7 +2455,7 @@ md:text-[24px]
                                 <source
                                   src={
                                     typeof lesson.videoFile === "string"
-                                      ? `http://localhost:8080/${lesson.videoFile.replaceAll("\\","/")}`
+                                      ? `${lesson.videoFile.replaceAll("\\","/")}`
                                       : URL.createObjectURL(
                                           lesson.videoFile
                                         )
@@ -2470,7 +2470,7 @@ md:text-[24px]
                               <a
                                 href={
                                   typeof lesson.documentFile === "string"
-                                    ? `http://localhost:8080/${lesson.documentFile.replaceAll("\\","/")}`
+                                    ? `${lesson.documentFile.replaceAll("\\","/")}`
                                     : URL.createObjectURL(
                                         lesson.documentFile
                                       )
