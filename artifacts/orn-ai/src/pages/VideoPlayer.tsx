@@ -390,7 +390,7 @@ console.log("currentLecture", currentLecture);
                     </div>
                     </div>
 
-                    <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                    {/* <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
   <h2 className="text-3xl font-bold mb-8">
     Complete Course Data
   </h2>
@@ -491,7 +491,7 @@ console.log("currentLecture", currentLecture);
     ))}
 
   </div>
-</div>
+</div> */}
 
                     {/* INSTRUCTOR */}
                     {/* <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">

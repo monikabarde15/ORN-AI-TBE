@@ -79,10 +79,20 @@ export function Shell({ children }: { children: React.ReactNode }) {
     const { user } = useAuth(); // <-- ADD THIS
 
   const [location] = useLocation();
-  const isDashboard =
-    location.startsWith("/recruiter") ||
-    location.startsWith("/admin") ||
-    location.startsWith("/training") ||
+ const candidateDashboardRoutes = [
+  "/courses",
+  // "/feed",
+  // "/workshops",
+  // "/messages",
+];
+
+const isDashboard =
+  location.startsWith("/recruiter") ||
+  location.startsWith("/admin") ||
+  location.startsWith("/candidate") ||
+  candidateDashboardRoutes.some(route =>
+    location.startsWith(route)
+  );
     /^\/candidate\/[^/]+\/training$/.test(location);
 
   if (isDashboard) {
@@ -99,61 +109,205 @@ export function Shell({ children }: { children: React.ReactNode }) {
               />
             </Link>
           </div>
-          
           <div className="flex-1 py-6 px-3 flex flex-col gap-1 overflow-y-auto">
-            <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Recruitment
-            </div>
-            <Link href="/recruiter" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-              <Search className="size-4" />
-              Talent Search
-            </Link>
-            <Link href="/recruiter/add" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/add" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
-              <UserPlus className="size-4" />
-              Add Candidate
-            </Link>
-            <Link href="/recruiter/courses" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/courses" || location === "/recruiter/course/add" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
-              <UserPlus className="size-4" />
-               Courses
-            </Link>
 
-            <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Career Transformation
-            </div>
-            <Link
-              href="/training"
-              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location.startsWith("/training") || /^\/candidate\/[^/]+\/training$/.test(location) ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-              data-testid="link-nav-training"
-            >
-              <GraduationCap className="size-4" />
-              Training Pipeline
-            </Link>
+              {user?.role === "candidate" ? (
+                <>
+                  <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Learning Hub
+                  </div>
 
-            <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Platform
+                  <Link
+                    href="/feed"
+                    className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${
+                      location.startsWith("/feed")
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <GraduationCap className="size-4" />
+                    Feed
+                  </Link>
+
+                  <Link
+                    href="/workshops"
+                    className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${
+                      location.startsWith("/workshops")
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <GraduationCap className="size-4" />
+                    Workshops
+                  </Link>
+
+                  <Link
+                    href="/courses"
+                    className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${
+                      location.startsWith("/courses")
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <GraduationCap className="size-4" />
+                    My Courses
+                  </Link>
+
+                  <Link
+                    href="/messages"
+                    className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${
+                      location.startsWith("/messages")
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <UserIcon className="size-4" />
+                    Messages
+                  </Link>
+
+                  {user?.candidateId && (
+                    <Link
+                      href={`/candidate/${user.candidateId}/evaluation`}
+                      className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${
+                        location.includes("/evaluation")
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      <BarChart3 className="size-4" />
+                      My Evaluation
+                    </Link>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Recruiter/Admin Menu */}
+                  <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Recruitment
+                  </div>
+
+                  <Link href="/recruiter" className="flex items-center gap-3 px-3 py-2">
+                    <Search className="size-4" />
+                    Talent Search
+                  </Link>
+
+                  <Link href="/recruiter/add" className="flex items-center gap-3 px-3 py-2">
+                    <UserPlus className="size-4" />
+                    Add Candidate
+                  </Link>
+
+                  <Link href="/recruiter/courses" className="flex items-center gap-3 px-3 py-2">
+                    <GraduationCap className="size-4" />
+                    Courses
+                  </Link>
+
+                  <Link href="/admin" className="flex items-center gap-3 px-3 py-2">
+                    <BarChart3 className="size-4" />
+                    Overview
+                  </Link>
+                </>
+              )}
             </div>
-            
-            <Link href="/admin" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/admin" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-              <BarChart3 className="size-4" />
-              Overview
-            </Link>
-            <div className="flex items-center gap-3 px-3 py-2 text-sm rounded-md text-muted-foreground/50 cursor-not-allowed">
-              <Database className="size-4" />
-              Data Sources
-            </div>
-            <div className="flex items-center gap-3 px-3 py-2 text-sm rounded-md text-muted-foreground/50 cursor-not-allowed">
-              <Settings2 className="size-4" />
-              Settings
-            </div>
-          </div>
           <div className="border-t p-3">
             <UserMenu />
           </div>
         </aside>
         
-        <main className="flex-1 pl-64 flex flex-col">
+        <div className="flex-1 pl-64 flex flex-col">
+
+        <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
+          <div className="container mx-auto h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
+            <Link href="/" className="flex items-center" aria-label="ORN-AI home">
+              
+            </Link>
+            
+            <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+            <Link
+                href="/"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                DASHBOARD
+              </Link>
+
+              {user?.role === "candidate" && (
+                <>
+                  <Link
+                    href="/"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    FEED
+                  </Link>
+
+                  <Link
+                    href="/"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    WORKSHOPS
+                  </Link>
+
+                  <Link
+                    href="/courses"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    COURSES
+                  </Link>
+
+                  <Link
+                    href="/"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    MESSAGE
+                  </Link>
+                </>
+              )}
+              {/* {user?.role === "candidate" && (
+              <Link
+                href="/courses"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                My Courses
+              </Link>
+            )} */}
+          {user?.role !== "candidate" && (
+                <>
+                  <Link
+                    href="/recruiter"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Recruiters
+                  </Link>
+
+                  <Link
+                    href="/admin"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Admin
+                  </Link>
+                </>
+              )}
+              
+            </nav>
+          
+            <div className="flex items-center gap-3">
+              {user?.role !== "candidate" && (
+                  <Link href="/register">
+                    <Button className="gap-2">
+                      <UserPlus className="size-4" />
+                      Join Talent Pool
+                    </Button>
+                  </Link>
+                )}
+              <UserMenu compact />
+            </div>
+            
+          </div>
+        </header>
+
+        <main className="flex-1">
           {children}
         </main>
+
+    </div>
       </div>
     );
   }
@@ -172,28 +326,84 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </Link>
           
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-            <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">Platform</Link>
+           <Link
+              href="/"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              DASHBOARD
+            </Link>
+
             {user?.role === "candidate" && (
+              <>
+                <Link
+                  href="/"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  FEED
+                </Link>
+
+                <Link
+                  href="/"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  WORKSHOPS
+                </Link>
+
+                <Link
+                  href="/courses"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  COURSES
+                </Link>
+
+                <Link
+                  href="/"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  MESSAGE
+                </Link>
+              </>
+            )}
+            {/* {user?.role === "candidate" && (
             <Link
               href="/courses"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               My Courses
             </Link>
-          )}
-            <Link href="/recruiter" className="text-muted-foreground hover:text-foreground transition-colors">Recruiters</Link>
-            <Link href="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Admin</Link>
+          )} */}
+         {user?.role !== "candidate" && (
+              <>
+                <Link
+                  href="/recruiter"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Recruiters
+                </Link>
+
+                <Link
+                  href="/admin"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Admin
+                </Link>
+              </>
+            )}
+            
           </nav>
-          
+         
           <div className="flex items-center gap-3">
-            <Link href="/register">
-              <Button className="gap-2">
-                <UserPlus className="size-4" />
-                Join Talent Pool
-              </Button>
-            </Link>
+             {user?.role !== "candidate" && (
+                <Link href="/register">
+                  <Button className="gap-2">
+                    <UserPlus className="size-4" />
+                    Join Talent Pool
+                  </Button>
+                </Link>
+              )}
             <UserMenu compact />
           </div>
+          
         </div>
       </header>
       
