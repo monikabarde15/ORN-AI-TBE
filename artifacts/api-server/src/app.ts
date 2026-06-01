@@ -47,22 +47,21 @@ const webOrigin = process.env.WEB_ORIGIN;
 
 const corsOptions =
   process.env.NODE_ENV === "production"
-    ? webOrigin
-      ? {
-          origin: webOrigin,
-          credentials: true,
-        }
-      : {
-          origin: false,
-        }
+    ? {
+        origin: [
+          "https://orn-ai.com",
+          "http://orn-ai.com",
+          "http://103.176.85.169:8080",
+        ],
+        credentials: true,
+      }
     : {
         origin: [
-          "http://orn-ai.com/",
-          "https://orn-ai.com/",
+          "http://localhost:5173",
           "http://127.0.0.1:5173",
         ],
         credentials: true,
-      };
+      }; 
 
 app.use(cors(corsOptions));
 
