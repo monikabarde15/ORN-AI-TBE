@@ -87,11 +87,19 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [coursesOpen, setCoursesOpen] = useState(false);
 
-  const isDashboard =
-    location.startsWith("/recruiter") ||
-    location.startsWith("/admin") ||
-    location.startsWith("/training") ||
-    /^\/candidate\/[^/]+\/training$/.test(location);
+  const candidateRoutes = [
+  "/courses",
+  "/feed",
+  "/workshops",
+  "/messages",
+];
+
+const isDashboard =
+  location.startsWith("/recruiter") ||
+  location.startsWith("/admin") ||
+  location.startsWith("/candidate") ||
+  candidateRoutes.some(route => location.startsWith(route)) ||
+  /^\/candidate\/[^/]+\/training$/.test(location);
 
   if (isDashboard) {
     return (
@@ -109,7 +117,45 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex-1 py-6 px-3 flex flex-col gap-1 overflow-y-auto">
-            <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            {user?.role === "candidate" ? (
+    <>
+      <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        Learning Hub
+      </div>
+
+      <Link href="/feed" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+        <BarChart3 className="size-4" />
+        Feed
+      </Link>
+
+      <Link href="/workshops" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+        <GraduationCap className="size-4" />
+        Workshops
+      </Link>
+
+      <Link href="/courses" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+        <GraduationCap className="size-4" />
+        Courses
+      </Link>
+
+      <Link href="/messages" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+        <UserIcon className="size-4" />
+        Messages
+      </Link>
+
+      {user?.candidateId && (
+        <Link
+          href={`/candidate/${user.candidateId}/evaluation`}
+          className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
+        >
+          <BarChart3 className="size-4" />
+          My Evaluation
+        </Link>
+      )}
+    </>
+  ) : (
+    <>
+      <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Recruitment
             </div>
             <Link href="/recruiter" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
@@ -138,7 +184,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </Link>
 
             <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Platform 1
+              Platform 
             </div>
 
             <Link href="/admin" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/admin" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
@@ -153,15 +199,40 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <Settings2 className="size-4" />
               Settings
             </div>
+    </>
+  )}
+           
           </div>
           <div className="border-t p-3">
             <UserMenu />
           </div>
         </aside>
+<div className="flex-1 pl-64 flex flex-col">
 
-        <main className="flex-1 pl-64 flex flex-col">
-          {children}
-        </main>
+  <header className="h-16 border-b bg-background sticky top-0 z-40">
+    <div className="h-full px-6 flex items-center justify-between">
+
+      <div className="flex items-center gap-6">
+       
+        {user?.role === "candidate" && (
+          <nav className="hidden md:flex items-center gap-6 text-sm">
+            <Link href="/feed">Feed</Link>
+            <Link href="/workshops">Workshops</Link>
+            <Link href="/courses">Courses</Link>
+            <Link href="/messages">Messages</Link>
+          </nav>
+        )}
+      </div>
+
+      <UserMenu />
+    </div>
+  </header>
+
+  <main className="flex-1">
+    {children}
+  </main>
+
+</div>
 
       </div>
       // </div >

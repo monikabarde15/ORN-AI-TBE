@@ -2,6 +2,8 @@ import { Link } from "wouter";
 import { Shell } from "@/components/layout/Shell";
 import { HeroSection } from "@/components/layout/HeroSection";
 import { VideoSection } from "@/components/layout/VideoSection";
+import FAQ from "@/components/layout/FAQ";
+
 // import { CourseGrid } from "@/components/layout/CourseGrid";
 import LearningSection from "@/components/layout/LearningSection";
 import TalentInfrastructure from "@/components/layout/TalentInfrastructure";
@@ -88,6 +90,7 @@ export default function Landing() {
       <OurBlog/>
       <Testimonials/>
       <ContactUs/>
+      <FAQ />
     </Shell>
     </>
   );
