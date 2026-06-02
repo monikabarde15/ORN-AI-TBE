@@ -84,24 +84,41 @@ export default function CourseManagementPage() {
   // FILTER
   // ======================================================
 
-  const filteredCourses = useMemo(() => {
-    if (!courses) return [];
+  // const filteredCourses = useMemo(() => {
+  //   if (!courses) return [];
 
-    return courses.filter((course: any) => {
-      const matchesSearch =
-        course.title
-          ?.toLowerCase()
-          .includes(search.toLowerCase());
+  //   return courses.filter((course: any) => {
+  //     const matchesSearch =
+  //       course.title
+  //         ?.toLowerCase()
+  //         .includes(search.toLowerCase());
 
-      const matchesStatus =
-        status === "all"
-          ? true
-          : course.status === status;
+  //     const matchesStatus =
+  //       status === "all"
+  //         ? true
+  //         : course.status === status;
 
-      return matchesSearch && matchesStatus;
-    });
-  }, [courses, search, status]);
+  //     return matchesSearch && matchesStatus;
+  //   });
+  // }, [courses, search, status]);
+const filteredCourses = useMemo(() => {
+  const courseList = Array.isArray(courses)
+    ? courses
+    : courses?.data || courses?.courses || [];
 
+  return courseList.filter((course: any) => {
+    const matchesSearch =
+      course.title?.toLowerCase()
+        .includes(search.toLowerCase());
+
+    const matchesStatus =
+      status === "all"
+        ? true
+        : course.status === status;
+
+    return matchesSearch && matchesStatus;
+  });
+}, [courses, search, status]);
   // ======================================================
   // DELETE
   // ======================================================
