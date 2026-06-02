@@ -68,9 +68,10 @@ function UserMenu({ compact = false }: { compact?: boolean }) {
         )}
         <DropdownMenuItem
           className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-          onClick={() => {
-            void logout();
-          }}
+          onClick={async () => {
+  await logout();
+  window.location.href = "/login";
+}}
           data-testid="button-logout"
         >
           <LogOut className="size-4" />
@@ -253,96 +254,157 @@ const isDashboard =
           </Link>
 
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-            <Link
-              href="/"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              DASHBOARD
-            </Link>
+           {!user && (
+                <Link
+                  href="/"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Platform
+                </Link>
+              )}
 
+              {user && (
+                <Link
+                  href={
+                    user.role === "candidate" && user.candidateId
+                      ? `/candidate/${user.candidateId}/evaluation`
+                      : "/admin"
+                  }
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Dashboard
+                </Link>
+              )}
+            
             {user?.role === "candidate" && (
               <Link
                 href="/courses"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                My Courses
+                 Feed
               </Link>
             )}
+            {user?.role === "candidate" && (
+              <Link
+                href="/courses"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Workshops
+              </Link>
+            )}
+            {user?.role === "candidate" && (
+              <Link
+                href="/courses"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                 Courses
+              </Link>
+            )}
+            {user?.role === "candidate" && (
+              <Link
+                href="/courses"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Messages
+              </Link>
+            )}
+           {!user && (
+              <>
+                <div
+                  className="relative"
+                  onMouseEnter={() => setCoursesOpen(true)}
+                >
+                  <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                    Courses
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
 
-            <div
-              className="relative"
-              onMouseEnter={() => setCoursesOpen(true)}
-            >
-              <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
-                Courses
-                <ChevronDown className="h-4 w-4" />
-              </button>
+                  {coursesOpen && (
+                    <div
+                      className="absolute left-1/2 top-full z-50 mt-3 w-[1100px] -translate-x-1/2 rounded-3xl border bg-white shadow-2xl"
+                      onMouseLeave={() => setCoursesOpen(false)}
+                    >
+                      <div className="grid grid-cols-3 gap-4 p-6">
+                        <Link href="/courses/cyber-security">
+                          <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
+                            <h4 className="font-semibold text-[#001858]">Cyber Security</h4>
+                            <p className="text-sm text-[#595959]">
+                              Learn to secure systems and networks.
+                            </p>
+                          </div>
+                        </Link>
 
-              {coursesOpen && (
-                <div className="absolute left-1/2 top-full z-50 mt-3 w-[1100px] -translate-x-1/2 rounded-3xl border bg-white shadow-2xl" onMouseLeave={() => setCoursesOpen(false)}>
-                  <div className="grid grid-cols-3 gap-4 p-6">
+                        <Link href="/courses/data-science-ai">
+                          <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
+                            <h4 className="font-semibold text-[#001858]">Data Science & AI</h4>
+                            <p className="text-sm text-[#595959]">
+                              Machine Learning, AI and Analytics.
+                            </p>
+                          </div>
+                        </Link>
 
-                    <Link href="/courses/cyber-security">
-                      <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
-                        <h4 className="font-semibold text-[#001858]">Cyber Security</h4>
-                        <p className="text-sm text-[#595959]">
-                          Learn to secure systems and networks.
-                        </p>
+                        <Link href="/courses/advanced-programs">
+                          <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
+                            <h4 className="font-semibold text-[#001858]">Advanced Programs</h4>
+                            <p className="text-sm text-[#595959]">
+                              Cloud, DevOps and emerging tech.
+                            </p>
+                          </div>
+                        </Link>
+
+                        <Link href="/courses/business-analytics">
+                          <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
+                            <h4 className="font-semibold text-[#001858]">Business Analytics</h4>
+                            <p className="text-sm text-[#595959]">
+                              Data-driven decision making.
+                            </p>
+                          </div>
+                        </Link>
+
+                        <Link href="/courses/technology-programs">
+                          <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
+                            <h4 className="font-semibold text-[#001858]">Technology Programs</h4>
+                            <p className="text-sm text-[#595959]">
+                              Modern IT and software skills.
+                            </p>
+                          </div>
+                        </Link>
+
+                        <Link href="/courses/science-programs">
+                          <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
+                            <h4 className="font-semibold text-[#001858]">Science Programs</h4>
+                            <p className="text-sm text-[#595959]">
+                              Research and scientific learning.
+                            </p>
+                          </div>
+                        </Link>
                       </div>
-                    </Link>
-
-                    <Link href="/courses/data-science-ai">
-                      <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
-                        <h4 className="font-semibold text-[#001858]">Data Science & AI</h4>
-                        <p className="text-sm text-[#595959]">
-                          Machine Learning, AI and Analytics.
-                        </p>
-                      </div>
-                    </Link>
-
-                    <Link href="/courses/advanced-programs">
-                      <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
-                        <h4 className="font-semibold text-[#001858]">Advanced Programs</h4>
-                        <p className="text-sm text-[#595959]">
-                          Cloud, DevOps and emerging tech.
-                        </p>
-                      </div>
-                    </Link>
-
-                    <Link href="/courses/business-analytics">
-                      <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
-                        <h4 className="font-semibold text-[#001858]">Business Analytics</h4>
-                        <p className="text-sm text-[#595959]">
-                          Data-driven decision making.
-                        </p>
-                      </div>
-                    </Link>
-
-                    <Link href="/courses/technology-programs">
-                      <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
-                        <h4 className="font-semibold text-[#001858]">Technology Programs</h4>
-                        <p className="text-sm text-[#595959]">
-                          Modern IT and software skills.
-                        </p>
-                      </div>
-                    </Link>
-
-                    <Link href="/courses/science-programs">
-                      <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
-                        <h4 className="font-semibold text-[#001858]">Science Programs</h4>
-                        <p className="text-sm text-[#595959]">
-                          Research and scientific learning.
-                        </p>
-                      </div>
-                    </Link>
-
-                  </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <Link href="/recruiter" className="text-muted-foreground hover:text-foreground transition-colors">Recruiters</Link>
-            <Link href="/admin" className="text-muted-foreground hover:text-foreground transition-colors">Admin</Link>
+                <Link
+                  href="/recruiter"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Blogs
+                </Link>
+
+                <Link
+                  href="/admin"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  About
+                </Link>
+                 <Link
+                  href="/admin"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Contacts
+                </Link>
+              </>
+            )}
+           
           </nav>
 
           <div className="flex items-center gap-3">

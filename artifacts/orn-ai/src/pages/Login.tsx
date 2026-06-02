@@ -39,24 +39,46 @@ export default function Login() {
   });
 
   async function onSubmit(values: FormValues) {
-    setSubmitting(true);
-    try {
-      const session = await login(values);
-      toast({ title: "Welcome back", description: `Signed in as ${session.user.email}` });
-      const role = session.user.role;
-      if (role === "admin") navigate("/admin");
-      else if (role === "recruiter") navigate("/recruiter");
-      else if (session.user.candidateId) navigate(`/candidate/${session.user.candidateId}/evaluation`);
-      else navigate("/");
-    } catch (err) {
-      const message = err instanceof ApiError && typeof err.data === "object" && err.data && "message" in err.data
+  setSubmitting(true);
+
+  try {
+    const session = await login(values);
+
+    toast({
+      title: "Welcome back",
+      description: `Signed in as ${session.user.email}`,
+    });
+
+    const role = session.user.role;
+
+    if (role === "admin") {
+      window.location.href = "/admin";
+    } else if (role === "recruiter") {
+      window.location.href = "/recruiter";
+    } else if (role === "candidate" && session.user.candidateId) {
+      window.location.href = `/candidate/${session.user.candidateId}/evaluation`;
+    } else {
+      window.location.href = "/";
+    }
+
+  } catch (err) {
+    const message =
+      err instanceof ApiError &&
+      typeof err.data === "object" &&
+      err.data &&
+      "message" in err.data
         ? String((err.data as { message?: string }).message)
         : "Invalid email or password";
-      toast({ title: "Sign-in failed", description: message, variant: "destructive" });
-    } finally {
-      setSubmitting(false);
-    }
+
+    toast({
+      title: "Sign-in failed",
+      description: message,
+      variant: "destructive",
+    });
+  } finally {
+    setSubmitting(false);
   }
+}
 
   return (
     <Shell>
