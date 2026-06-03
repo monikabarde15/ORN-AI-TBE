@@ -16,7 +16,6 @@ import RecruiterAddCandidate from "@/pages/RecruiterAddCandidate";
 import CoursesAddCandidate from "@/pages/CreateCourseForm";
 import EditCourseForm from "@/pages/EditCourseForm";
 import VideoPlayer from "@/pages/VideoPlayer";
-import CoursePlayer from "./pages/CoursePlayer/CoursePlayer";
 
 import CourseManagementPage from "@/pages/CourseManagementPage";
 import MyFeed from "@/pages/MyFeed";
@@ -83,8 +82,7 @@ function Router() {
           <VideoPlayer />
         </ProtectedRoute>
       </Route> */}
-      {/* <Route path="/course/details/:id" component={VideoPlayer} /> */}
-      <Route path="/course/details/:id" component={CoursePlayer} />
+      <Route path="/course/details/:id" component={VideoPlayer} />
       <Route path="/recruiter/course/edit/:id">
         <ProtectedRoute roles={["recruiter", "admin"]}>
           <EditCourseForm />

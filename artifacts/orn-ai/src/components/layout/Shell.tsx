@@ -58,6 +58,14 @@ function UserMenu({ compact = false }: { compact?: boolean }) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+          {user?.role === "admin" && (
+  <Link href="/admin">
+    <DropdownMenuItem className="cursor-pointer gap-2">
+      <UserIcon className="size-4" />
+      Dashboard
+    </DropdownMenuItem>
+  </Link>
+)}
         {user.candidateId && (
           <Link href={`/candidate/${user.candidateId}/evaluation`}>
             <DropdownMenuItem className="cursor-pointer gap-2">
@@ -119,89 +127,89 @@ const isDashboard =
 
           <div className="flex-1 py-6 px-3 flex flex-col gap-1 overflow-y-auto">
             {user?.role === "candidate" ? (
-    <>
-      <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-        Learning Hub
-      </div>
+              <>
+                <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Learning Hub
+                </div>
 
-      <Link href="/feed" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
-        <BarChart3 className="size-4" />
-        Feed
-      </Link>
+                <Link href="/feed" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+                  <BarChart3 className="size-4" />
+                  Feed
+                </Link>
 
-      <Link href="/workshops" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
-        <GraduationCap className="size-4" />
-        Workshops
-      </Link>
+                <Link href="/workshops" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+                  <GraduationCap className="size-4" />
+                  Workshops
+                </Link>
 
-      <Link href="/courses" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
-        <GraduationCap className="size-4" />
-        Courses
-      </Link>
+                <Link href="/courses" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+                  <GraduationCap className="size-4" />
+                  Courses
+                </Link>
 
-      <Link href="/messages" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
-        <UserIcon className="size-4" />
-        Messages
-      </Link>
+                <Link href="/messages" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+                  <UserIcon className="size-4" />
+                  Messages
+                </Link>
 
-      {user?.candidateId && (
-        <Link
-          href={`/candidate/${user.candidateId}/evaluation`}
-          className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
-        >
-          <BarChart3 className="size-4" />
-          My Evaluation
-        </Link>
-      )}
-    </>
-  ) : (
-    <>
-      <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Recruitment
-            </div>
-            <Link href="/recruiter" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-              <Search className="size-4" />
-              Talent Search
-            </Link>
-            <Link href="/recruiter/add" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/add" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
-              <UserPlus className="size-4" />
-              Add Candidate
-            </Link>
-            <Link href="/recruiter/courses" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/courses" || location === "/recruiter/course/add" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
-              <UserPlus className="size-4" />
-              Courses
-            </Link>
+                {user?.candidateId && (
+                  <Link
+                    href={`/candidate/${user.candidateId}/evaluation`}
+                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
+                  >
+                    <BarChart3 className="size-4" />
+                    My Evaluation
+                  </Link>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Recruitment
+                      </div>
+                      <Link href="/recruiter" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                        <Search className="size-4" />
+                        Talent Search
+                      </Link>
+                      <Link href="/recruiter/add" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/add" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
+                        <UserPlus className="size-4" />
+                        Add Candidate
+                      </Link>
+                      <Link href="/recruiter/courses" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/courses" || location === "/recruiter/course/add" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
+                        <UserPlus className="size-4" />
+                        Courses
+                      </Link>
 
-            <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Career Transformation
-            </div>
-            <Link
-              href="/training"
-              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location.startsWith("/training") || /^\/candidate\/[^/]+\/training$/.test(location) ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-              data-testid="link-nav-training"
-            >
-              <GraduationCap className="size-4" />
-              Training Pipeline
-            </Link>
+                      <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Career Transformation
+                      </div>
+                      <Link
+                        href="/training"
+                        className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location.startsWith("/training") || /^\/candidate\/[^/]+\/training$/.test(location) ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                        data-testid="link-nav-training"
+                      >
+                        <GraduationCap className="size-4" />
+                        Training Pipeline
+                      </Link>
 
-            <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Platform 
-            </div>
+                      <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Platform 
+                      </div>
 
-            <Link href="/admin" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/admin" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-              <BarChart3 className="size-4" />
-              Overview
-            </Link>
-            <div className="flex items-center gap-3 px-3 py-2 text-sm rounded-md text-muted-foreground/50 cursor-not-allowed">
-              <Database className="size-4" />
-              Data Sources
-            </div>
-            <div className="flex items-center gap-3 px-3 py-2 text-sm rounded-md text-muted-foreground/50 cursor-not-allowed">
-              <Settings2 className="size-4" />
-              Settings
-            </div>
-    </>
-  )}
+                      <Link href="/admin" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/admin" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                        <BarChart3 className="size-4" />
+                        Overview
+                      </Link>
+                      <div className="flex items-center gap-3 px-3 py-2 text-sm rounded-md text-muted-foreground/50 cursor-not-allowed">
+                        <Database className="size-4" />
+                        Data Sources
+                      </div>
+                      <div className="flex items-center gap-3 px-3 py-2 text-sm rounded-md text-muted-foreground/50 cursor-not-allowed">
+                        <Settings2 className="size-4" />
+                        Settings
+                      </div>
+              </>
+            )}
            
           </div>
           <div className="border-t p-3">
@@ -263,19 +271,7 @@ const isDashboard =
                 </Link>
               )}
 
-              {user && (
-                <Link
-                  href={
-                    user.role === "candidate" && user.candidateId
-                      ? `/candidate/${user.candidateId}/evaluation`
-                      : "/admin"
-                  }
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Dashboard
-                </Link>
-              )}
-            
+             
             {user?.role === "candidate" && (
               <Link
                 href="/courses"
