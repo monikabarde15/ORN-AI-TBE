@@ -29,6 +29,7 @@ interface CourseSidebarProps {
   ) => void;
 
   onAboutSelect: () => void;
+  onFinalAssessmentSelect: () => void;
 }
 
 const CourseSidebar = ({
@@ -46,8 +47,59 @@ const CourseSidebar = ({
   onLessonSelect,
   onQuizSelect,
   onAboutSelect,
+  onFinalAssessmentSelect,
 }: CourseSidebarProps) => {
-  const progress = 35;
+  // const progress = 35;
+  
+  const totalItems = sections.reduce(
+  (acc, section) =>
+    acc +
+    section.lessons.length +
+    section.lessons.reduce(
+      (quizAcc: number, lesson: any) =>
+        quizAcc +
+        (lesson.quizzes?.length > 0 ? 1 : 0),
+      0
+    ),
+  0
+);
+const totalLessons = sections.reduce(
+  (acc, section) =>
+    acc + section.lessons.length,
+  0
+);
+
+const totalQuizzes = sections.reduce(
+  (acc, section) =>
+    acc +
+    section.lessons.filter(
+      (lesson: any) =>
+        lesson.quizzes?.length > 0
+    ).length,
+  0
+);
+
+const completedQuizzes =
+  sections.reduce(
+    (acc, section) =>
+      acc +
+      section.lessons.filter(
+        (lesson: any) =>
+          localStorage.getItem(
+            `quiz_${lesson.id}`
+          ) === "completed"
+      ).length,
+    0
+  );
+
+const progress =
+  totalQuizzes > 0
+    ? Math.round(
+        (completedQuizzes /
+          totalQuizzes) *
+          100
+      )
+    : 0;
 
   const SidebarContent = () => (
     <>
@@ -68,7 +120,7 @@ const CourseSidebar = ({
 
         <button
           onClick={onAboutSelect}
-          className="w-full text-left"
+          className="w-full text-center"
         >
           <h2
             className="
@@ -168,6 +220,7 @@ const CourseSidebar = ({
       </div>
 
       {/* Final Assessment */}
+      {progress === 100 && (
       <div
         className="
           border-t
@@ -185,10 +238,12 @@ const CourseSidebar = ({
             transition-colors
             hover:text-red-500
           "
+          onClick={onFinalAssessmentSelect}
         >
           Final Assessment
         </button>
       </div>
+      )}
     </>
   );
 

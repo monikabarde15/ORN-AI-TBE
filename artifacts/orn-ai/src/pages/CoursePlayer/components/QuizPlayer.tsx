@@ -3,10 +3,12 @@ import { CheckCircle, XCircle } from "lucide-react";
 
 interface QuizPlayerProps {
   lecture: any;
+  onQuizCompleted: () => void;
 }
 
 const QuizPlayer = ({
   lecture,
+  onQuizCompleted,
 }: QuizPlayerProps) => {
   const quizzes =
     lecture?.quizzes || [];
@@ -60,9 +62,19 @@ const QuizPlayer = ({
     }));
   };
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-  };
+ const handleSubmit = () => {
+  localStorage.setItem(
+    `quiz_${lecture.id}`,
+    "completed"
+  );
+
+  setSubmitted(true);
+
+  setTimeout(() => {
+    onQuizCompleted();
+  }, 1000);
+};
+  
 
   if (!quizzes.length) {
     return (
@@ -113,7 +125,10 @@ const QuizPlayer = ({
       <div className="rounded-3xl bg-white p-8 shadow-sm">
         {/* Header */}
         <div className="mb-8">
-          <p className="mb-2 text-sm font-medium text-red-500 uppercase">
+          <p className="mb-2 text-sm font-medium text-gradient-to-r
+    from-blue-900
+    via-blue-700
+    to-cyan-500 uppercase">
             Assessment
           </p>
 
@@ -136,14 +151,20 @@ const QuizPlayer = ({
           </div>
 
           <div className="h-2 overflow-hidden rounded-full bg-gray-200">
-            <div
-              className="h-full rounded-full bg-red-500 transition-all"
+           <div
+              className="
+                h-full
+                rounded-full
+                bg-gradient-to-r
+                from-blue-900
+                via-blue-700
+                to-cyan-500
+                transition-all
+                duration-500
+              "
               style={{
                 width: `${
-                  ((currentQuestion +
-                    1) /
-                    quizzes.length) *
-                  100
+                  ((currentQuestion + 1) / quizzes.length) * 100
                 }%`,
               }}
             />
@@ -281,12 +302,20 @@ const QuizPlayer = ({
                 handleSubmit
               }
               className="
-                rounded-xl
-                bg-red-500
-                px-6
-                py-3
-                font-medium
-                text-white
+               mt-6
+    rounded-lg
+    bg-[#0B1F4D]
+    border
+    border-cyan-500/40
+    px-6
+    py-3
+    text-white
+    font-semibold
+    shadow-md
+    transition-all
+    duration-300
+    hover:bg-[#102B6A]
+    hover:border-cyan-400
               "
             >
               Submit Quiz

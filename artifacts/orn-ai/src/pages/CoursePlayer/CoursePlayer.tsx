@@ -10,14 +10,17 @@ import ContentArea from "./components/ContentArea";
 export type ContentMode =
   | "about"
   | "lesson"
-  | "quiz";
+  | "quiz"
+    | "finalAssessment";
 
 const CoursePlayer = () => {
   const [, params] =
     useRoute("/course/details/:id");
-
+const [relatedCourses, setRelatedCourses] =
+  useState<any[]>([]);
   const courseId = params?.id;
-
+console.log("params", params);
+console.log("courseId", params?.id);
   const [course, setCourse] =
     useState<any>(null);
 
@@ -47,95 +50,93 @@ const CoursePlayer = () => {
   }, [courseId]);
 
   const fetchCourse = async () => {
-    try {
-      const res = await api.get(
-        `/api/courses/${courseId}`
-      );
+  try {
+    const res = await api.get(
+      `/api/courses/${courseId}`
+    );
 
-      const courseData =
-        res.data?.data;
+    const courseData =
+      res.data?.data;
 
-      setCourse(courseData);
+    setCourse(courseData);
 
-      const formattedSections =
-        courseData?.sections?.map(
-          (section: any) => ({
-            id: section.id,
-            title:
-              section.sectionName,
+    // ADD THIS
+    fetchRelatedCourses(
+      courseData.id
+    );
 
-            lessons:
-              section.lessons?.map(
-                (lesson: any) => ({
-                  id: lesson.id,
+    const formattedSections =
+  courseData?.sections?.map(
+    (section: any) => ({
+      id: section.id,
+      title: section.sectionName,
 
-                  title:
-                    lesson.title,
+      lessons:
+        section.lessons?.map(
+          (lesson: any) => ({
+            id: lesson.id,
+            title: lesson.title,
+            description: lesson.description,
+            duration: lesson.timeDuration,
+            videoUrl: lesson.videoUrl,
+            pdfUrl: lesson.pdfUrl,
 
-                  description:
-                    lesson.description,
-
-                  duration:
-                    lesson.timeDuration,
-
-                  videoUrl:
-                    lesson.videoUrl,
-
-                  pdfUrl:
-                    lesson.pdfUrl,
-
-                  quizzes:
-                    lesson.quizzes?.map(
-                      (quiz: any) => ({
-                        ...quiz,
-
-                        options:
-                          Array.isArray(
-                            quiz.options
-                          )
-                            ? quiz.options
-                            : JSON.parse(
-                                quiz.options ||
-                                  "[]"
-                              ),
-                      })
-                    ) || [],
+            quizzes:
+              lesson.quizzes?.map(
+                (quiz: any) => ({
+                  ...quiz,
+                  options: Array.isArray(
+                    quiz.options
+                  )
+                    ? quiz.options
+                    : JSON.parse(
+                        quiz.options || "[]"
+                      ),
                 })
               ) || [],
           })
-        ) || [];
+        ) || [],
+    })
+  ) || [];
 
-      setSections(
-        formattedSections
-      );
-
-      if (
-        formattedSections.length >
-        0
-      ) {
-        setExpandedSections([
-          formattedSections[0].id,
-        ]);
-      }
-    } catch (error) {
-      console.error(
-        "Course fetch error",
-        error
-      );
-    }
-  };
-
-  const handleLectureSelect = (
-    lecture: any
-  ) => {
-    setCurrentLecture(
-      lecture
+    setSections(
+      formattedSections
     );
 
-    setContentMode(
-      "lesson"
+  } catch (error) {
+    console.error(
+      "Course fetch error",
+      error
     );
-  };
+  }
+};
+
+const handleLectureSelect = (
+  lecture: any
+) => {
+  setSections((prev) =>
+    prev.map((section) => ({
+      ...section,
+      lessons: section.lessons.map(
+        (item: any) =>
+          item.id === lecture.id
+            ? {
+                ...item,
+                completed: true,
+              }
+            : item
+      ),
+    }))
+  );
+
+  setCurrentLecture({
+    ...lecture,
+    completed: true,
+  });
+
+  setContentMode("lesson");
+  console.log(sections);
+};
 
   const handleQuizSelect = (
     lecture: any
@@ -153,7 +154,50 @@ const CoursePlayer = () => {
         "about"
       );
     };
+const fetchRelatedCourses = async (
+  currentCourseId: string
+) => {
+  try {
+    const res = await api.get(
+      "/api/courses"
+    );
 
+    const courses =
+      res.data || [];
+
+    const filteredCourses =
+      courses.filter(
+        (course: any) =>
+          course._id !== currentCourseId
+      );
+
+    setRelatedCourses(
+      filteredCourses
+    );
+
+    console.log(
+      "Related Courses",
+      filteredCourses
+    );
+    
+  } catch (error) {
+    console.error(
+      "Related courses error",
+      error
+    );
+  }
+};
+const handleFinalAssessment =
+  () => {
+    setContentMode(
+      "finalAssessment"
+    );
+  };
+  const handleQuizCompleted = () => {
+  setContentMode(
+    "finalAssessment"
+  );
+};
   return (
     <Shell>
       <div className="flex h-screen bg-[#F8F8F8] overflow-hidden">
@@ -185,6 +229,10 @@ const CoursePlayer = () => {
           onAboutSelect={
             handleAboutSelect
           }
+          onFinalAssessmentSelect={
+    handleFinalAssessment
+  }
+
         />
 
         <ContentArea
@@ -193,6 +241,10 @@ const CoursePlayer = () => {
           lecture={
             currentLecture
           }
+           relatedCourses={relatedCourses}
+           onQuizCompleted={
+              handleQuizCompleted
+            }
         />
       </div>
     </Shell>

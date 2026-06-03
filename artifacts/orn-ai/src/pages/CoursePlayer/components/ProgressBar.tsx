@@ -5,6 +5,11 @@ interface ProgressBarProps {
 const ProgressBar = ({
   progress,
 }: ProgressBarProps) => {
+  const safeProgress = Math.min(
+    100,
+    Math.max(0, progress || 0)
+  );
+  
   return (
     <div>
       <div className="mb-2 flex items-center justify-between text-sm">

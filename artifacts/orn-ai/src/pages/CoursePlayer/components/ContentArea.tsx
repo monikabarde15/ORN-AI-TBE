@@ -2,19 +2,21 @@ import AboutTab from "./AboutTab";
 import PdfViewerContent from "./PdfViewerContent";
 import QuizPlayer from "./QuizPlayer";
 import VideoPlayerContent from "./VideoPlayerContent";
-
+import FinalAssessment from "./FinalAssessment";
 interface ContentAreaProps {
-  mode: "about" | "lesson" | "quiz";
-
+  mode: "about" | "lesson" | "quiz" | "finalAssessment";
   course: any;
-
   lecture: any;
+  relatedCourses: any[];
+   onQuizCompleted: () => void;
 }
 
 const ContentArea = ({
   mode,
   course,
   lecture,
+  relatedCourses,
+  onQuizCompleted,
 }: ContentAreaProps) => {
   const renderContent = () => {
     switch (mode) {
@@ -56,10 +58,17 @@ const ContentArea = ({
           </div>
         );
 
-      case "quiz":
+      case "finalAssessment":
+  return (
+    <FinalAssessment />
+  );
+        case "quiz":
         return (
           <QuizPlayer
             lecture={lecture}
+            onQuizCompleted={
+        onQuizCompleted
+      }
           />
         );
 
@@ -67,6 +76,7 @@ const ContentArea = ({
         return (
           <AboutTab
             course={course}
+            relatedCourses={relatedCourses}
           />
         );
     }

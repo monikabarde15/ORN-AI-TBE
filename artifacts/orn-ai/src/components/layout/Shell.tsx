@@ -141,12 +141,12 @@ const isDashboard =
                   Learning Hub
                 </div>
 
-                <Link href="/feed" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+                <Link href="#" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
                   <BarChart3 className="size-4" />
                   Feed
                 </Link>
 
-                <Link href="/workshops" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+                <Link href="#" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
                   <GraduationCap className="size-4" />
                   Workshops
                 </Link>
@@ -156,7 +156,7 @@ const isDashboard =
                   Courses
                 </Link>
 
-                <Link href="/messages" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+                <Link href="#" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
                   <UserIcon className="size-4" />
                   Messages
                 </Link>
@@ -233,10 +233,10 @@ const isDashboard =
        
         {user?.role === "candidate" && (
           <nav className="hidden md:flex items-center gap-6 text-sm">
-            <Link href="/feed">Feed</Link>
-            <Link href="/workshops">Workshops</Link>
+            <Link href="#">Feed</Link>
+            <Link href="#">Workshops</Link>
             <Link href="/courses">Courses</Link>
-            <Link href="/messages">Messages</Link>
+            <Link href="#">Messages</Link>
           </nav>
         )}
       </div>
@@ -282,7 +282,7 @@ const isDashboard =
              
             {user?.role === "candidate" && (
               <Link
-                href="/courses"
+                href="#"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                  Feed
@@ -290,7 +290,7 @@ const isDashboard =
             )}
             {user?.role === "candidate" && (
               <Link
-                href="/courses"
+                href="#"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 Workshops
@@ -306,7 +306,7 @@ const isDashboard =
             )}
             {user?.role === "candidate" && (
               <Link
-                href="/courses"
+                href="/#"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 Messages
@@ -388,20 +388,20 @@ const isDashboard =
                 </div>
 
                 <Link
-                  href="/recruiter"
+                  href="#"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Blogs
                 </Link>
 
                 <Link
-                  href="/admin"
+                  href="#"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   About
                 </Link>
                  <Link
-                  href="/admin"
+                  href="#"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Contacts
@@ -498,35 +498,21 @@ const isDashboard =
               </li>
 
               <li>
-                <a href="/about-us" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   About Us
                 </a>
               </li>
               <li>
-                <a href="contact-us" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Contact Us
                 </a>
               </li>
               <li>
-                <a href="blogs" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Blog
                 </a>
               </li>
-              <li>
-                <a href="/admin" className="hover:text-white">
-                  Login
-                </a>
-              </li>
-              <li>
-                <a href="/admin/register" className="hover:text-white">
-                  Signup
-                </a>
-              </li>
-              <li>
-                <a href="https://hire.orn-ai.com/register" className="hover:text-white">
-                  Join Talent Pool
-                </a>
-              </li>
+              
             </ul>
           </div>
 
@@ -536,37 +522,37 @@ const isDashboard =
             <ul className="space-y-2 text-gray-400 text-sm">
 
               <li>
-                <a href="/cyber-security" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Cyber Security
                 </a>
               </li>
               <li>
-                <a href="/data-science-ai" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Data Science & AI
                 </a>
               </li>
               <li>
-                <a href="/advanced-programs" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Advanced Programs
                 </a>
               </li>
               <li>
-                <a href="/business-analytics" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Business Analytics
                 </a>
               </li>
               <li>
-                <a href="/technology-programs" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Technology Programs
                 </a>
               </li>
               <li>
-                <a href="/telecommunication" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Telecommunication
                 </a>
               </li>
               <li>
-                <a href="/science-programs" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Science Programs
                 </a>
               </li>
@@ -579,17 +565,17 @@ const isDashboard =
             <h3 className="font-semibold mb-4 text-white">Help</h3>
             <ul className="space-y-2 text-gray-400 text-sm">
               <li>
-                <a href="privacy-policy" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Privacy Policy
                 </a>
               </li>
               <li>
-                <a href="terms-and-conditions" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Terms and Condition
                 </a>
               </li>
               <li>
-                <a href="support" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Support
                 </a>
               </li>
@@ -599,7 +585,7 @@ const isDashboard =
                 </a>
               </li>
               <li>
-                <a href="refund-policy" className="hover:text-white">
+                <a href="#" className="hover:text-white">
                   Refund Policy
                 </a>
               </li>

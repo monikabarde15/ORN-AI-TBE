@@ -51,8 +51,15 @@ const ChapterAccordion = ({
   };
 
   // temporary
-  const completedLessons = 0;
-
+const completedLessons =
+  section.lessons.filter(
+    (lesson: any) =>
+      lesson.completed &&
+      (
+        !lesson.quizzes?.length ||
+        lesson.quizCompleted
+      )
+  ).length;
   return (
     <div className="border-b border-[#1f1f1f]">
       {/* Chapter Header */}

@@ -1,9 +1,9 @@
 import AuthorCard from "./AuthorCard";
 import CourseTags from "./CourseTags";
 import RelatedCourses from "./RelatedCourses";
-
 interface AboutTabProps {
   course: any;
+  relatedCourses: any[];
 }
 
 const AboutTab = ({
@@ -106,7 +106,7 @@ const AboutTab = ({
       )}
 
       {/* Related Courses */}
-      <RelatedCourses />
+      <RelatedCourses currentCourseId={course?.id}/>
     </div>
   );
 };
