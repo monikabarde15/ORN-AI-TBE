@@ -18,7 +18,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
 import { Search, UserPlus, Settings2, BarChart3, Database, GraduationCap, LogIn, LogOut, User as UserIcon } from "lucide-react";
-
+import { useEffect } from "react";
 function UserMenu({ compact = false }: { compact?: boolean }) {
   const { user, logout } = useAuth();
   // if (!user) {
@@ -91,9 +91,18 @@ function UserMenu({ compact = false }: { compact?: boolean }) {
 }
 
 export function Shell({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth(); // <-- ADD THIS
+  const { user } = useAuth();
+  const [location, setLocation] = useLocation();
 
-  const [location] = useLocation();
+  useEffect(() => {
+    if (location === "/" && user?.role === "admin") {
+      setLocation("/admin");
+    }
+    if (location === "/" && user?.role === "candidate") {
+      setLocation(`/candidate/${user.candidateId}/evaluation`);
+    }
+  }, [location, user, setLocation]);
+
   const [coursesOpen, setCoursesOpen] = useState(false);
 
   const candidateRoutes = [
@@ -151,7 +160,6 @@ const isDashboard =
                   <UserIcon className="size-4" />
                   Messages
                 </Link>
-
                 {user?.candidateId && (
                   <Link
                     href={`/candidate/${user.candidateId}/evaluation`}
@@ -402,9 +410,9 @@ const isDashboard =
             )}
            
           </nav>
-
-          <div className="flex items-center gap-3">
-            {user?.role !== "candidate" && (
+         
+            <div className="flex items-center gap-3">
+              {user == null && user?.role !== "candidate" && (
               <Link href="/register">
                 <Button className="gap-2">
                   <UserPlus className="size-4" />
@@ -412,9 +420,9 @@ const isDashboard =
                 </Button>
               </Link>
             )}
-            <UserMenu compact />
-          </div>
-
+              <UserMenu compact />
+            </div>
+          
         </div>
       </header>
 

@@ -208,7 +208,10 @@ const CourseSidebar = ({
 
     flex-col
 
-    bg-black
+    bg-gradient-to-b
+from-[#0B1020]
+via-[#111827]
+to-[#0F172A]
     text-white
   "
       >
@@ -227,7 +230,10 @@ const CourseSidebar = ({
             top-4
             z-50
             rounded-lg
-            bg-black
+            bg-gradient-to-b
+            from-[#0B1020]
+            via-[#111827]
+            to-[#0F172A]
             p-3
             text-white
             lg:hidden
@@ -245,7 +251,10 @@ const CourseSidebar = ({
           left-0
           z-50
           w-[360px]
-          bg-black
+          bg-gradient-to-b
+          from-[#0B1020]
+          via-[#111827]
+          to-[#0F172A]
           text-white
           transform
           transition-transform
