@@ -329,7 +329,7 @@ const isDashboard =
                       onMouseLeave={() => setCoursesOpen(false)}
                     >
                       <div className="grid grid-cols-3 gap-4 p-6">
-                        <Link href="/courses/cyber-security">
+                        <Link href="/cyber-security">
                           <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
                             <h4 className="font-semibold text-[#001858]">Cyber Security</h4>
                             <p className="text-sm text-[#595959]">
@@ -338,7 +338,7 @@ const isDashboard =
                           </div>
                         </Link>
 
-                        <Link href="/courses/data-science-ai">
+                        <Link href="/data-science-ai">
                           <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
                             <h4 className="font-semibold text-[#001858]">Data Science & AI</h4>
                             <p className="text-sm text-[#595959]">
@@ -347,7 +347,7 @@ const isDashboard =
                           </div>
                         </Link>
 
-                        <Link href="/courses/advanced-programs">
+                        <Link href="/advanced-programs">
                           <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
                             <h4 className="font-semibold text-[#001858]">Advanced Programs</h4>
                             <p className="text-sm text-[#595959]">
@@ -356,7 +356,7 @@ const isDashboard =
                           </div>
                         </Link>
 
-                        <Link href="/courses/business-analytics">
+                        <Link href="/business-analytics">
                           <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
                             <h4 className="font-semibold text-[#001858]">Business Analytics</h4>
                             <p className="text-sm text-[#595959]">
@@ -365,7 +365,7 @@ const isDashboard =
                           </div>
                         </Link>
 
-                        <Link href="/courses/technology-programs">
+                        <Link href="/technology-programs">
                           <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
                             <h4 className="font-semibold text-[#001858]">Technology Programs</h4>
                             <p className="text-sm text-[#595959]">
@@ -374,7 +374,7 @@ const isDashboard =
                           </div>
                         </Link>
 
-                        <Link href="/courses/science-programs">
+                        <Link href="/science-programs">
                           <div className="rounded-xl border p-4 bg-[#f7f9ff] hover:bg-[#e2e9ff] cursor-pointer">
                             <h4 className="font-semibold text-[#001858]">Science Programs</h4>
                             <p className="text-sm text-[#595959]">

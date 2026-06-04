@@ -17,7 +17,7 @@ import CoursesAddCandidate from "@/pages/CreateCourseForm";
 import EditCourseForm from "@/pages/EditCourseForm";
 import VideoPlayer from "@/pages/VideoPlayer";
 import CoursePlayer from "./pages/CoursePlayer/CoursePlayer";
-
+import LabDetail from "./pages/LabDetail";
 import CourseManagementPage from "@/pages/CourseManagementPage";
 import MyFeed from "@/pages/MyFeed";
 
@@ -25,6 +25,14 @@ import MyFeed from "@/pages/MyFeed";
 import AdminDashboard from "@/pages/AdminDashboard";
 import TrainingDashboard from "@/pages/TrainingDashboard";
 import CandidateTraining from "@/pages/CandidateTraining";
+import Pricing from "@/pages/Pricing";
+import DataScientce from "@/pages/Data";
+import Advancedprograms from "@/pages/Advancedprograms";
+import BusinessDataAnalytics from "@/pages/BusinessDataAnalytics";
+import TechnologyPrograms from "@/pages/TechnologyPrograms";
+import ScienceProgramsD from "@/pages/ScienceProgramsD";
+
+
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient({
@@ -67,6 +75,13 @@ function Router() {
       <Route path="/candidate/:id/upload" component={CandidateUpload} />
       <Route path="/candidate/:id/evaluation" component={CandidateEvaluation} />
       <Route path="/candidate/:id/training" component={CandidateTraining} />
+      <Route path="/cyber-security" component={Pricing} />
+      <Route path="/data-science-ai" component={DataScientce} />
+      <Route path="/advanced-programs" component={Advancedprograms} />
+      <Route path="/business-analytics" component={BusinessDataAnalytics} />
+      <Route path="/technology-programs" component={TechnologyPrograms} />
+      <Route path="/science-programs" component={ScienceProgramsD} />
+      <Route path="/lab/:id" component={LabDetail} />
       <Route path="/courses" component={MyFeed} />
       <Route path="/recruiter/add">
         <ProtectedRoute roles={["recruiter", "admin"]}>

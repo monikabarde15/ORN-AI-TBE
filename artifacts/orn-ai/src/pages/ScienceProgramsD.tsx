@@ -1,0 +1,477 @@
+// LabPricing.jsx
+import React, { useState } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useLocation } from "wouter";
+
+import HeroBanner from "./components/Banner";
+import { Shell } from "@/components/layout/Shell";
+
+
+export const cyberLabs = [
+  {
+    id: 41,
+    subtitle: "Medical Coding Master",
+    name: "Medical Coding Master",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/668e4fa8c6719b7cb85eb262_doctor-workplace-with-stethoscope-p-500.png",
+    shortDesc:
+      "The Medical Coding Master program is meticulously crafted to provide you with robust skills for accurately coding medical diagnoses and treatments. You will learn to navigate various systems of the human body, understand the related medical terminology, and apply this knowledge in coding with precision. Prepare to become a pivotal part of healthcare operations, ensuring accurate medical billing and documentation.",
+
+    longDesc:
+      "The Certified Network Defender program is meticulously crafted to provide you with a comprehensive understanding of network security. Through this program, you will gain in-depth knowledge of network defense fundamentals, security threats and vulnerabilities, and advanced protective measures. Prepare to become a proficient network defender equipped with the skills to secure modern networks effectively.Target Audience This program is ideal for Network Administrators, IT Security Professionals, Security Analysts, Network Engineers, and individuals seeking to specialize in network security.",
+
+    features: [
+      "Grasp the essentials of network defense, including security architecture and practical configurations.",
+      "Understand network security, vulnerabilities, and penetration testing methodologies.",
+      "Implement advanced network security protocols and design comprehensive security policies.",
+      "Explore unified security frameworks, host security, and secure firewall management.",
+      "Develop skills in VPN, IDS configuration, wireless network defense, and traffic monitoring.",
+      "Prepare for effective incident response and management."
+    ],
+
+    syllabus: [
+      "Network Defense",
+      "Threat Analysis",
+      "Penetration Testing",
+      "Security Policy Design",
+      "Intrusion Detection",
+      "Intrusion Detection",
+      "Wireless Security"
+    ]
+  },
+
+  {
+    id: 42,
+    subtitle: "Technical Content Writer Basic Level",
+    name: "Technical Content Writer Basic Level",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/665814f337eac2582951c4a2_Technical%20content%20writer%20basic%20level-p-500.png",
+    shortDesc:
+      "The Technical Content Writer Basic Level program is expertly designed to develop your skills in creating precise and clear technical documentation. Engage in comprehensive training on technical writing fundamentals, effective communication, and the use of essential tools and technologies.",
+
+    longDesc:
+      "Learn Security Operations, SIEM tools, threat intelligence, alert management and attacker tactics used in real-world SOC environments.",
+
+    features: [
+      "SIEM Practical Labs",
+      "Threat Intelligence Analysis",
+      "SOC Alert Investigation",
+      "MITRE ATT&CK Framework",
+      "Hands-on Incidents Training"
+    ],
+
+    syllabus: [
+      "Module 1: SOC Fundamentals",
+      "Module 2: SIEM & Log Analysis",
+      "Module 3: Threat Intelligence",
+      "Module 4: MITRE Tactics & Techniques",
+      "Module 5: Incident Response Playbooks"
+    ]
+  },
+
+  {
+    id: 43,
+    subtitle: "Technical Content Writer Advance Level",
+    name: "Technical Content Writer Advance Level",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/6658150a484367e5a7197efa_Technical%20content%20writer%20-%20Advance%20level-p-500.png",
+    shortDesc:
+      "The Technical Content Writer Advance Level program is designed to deepen your expertise in technical writing and documentation. This course covers everything from the fundamentals to advanced tools and strategies, preparing you to create detailed, clear, and user-focused documentation. Sharpen your skills to become a top-tier technical writer in the industry.",
+
+    longDesc:
+      "Train in offensive & defensive security, ethical hacking labs, exploitation techniques, and malware analysis basics.",
+
+    features: [
+      "VAPT Practical Labs",
+      "Web App Hacking",
+      "Network Attack Simulations",
+      "Exploit Development Basics",
+      "Malware & Payload Analysis"
+    ],
+
+    syllabus: [
+      "Module 1: Basics of Cyber Security",
+      "Module 2: Footprinting & Scanning",
+      "Module 3: Network Attacks",
+      "Module 4: Web Application Hacking",
+      "Module 5: Exploitation & Priv Escalation"
+    ]
+  },
+
+  {
+    id: 44,
+    subtitle: "Tableau Master",
+    name: "Tableau Course",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/6658152460758a2209601c69_Tableau%20Course-p-500.png",
+    shortDesc:
+      "The Tableau Master program is expertly designed to empower you with essential skills for effective data visualization and analysis using Tableau. You will delve into the fundamentals of Tableau, advanced data management, calculation techniques, filtering methods, and master the art of crafting insightful dashboards.",
+
+    longDesc:
+      "Learn digital crime investigation, forensic imaging, evidence reconstruction, and incident investigation techniques.",
+
+    features: [
+      "Disk & Memory Forensics",
+      "Log Investigation Labs",
+      "Malware Behavioral Analysis",
+      "Evidence Imaging & Chain of Custody",
+      "Forensic Report Writing"
+    ],
+
+    syllabus: [
+      "Module 1: Introduction to Cyber Forensics",
+      "Module 2: Evidence Handling & Imaging",
+      "Module 3: File System Analysis",
+      "Module 4: Network Forensics",
+      "Module 5: Malware & Threat Analysis"
+    ]
+  },
+
+  {
+    id: 45,
+    subtitle: "Reception Course",
+    name: "Reception Course",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/6658168bf11a8e5e14b861a1_Reception%20Course-p-500.png",
+    shortDesc:
+      "The Reception Course is carefully designed to prepare you for a dynamic role at the forefront of an organization. This program covers everything from effective communication to advanced office management, ensuring you are equipped to handle the diverse demands of a receptionist's role.",
+
+    longDesc:
+      "Learn end-to-end bug bounty hunting, reconnaissance, web vulnerabilities, exploitation & reporting.",
+
+    features: [
+      "Web Vulnerability Labs",
+      "BurpSuite Hands-on",
+      "Real Bug Bounty Techniques",
+      "Payload Crafting",
+      "Report Writing & Submission"
+    ],
+
+    syllabus: [
+      "Module 1: Recon & Enumeration",
+      "Module 2: OWASP Top 10 Deep Dive",
+      "Module 3: Exploitation Techniques",
+      "Module 4: Bug Reporting & POCs",
+      "Module 5: Live Bug Hunting Strategy"
+    ]
+  },
+   {
+    id: 46,
+    subtitle: "Power BI Mastery",
+    name: "Power BI Course",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/6658169e9186d46c6f0c13f4_power%20bi-p-500.png",
+    shortDesc:
+      "The Power BI Mastery program is expertly designed to transform you into a data wizard, adept at leveraging Power BI to enhance business intelligence. Explore comprehensive modules covering everything from data warehousing basics to advanced DAX and data visualization techniques.",
+
+    longDesc:
+      "Learn end-to-end bug bounty hunting, reconnaissance, web vulnerabilities, exploitation & reporting.",
+
+    features: [
+      "Web Vulnerability Labs",
+      "BurpSuite Hands-on",
+      "Real Bug Bounty Techniques",
+      "Payload Crafting",
+      "Report Writing & Submission"
+    ],
+
+    syllabus: [
+      "Module 1: Recon & Enumeration",
+      "Module 2: OWASP Top 10 Deep Dive",
+      "Module 3: Exploitation Techniques",
+      "Module 4: Bug Reporting & POCs",
+      "Module 5: Live Bug Hunting Strategy"
+    ]
+  },
+   {
+    id: 47,
+    subtitle: "Office Administrator",
+    name: "Office Administration Course",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/66581b023ab4092c105393c2_Administration-p-500.png",
+    shortDesc:
+      "The Office Administrator program is carefully designed to enhance your administrative capabilities in modern office settings. You will learn about the evolution of office administration, the role of administrators, advanced office software skills, and much more. Prepare yourself to manage office environments efficiently and support business operations effectively.",
+
+    longDesc:
+      "Learn end-to-end bug bounty hunting, reconnaissance, web vulnerabilities, exploitation & reporting.",
+
+    features: [
+      "Web Vulnerability Labs",
+      "BurpSuite Hands-on",
+      "Real Bug Bounty Techniques",
+      "Payload Crafting",
+      "Report Writing & Submission"
+    ],
+
+    syllabus: [
+      "Module 1: Recon & Enumeration",
+      "Module 2: OWASP Top 10 Deep Dive",
+      "Module 3: Exploitation Techniques",
+      "Module 4: Bug Reporting & POCs",
+      "Module 5: Live Bug Hunting Strategy"
+    ]
+  },
+  {
+    id: 48,
+    subtitle: "Modern Recruitment Master",
+    name: "Modern Recruitment Practices",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/66581b16c2cb7ce6a7a609ff_Modern%20Recruitment-p-500.png",
+    shortDesc:
+      "The Modern Recruitment Master program is intricately designed to equip you with the most effective and innovative recruitment techniques. Learn to navigate the complexities of organizational structures, master HR management, and implement cutting-edge recruitment technologies. Prepare yourself to drive strategic hiring and foster organizational development.",
+
+    longDesc:
+      "Learn end-to-end bug bounty hunting, reconnaissance, web vulnerabilities, exploitation & reporting.",
+
+    features: [
+      "Web Vulnerability Labs",
+      "BurpSuite Hands-on",
+      "Real Bug Bounty Techniques",
+      "Payload Crafting",
+      "Report Writing & Submission"
+    ],
+
+    syllabus: [
+      "Module 1: Recon & Enumeration",
+      "Module 2: OWASP Top 10 Deep Dive",
+      "Module 3: Exploitation Techniques",
+      "Module 4: Bug Reporting & POCs",
+      "Module 5: Live Bug Hunting Strategy"
+    ]
+  },
+  {
+    id: 49,
+    subtitle: "Business Analyst",
+    name: "Business Analyst course",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/66581b400ff348be32546662_BUSSINESS-p-500.png",
+    shortDesc:
+      "The Business Analyst program is intricately designed to provide you with comprehensive skills in business analysis. Learn to understand business needs, stakeholder analysis, strategic frameworks, and effective use of tools like Jira for process improvements. Prepare to impact business strategies and operations profoundly.",
+
+    longDesc:
+      "Learn end-to-end bug bounty hunting, reconnaissance, web vulnerabilities, exploitation & reporting.",
+
+    features: [
+      "Web Vulnerability Labs",
+      "BurpSuite Hands-on",
+      "Real Bug Bounty Techniques",
+      "Payload Crafting",
+      "Report Writing & Submission"
+    ],
+
+    syllabus: [
+      "Module 1: Recon & Enumeration",
+      "Module 2: OWASP Top 10 Deep Dive",
+      "Module 3: Exploitation Techniques",
+      "Module 4: Bug Reporting & POCs",
+      "Module 5: Live Bug Hunting Strategy"
+    ]
+  },
+  {
+    id: 50,
+    subtitle: "Entrepreneurial Mastery",
+    name: "Enterpreneurship",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/66581b552e8f748ebb7d3a47_Enterprenuership-p-500.png",
+    shortDesc:
+      "The Entrepreneurial Mastery program is expertly designed to guide you from the fundamentals of entrepreneurship through to launching your own business. Learn to create robust business models, manage risks, secure financing, and master strategic planning. Equip yourself with the necessary tools to start, manage, and scale your business effectively.",
+
+    longDesc:
+      "Learn end-to-end bug bounty hunting, reconnaissance, web vulnerabilities, exploitation & reporting.",
+
+    features: [
+      "Web Vulnerability Labs",
+      "BurpSuite Hands-on",
+      "Real Bug Bounty Techniques",
+      "Payload Crafting",
+      "Report Writing & Submission"
+    ],
+
+    syllabus: [
+      "Module 1: Recon & Enumeration",
+      "Module 2: OWASP Top 10 Deep Dive",
+      "Module 3: Exploitation Techniques",
+      "Module 4: Bug Reporting & POCs",
+      "Module 5: Live Bug Hunting Strategy"
+    ]
+  },
+  {
+    id: 51,
+    subtitle: "Excel Virtuoso",
+    name: "Excel VBA course",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/66581b62cea1a38ab485e777_XL-p-500.png",
+    shortDesc:
+      "The Excel Virtuoso program is designed to provide an in-depth understanding of Excel and VBA, emphasizing practical applications in modern data landscapes. Learn everything from foundational skills to advanced data analysis and automation with VBA, equipping you to handle complex data tasks efficiently.",
+
+    longDesc:
+      "Learn end-to-end bug bounty hunting, reconnaissance, web vulnerabilities, exploitation & reporting.",
+
+    features: [
+      "Web Vulnerability Labs",
+      "BurpSuite Hands-on",
+      "Real Bug Bounty Techniques",
+      "Payload Crafting",
+      "Report Writing & Submission"
+    ],
+
+    syllabus: [
+      "Module 1: Recon & Enumeration",
+      "Module 2: OWASP Top 10 Deep Dive",
+      "Module 3: Exploitation Techniques",
+      "Module 4: Bug Reporting & POCs",
+      "Module 5: Live Bug Hunting Strategy"
+    ]
+  },
+   {
+    id: 52,
+    subtitle: "Manual Tester",
+    name: "Manual Testing course",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/66581b738c0b7b809088e672_Manual%20testing-p-500.png",
+    shortDesc:
+      "The Manual Tester program is expertly designed to provide you with a comprehensive understanding of manual software testing. You will explore the Software Development Life Cycle (SDLC), various testing methodologies, static techniques, and more. Prepare to excel in ensuring software quality and managing testing processes effectively.",
+
+    longDesc:
+      "Learn end-to-end bug bounty hunting, reconnaissance, web vulnerabilities, exploitation & reporting.",
+
+    features: [
+      "Web Vulnerability Labs",
+      "BurpSuite Hands-on",
+      "Real Bug Bounty Techniques",
+      "Payload Crafting",
+      "Report Writing & Submission"
+    ],
+
+    syllabus: [
+      "Module 1: Recon & Enumeration",
+      "Module 2: OWASP Top 10 Deep Dive",
+      "Module 3: Exploitation Techniques",
+      "Module 4: Bug Reporting & POCs",
+      "Module 5: Live Bug Hunting Strategy"
+    ]
+  },
+   {
+    id: 53,
+    subtitle: "Technology Training Program",
+    name: "Technology Training Program",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/66581b9620fa83eaa49af863_Technology%20training%20program-p-500.png",
+    shortDesc:
+      "The Technology Training Program is an exhaustive course designed to equip you with a profound understanding and practical skills across a broad spectrum of computing and IT disciplines. From foundational computing concepts to advanced infrastructure management, this program offers a comprehensive tech education.",
+
+    longDesc:
+      "Learn end-to-end bug bounty hunting, reconnaissance, web vulnerabilities, exploitation & reporting.",
+
+    features: [
+      "Web Vulnerability Labs",
+      "BurpSuite Hands-on",
+      "Real Bug Bounty Techniques",
+      "Payload Crafting",
+      "Report Writing & Submission"
+    ],
+
+    syllabus: [
+      "Module 1: Recon & Enumeration",
+      "Module 2: OWASP Top 10 Deep Dive",
+      "Module 3: Exploitation Techniques",
+      "Module 4: Bug Reporting & POCs",
+      "Module 5: Live Bug Hunting Strategy"
+    ]
+  },
+  {
+    id: 54,
+    subtitle: "AML KYC Specialist",
+    name: "AML KYC Course",
+    image:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/66581bbe733d3c480190d443_AML-p-500.png",
+    shortDesc:
+      "The AML KYC Specialist program is meticulously crafted to equip you with essential skills for mastering Anti-Money Laundering (AML) and Know Your Customer (KYC) compliance. Learn the fundamentals, the regulatory framework, customer due diligence, and the use of technology in AML/KYC processes. This program prepares you to ensure compliance and secure operations within financial services.",
+
+    longDesc:
+      "Learn end-to-end bug bounty hunting, reconnaissance, web vulnerabilities, exploitation & reporting.",
+
+    features: [
+      "Web Vulnerability Labs",
+      "BurpSuite Hands-on",
+      "Real Bug Bounty Techniques",
+      "Payload Crafting",
+      "Report Writing & Submission"
+    ],
+
+    syllabus: [
+      "Module 1: Recon & Enumeration",
+      "Module 2: OWASP Top 10 Deep Dive",
+      "Module 3: Exploitation Techniques",
+      "Module 4: Bug Reporting & POCs",
+      "Module 5: Live Bug Hunting Strategy"
+    ]
+  }
+];
+
+const ScienceProgramsD = () => {
+  const [, navigate] = useLocation(); 
+  const [labs] = useState(cyberLabs);
+
+  const handlePlanClick = (lab) => {
+    toast.success("Added to cart", { autoClose: 2000 });
+  };
+
+  return (
+    <Shell>
+    <div className="py-10 px-4 md:px-10 bg-white">
+      {/* Cards Section */}
+       <HeroBanner
+                title="Business & Data Analytics"
+                subtitle="Your subtitle or description goes here"
+                ctaText="Sign up"
+                ctaHref="/signup"
+                image="https://cdn.prod.website-files.com/66446d71a3755a2d4e53fe14/668baff40b223db5311c7fda_network-connections.png"
+                height="h-96"
+                />
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-10 max-w-7xl mx-auto mt-12">
+        {labs.map((lab, index) => (
+          <div
+            key={index}
+            className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-gray-200"
+          >
+            {/* Image */}
+            <div className="w-full h-52">
+              <img
+                src={lab.image}
+                alt={lab.name}
+                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+              />
+            </div>
+
+            {/* Text Content */}
+            <div className="p-6">
+              <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
+                {lab.subtitle}
+              </p>
+
+              <h3 className="text-lg font-bold text-gray-900 mt-1 mb-2 leading-tight">
+                {lab.name}
+              </h3>
+
+              <p className="text-gray-700 text-sm leading-relaxed mb-5">
+                {lab.shortDesc}
+              </p>
+
+             <button
+  onClick={() => navigate(`/lab/${lab.id}`)}
+  className="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+>
+  Learn more →
+</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+    </Shell>
+  );
+};
+
+export default ScienceProgramsD;
