@@ -44,6 +44,7 @@
     "@tailwindcss/typography": "^0.5.15",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-query": "catalog:",
+    "@types/lodash": "^4.17.24",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
@@ -75,8 +76,11 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@tiptap/react": "^3.25.0",
+    "@tiptap/starter-kit": "^3.25.0",
     "axios": "^1.16.1",
     "country-list-with-dial-code-and-flag": "^5.1.1",
+    "lodash": "^4.18.1",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.16.0",
     "react-toastify": "^11.1.0"

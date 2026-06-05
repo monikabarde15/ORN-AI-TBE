@@ -156,6 +156,8 @@ const isDashboard =
                   Courses
                 </Link>
 
+                
+
                 <Link href="#" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
                   <UserIcon className="size-4" />
                   Messages
@@ -178,6 +180,10 @@ const isDashboard =
                       <Link href="/recruiter" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                         <Search className="size-4" />
                         Talent Search
+                      </Link>
+                      <Link href="/admin/blog/add" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+                        <GraduationCap className="size-4" />
+                        Blogs
                       </Link>
                       <Link href="/recruiter/add" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/add" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
                         <UserPlus className="size-4" />
@@ -388,20 +394,20 @@ const isDashboard =
                 </div>
 
                 <Link
-                  href="#"
+                  href="/blogs"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Blogs
                 </Link>
 
                 <Link
-                  href="#"
+                  href="/about-us"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   About
                 </Link>
                  <Link
-                  href="#"
+                  href="/contact-us"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Contacts
@@ -498,18 +504,18 @@ const isDashboard =
               </li>
 
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="/about-us" className="hover:text-white">
                   About Us
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="/contact-us" className="hover:text-white">
                   Contact Us
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
-                  Blog
+                <a href="/blogs" className="hover:text-white">
+                  Blogs
                 </a>
               </li>
               
@@ -522,37 +528,37 @@ const isDashboard =
             <ul className="space-y-2 text-gray-400 text-sm">
 
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="/cyber-security" className="hover:text-white">
                   Cyber Security
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="/data-science-ai" className="hover:text-white">
                   Data Science & AI
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="/advanced-programs" className="hover:text-white">
                   Advanced Programs
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="/business-analytics" className="hover:text-white">
                   Business Analytics
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="/technology-programs" className="hover:text-white">
                   Technology Programs
                 </a>
               </li>
-              <li>
+              {/* <li>
                 <a href="#" className="hover:text-white">
                   Telecommunication
                 </a>
-              </li>
+              </li> */}
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="/science-programs" className="hover:text-white">
                   Science Programs
                 </a>
               </li>
@@ -565,17 +571,17 @@ const isDashboard =
             <h3 className="font-semibold mb-4 text-white">Help</h3>
             <ul className="space-y-2 text-gray-400 text-sm">
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="/privacy-policy" className="hover:text-white">
                   Privacy Policy
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="/terms-and-conditions" className="hover:text-white">
                   Terms and Condition
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="/support" className="hover:text-white">
                   Support
                 </a>
               </li>
@@ -585,7 +591,7 @@ const isDashboard =
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <a href="/refund-policy" className="hover:text-white">
                   Refund Policy
                 </a>
               </li>

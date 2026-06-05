@@ -183,3 +183,6 @@ export type McqRow =
 
 export type InsertMcqRow =
   typeof mcqTable.$inferInsert
+
+
+ 

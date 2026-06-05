@@ -419,7 +419,6 @@ const TechnologyPrograms = () => {
 
   return (
     <Shell>
-    <div className="py-10 px-4 md:px-10 bg-white">
        <HeroBanner
           title="Business & Data Analytics"
           subtitle="Your subtitle or description goes here"
@@ -428,6 +427,8 @@ const TechnologyPrograms = () => {
           image="https://cdn.prod.website-files.com/66446d71a3755a2d4e53fe14/668baff40b223db5311c7fda_network-connections.png"
           height="h-96"
           />
+    <div className="py-10 px-4 md:px-10 bg-white">
+      
       {/* Cards Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-10 max-w-7xl mx-auto mt-12">
         {labs.map((lab, index) => (

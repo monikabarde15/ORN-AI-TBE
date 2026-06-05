@@ -13,6 +13,8 @@ import CandidateUpload from "@/pages/CandidateUpload";
 import CandidateEvaluation from "@/pages/CandidateEvaluation";
 import RecruiterDashboard from "@/pages/RecruiterDashboard";
 import RecruiterAddCandidate from "@/pages/RecruiterAddCandidate";
+import BlogAdd from "@/pages/BlogAdd";
+
 import CoursesAddCandidate from "@/pages/CreateCourseForm";
 import EditCourseForm from "@/pages/EditCourseForm";
 import VideoPlayer from "@/pages/VideoPlayer";
@@ -31,6 +33,16 @@ import Advancedprograms from "@/pages/Advancedprograms";
 import BusinessDataAnalytics from "@/pages/BusinessDataAnalytics";
 import TechnologyPrograms from "@/pages/TechnologyPrograms";
 import ScienceProgramsD from "@/pages/ScienceProgramsD";
+import SciencePrograms from "@/pages/SciencePrograms";
+import AboutUs from "@/pages/AboutUs";
+import ContactPage from "@/pages/ContactPage";
+import BlogList from "@/pages/BlogList";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsCondition from "@/pages/TermsCondition";
+import Support from "@/pages/Support";
+import RefoundPolicy from "@/pages/RefoundPolicy";
+
+import BlogDetail from "@/pages/BlogDetail";
 
 
 import { Loader2 } from "lucide-react";
@@ -80,12 +92,27 @@ function Router() {
       <Route path="/advanced-programs" component={Advancedprograms} />
       <Route path="/business-analytics" component={BusinessDataAnalytics} />
       <Route path="/technology-programs" component={TechnologyPrograms} />
-      <Route path="/science-programs" component={ScienceProgramsD} />
+      <Route path="/science-programs" component={SciencePrograms} />
+      <Route path="/about-us" component={AboutUs} />
+      <Route path="/contact-us" component={ContactPage} />
+      <Route path="/blogs" component={BlogList} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-and-conditions" component={TermsCondition} />
+      <Route path="/refund-policy" component={RefoundPolicy} />
+
+      <Route path="/support" component={Support} />
+      <Route path="/blogs/:id" component={BlogDetail} />
+
       <Route path="/lab/:id" component={LabDetail} />
       <Route path="/courses" component={MyFeed} />
       <Route path="/recruiter/add">
         <ProtectedRoute roles={["recruiter", "admin"]}>
           <RecruiterAddCandidate />
+        </ProtectedRoute>
+      </Route>
+       <Route path="/admin/blog/add">
+        <ProtectedRoute roles={["recruiter", "admin"]}>
+          <BlogAdd />
         </ProtectedRoute>
       </Route>
       <Route path="/recruiter/course/add">

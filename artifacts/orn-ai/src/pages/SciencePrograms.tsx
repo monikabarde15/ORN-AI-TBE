@@ -1,8 +1,11 @@
 
 import ScienceProgramsD from './ScienceProgramsD';
+import { Shell } from "@/components/layout/Shell";
+
 import HeroBanner from './components/Banner';
 
 const SciencePrograms = () => (
+   <Shell>
   <div style={{ minHeight: '100vh', background: '#140f1c' }}>
       <HeroBanner
         title="Science Programs"
@@ -13,6 +16,8 @@ const SciencePrograms = () => (
         height="h-96"
         />
     <ScienceProgramsD />
+   
   </div>
+   </Shell>
 );
 export default SciencePrograms;

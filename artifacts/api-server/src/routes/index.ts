@@ -10,6 +10,8 @@ import recruiterRouter from "./recruiter";
 import adminRouter from "./admin";
 import demoRouter from "./demo";
 import trainingRouter from "./training";
+import blogRouter from "./blog";
+
 
 const router: IRouter = Router();
 
@@ -24,5 +26,6 @@ router.use(recruiterRouter);
 router.use(adminRouter);
 router.use(demoRouter);
 router.use(trainingRouter);
+router.use(blogRouter);
 
 export default router;
