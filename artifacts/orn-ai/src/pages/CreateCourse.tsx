@@ -1173,7 +1173,7 @@ const handleAddQuiz = async (
           className="btn-primary mt-6"
           onClick={() => {
             // Reset form or redirect
-            window.location.href = "/admin/courses"
+            window.location.href = "/recruiter/courses"
           }}
         >
           View All Courses
