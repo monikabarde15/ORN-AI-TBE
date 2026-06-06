@@ -15,12 +15,12 @@ import RecruiterDashboard from "@/pages/RecruiterDashboard";
 import RecruiterAddCandidate from "@/pages/RecruiterAddCandidate";
 import BlogAdd from "@/pages/BlogAdd";
 
-import CoursesAddCandidate from "@/pages/CreateCourseForm";
-import EditCourseForm from "@/pages/EditCourseForm";
+import CreateCourse from "@/pages/CreateCourse";
+import EditCoursePage from "@/pages/EditCoursePage";
 import VideoPlayer from "@/pages/VideoPlayer";
 import CoursePlayer from "./pages/CoursePlayer/CoursePlayer";
 import LabDetail from "./pages/LabDetail";
-import CourseManagementPage from "@/pages/CourseManagementPage";
+import CourseManagementPage from "@/pages/CoursesListPage";
 import MyFeed from "@/pages/MyFeed";
 
 
@@ -117,7 +117,7 @@ function Router() {
       </Route>
       <Route path="/recruiter/course/add">
         <ProtectedRoute roles={["recruiter", "admin"]}>
-          <CoursesAddCandidate />
+          <CreateCourse />
         </ProtectedRoute>
       </Route>
       {/* <Route path="/recruiter/course/details/:id">
@@ -129,7 +129,7 @@ function Router() {
       <Route path="/course/details/:id" component={CoursePlayer} />
       <Route path="/recruiter/course/edit/:id">
         <ProtectedRoute roles={["recruiter", "admin"]}>
-          <EditCourseForm />
+          <EditCoursePage />
         </ProtectedRoute>
       </Route>
        <Route path="/recruiter/courses">

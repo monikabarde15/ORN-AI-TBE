@@ -1,9 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
+import React, { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
 
 import { Shell } from "@/components/layout/Shell";
@@ -16,7 +11,6 @@ import {
 } from "@/components/ui/card";
 
 import { Button } from "@/components/ui/button";
-
 import { Input } from "@/components/ui/input";
 
 import {
@@ -40,13 +34,15 @@ import {
   Pencil,
   Trash2,
   Search,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 
-import {
-  useEditor,
-  EditorContent,
-} from "@tiptap/react";
-
+import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 
 interface Blog {
@@ -58,95 +54,45 @@ interface Blog {
   status: string;
 }
 
-export default function BlogManagement() {
-  const [blogs, setBlogs] =
-    useState<Blog[]>([]);
+export default function BlogManagementNew() {
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
 
-  const [open, setOpen] =
-    useState(false);
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
 
-  const [loading, setLoading] =
-    useState(false);
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
 
-  const [editingBlog, setEditingBlog] =
-    useState<Blog | null>(null);
-
-  const [title, setTitle] =
-    useState("");
-
-  const [category, setCategory] =
-    useState("");
-
-  const [description, setDescription] =
-    useState("");
-
-  const [image, setImage] =
-    useState<File | null>(null);
-
-  const [imagePreview, setImagePreview] =
-    useState("");
-
-  const [search, setSearch] =
-    useState("");
-
-  const [page, setPage] =
-    useState(1);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const perPage = 5;
 
   const editor = useEditor({
     extensions: [StarterKit],
-    content: description,
-
+    content: "",
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      setDescription(
-        editor.getHTML()
-      );
+      setDescription(editor.getHTML());
     },
   });
-
-  const fetchBlogs = async () => {
-    try {
-      const res =
-        await api.get("/api/blogs");
-
-      setBlogs(
-        res.data.data || []
-      );
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   useEffect(() => {
     fetchBlogs();
   }, []);
 
-  const filteredBlogs =
-    blogs.filter((blog) =>
-      blog.title
-        .toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
-    );
-
-  const paginatedBlogs =
-    useMemo(() => {
-      const start =
-        (page - 1) * perPage;
-
-      return filteredBlogs.slice(
-        start,
-        start + perPage
-      );
-    }, [filteredBlogs, page]);
-
-  const totalPages =
-    Math.ceil(
-      filteredBlogs.length /
-        perPage
-    );
+  const fetchBlogs = async () => {
+    try {
+      const res = await api.get("/api/blogs");
+      setBlogs(res.data.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const resetForm = () => {
     setTitle("");
@@ -155,67 +101,40 @@ export default function BlogManagement() {
     setImage(null);
     setImagePreview("");
     setEditingBlog(null);
-
     editor?.commands.setContent("");
   };
 
-  const handleAddClick = () => {
+  const handleAdd = () => {
     resetForm();
     setOpen(true);
   };
 
-  const handleEditClick = (
-    blog: Blog
-  ) => {
+  const handleEdit = (blog: Blog) => {
     setEditingBlog(blog);
 
     setTitle(blog.title);
+    setCategory(blog.category);
+    setDescription(blog.description);
 
-    setCategory(
-      blog.category
-    );
+    setImagePreview(blog.thumbnail || "");
 
-    setDescription(
-      blog.description
-    );
-
-    setImagePreview(
-      blog.thumbnail || ""
-    );
-
-    editor?.commands.setContent(
-      blog.description || ""
-    );
+    editor?.commands.setContent(blog.description || "");
 
     setOpen(true);
   };
 
-  const handleImageChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file =
-      e.target.files?.[0];
-
-    if (!file) return;
-
-    setImage(file);
-
-    setImagePreview(
-      URL.createObjectURL(file)
+  const handleDelete = async (id: string) => {
+    const confirmDelete = window.confirm(
+      "Delete this blog?"
     );
-  };
 
-  const handleDelete = async (
-    id: string
-  ) => {
+    if (!confirmDelete) return;
+
     try {
-      await api.delete(
-        `/api/blogs/${id}`
-      );
-
+      await api.delete(`/api/blogs/${id}`);
       fetchBlogs();
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -223,34 +142,15 @@ export default function BlogManagement() {
     try {
       setLoading(true);
 
-      const formData =
-        new FormData();
+      const formData = new FormData();
 
-      formData.append(
-        "title",
-        title
-      );
-
-      formData.append(
-        "description",
-        description
-      );
-
-      formData.append(
-        "category",
-        category
-      );
-
-      formData.append(
-        "status",
-        "Published"
-      );
+      formData.append("title", title);
+      formData.append("category", category);
+      formData.append("description", description);
+      formData.append("status", "Published");
 
       if (image) {
-        formData.append(
-          "thumbnailImage",
-          image
-        );
+        formData.append("thumbnailImage", image);
       }
 
       if (editingBlog) {
@@ -270,109 +170,98 @@ export default function BlogManagement() {
       setOpen(false);
 
       resetForm();
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
+  const filteredBlogs = useMemo(() => {
+    return blogs.filter((blog) =>
+      blog.title
+        .toLowerCase()
+        .includes(search.toLowerCase())
+    );
+  }, [blogs, search]);
+
+  const paginatedBlogs = useMemo(() => {
+    const start = (page - 1) * perPage;
+    return filteredBlogs.slice(
+      start,
+      start + perPage
+    );
+  }, [filteredBlogs, page]);
+
+  const totalPages = Math.ceil(
+    filteredBlogs.length / perPage
+  );
+
   return (
     <Shell>
-      <div className="container mx-auto py-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>
-              Blog CMS
+      <div className="p-4 md:p-8">
+        <Card className="shadow-xl rounded-2xl">
+          <CardHeader className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+            <CardTitle className="text-2xl font-bold">
+              Blog Management
             </CardTitle>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col md:flex-row gap-3">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4" />
-
                 <Input
-                  className="pl-10"
-                  placeholder="Search"
+                  className="pl-10 w-full md:w-[250px]"
+                  placeholder="Search Blog..."
                   value={search}
                   onChange={(e) =>
-                    setSearch(
-                      e.target.value
-                    )
+                    setSearch(e.target.value)
                   }
                 />
               </div>
 
-              <Button
-                onClick={
-                  handleAddClick
-                }
-              >
-                <Plus
-                  size={16}
-                />
+              <Button onClick={handleAdd}>
+                <Plus className="mr-2 h-4 w-4" />
                 Add Blog
               </Button>
             </div>
           </CardHeader>
 
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>
-                    Image
-                  </TableHead>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Image</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Action</TableHead>
+                  </TableRow>
+                </TableHeader>
 
-                  <TableHead>
-                    Title
-                  </TableHead>
-
-                  <TableHead>
-                    Category
-                  </TableHead>
-
-                  <TableHead>
-                    Status
-                  </TableHead>
-
-                  <TableHead>
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {paginatedBlogs.map(
-                  (blog) => (
-                    <TableRow
-                      key={blog.id}
-                    >
+                <TableBody>
+                  {paginatedBlogs.map((blog) => (
+                    <TableRow key={blog.id}>
                       <TableCell>
                         <img
                           src={
                             blog.thumbnail ||
-                            "https://placehold.co/100x60"
+                            "https://placehold.co/120x80"
                           }
-                          className="h-14 w-24 rounded object-cover"
+                          className="h-16 w-28 rounded-lg object-cover"
                         />
                       </TableCell>
 
                       <TableCell>
-                        {
-                          blog.title
-                        }
+                        {blog.title}
                       </TableCell>
 
                       <TableCell>
-                        {
-                          blog.category
-                        }
+                        {blog.category}
                       </TableCell>
 
                       <TableCell>
-                        {
-                          blog.status
-                        }
+                        {blog.status}
                       </TableCell>
 
                       <TableCell>
@@ -381,9 +270,7 @@ export default function BlogManagement() {
                             size="sm"
                             variant="outline"
                             onClick={() =>
-                              handleEditClick(
-                                blog
-                              )
+                              handleEdit(blog)
                             }
                           >
                             <Pencil size={14} />
@@ -393,9 +280,7 @@ export default function BlogManagement() {
                             size="sm"
                             variant="destructive"
                             onClick={() =>
-                              handleDelete(
-                                blog.id
-                              )
+                              handleDelete(blog.id)
                             }
                           >
                             <Trash2 size={14} />
@@ -403,75 +288,149 @@ export default function BlogManagement() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  )
-                )}
-              </TableBody>
-            </Table>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="flex justify-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                disabled={page === 1}
+                onClick={() =>
+                  setPage(page - 1)
+                }
+              >
+                Prev
+              </Button>
+
+              <span className="px-4 py-2">
+                {page} / {totalPages || 1}
+              </span>
+
+              <Button
+                variant="outline"
+                disabled={page >= totalPages}
+                onClick={() =>
+                  setPage(page + 1)
+                }
+              >
+                Next
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
-        <Dialog
-          open={open}
-          onOpenChange={setOpen}
-        >
-          <DialogContent className="max-w-6xl">
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent
+  className="
+    w-[98vw]
+    h-[95vh]
+
+    max-w-7xl
+
+    overflow-hidden
+
+    rounded-3xl
+
+    p-0
+  "
+>
             <DialogHeader>
               <DialogTitle>
                 {editingBlog
                   ? "Edit Blog"
-                  : "Add Blog"}
+                  : "Create Blog"}
               </DialogTitle>
             </DialogHeader>
 
-            <div className="grid lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
+            <div className=" grid
+    grid-cols-1
+
+    lg:grid-cols-[420px_1fr]
+
+    h-[calc(95vh-80px)]
+
+    overflow-hidden">
+              <div className="border-r
+
+    overflow-y-auto
+
+    p-5
+
+    space-y-5">
                 <Input
-                  placeholder="Title"
+                  placeholder="Blog Title"
                   value={title}
                   onChange={(e) =>
-                    setTitle(
-                      e.target.value
-                    )
+                    setTitle(e.target.value)
                   }
                 />
 
                 <Input
                   placeholder="Category"
-                  value={
-                    category
-                  }
+                  value={category}
                   onChange={(e) =>
-                    setCategory(
-                      e.target.value
-                    )
+                    setCategory(e.target.value)
                   }
                 />
 
-                <Input
+                
+<label
+  className="
+    border-2
+    border-dashed
+    rounded-2xl
+
+    h-40
+
+    flex
+    items-center
+    justify-center
+
+    cursor-pointer
+
+    hover:bg-muted
+  "
+>
+  Upload Thumbnail
+
+  <Input
                   type="file"
                   accept="image/*"
-                  onChange={
-                    handleImageChange
-                  }
-                />
+                  onChange={(e) => {
+                    const file =
+                      e.target.files?.[0];
 
+                    if (!file) return;
+
+                    setImage(file);
+
+                    setImagePreview(
+                      URL.createObjectURL(file)
+                    );
+                  }}
+                />
+</label>
                 {imagePreview && (
                   <img
-                    src={
-                      imagePreview
-                    }
-                    className="w-full h-64 object-cover rounded"
+                    src={imagePreview}
+                    className="
+                      w-full
+                      h-40
+                      sm:h-56
+                      md:h-64
+                      object-cover
+                      rounded-xl
+                      border
+                    "
                   />
                 )}
 
                 <Button
                   className="w-full"
-                  onClick={
-                    handleSave
-                  }
-                  disabled={
-                    loading
-                  }
+                  disabled={loading}
+                  onClick={handleSave}
                 >
                   {loading
                     ? "Saving..."
@@ -481,11 +440,146 @@ export default function BlogManagement() {
                 </Button>
               </div>
 
-              <div>
-                <EditorContent
-                  editor={editor}
-                  className="min-h-[500px] border rounded p-4"
-                />
+              <div className="flex
+    flex-col
+
+    h-full
+
+    overflow-hidden">
+                <div className=" border
+    rounded-xl
+
+    overflow-hidden
+
+    h-full
+
+    flex
+    flex-col">
+                  <div className="sticky
+    top-0
+
+    z-20
+
+    bg-background
+
+    border-b
+
+    p-3
+
+    flex
+    flex-wrap
+
+    gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        editor
+                          ?.chain()
+                          .focus()
+                          .toggleBold()
+                          .run()
+                      }
+                    >
+                      <Bold size={14} />
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        editor
+                          ?.chain()
+                          .focus()
+                          .toggleItalic()
+                          .run()
+                      }
+                    >
+                      <Italic size={14} />
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        editor
+                          ?.chain()
+                          .focus()
+                          .toggleBulletList()
+                          .run()
+                      }
+                    >
+                      <List size={14} />
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        editor
+                          ?.chain()
+                          .focus()
+                          .toggleOrderedList()
+                          .run()
+                      }
+                    >
+                      <ListOrdered size={14} />
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        editor
+                          ?.chain()
+                          .focus()
+                          .undo()
+                          .run()
+                      }
+                    >
+                      <Undo2 size={14} />
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        editor
+                          ?.chain()
+                          .focus()
+                          .redo()
+                          .run()
+                      }
+                    >
+                      <Redo2 size={14} />
+                    </Button>
+                  </div>
+
+                <div
+  className="
+    flex
+    flex-col
+    h-full
+    overflow-hidden
+  "
+>
+  
+
+  <EditorContent
+    editor={editor}
+    className="
+      flex-1
+      overflow-y-auto
+      p-6
+      prose
+      max-w-none
+
+      [&_.ProseMirror]:outline-none
+      [&_.ProseMirror]:min-h-full
+    "
+  />
+</div>
+                </div>
               </div>
             </div>
           </DialogContent>

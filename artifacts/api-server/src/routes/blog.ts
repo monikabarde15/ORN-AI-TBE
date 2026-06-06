@@ -4,7 +4,7 @@ import { upload } from "../lib/upload";
 
 import {
   db,
-  blogsTable,
+  blogs,
 } from "@workspace/db";
 
 const router: IRouter = Router();
@@ -30,7 +30,7 @@ router.post(
           ?.thumbnailImage?.[0];
 
       const [blog] = await db
-        .insert(blogsTable)
+        .insert(blogs)
         .values({
           title: body.title,
           description: body.description,
@@ -65,14 +65,14 @@ router.get(
   "/blogs",
   async (_req, res): Promise<void> => {
     try {
-      const blogs = await db
+      const blogList = await db
         .select()
-        .from(blogsTable)
-        .orderBy(desc(blogsTable.createdAt));
+        .from(blogs)
+        .orderBy(desc(blogs.createdAt));
 
       res.json({
         success: true,
-        data: blogs,
+        data: blogList,
       });
     } catch (error) {
       console.log("BLOG ERROR =>", error);
@@ -98,8 +98,8 @@ router.get(
 
       const [blog] = await db
         .select()
-        .from(blogsTable)
-        .where(eq(blogsTable.id, id));
+        .from(blogs)
+        .where(eq(blogs.id, Number(id)));
 
       if (!blog) {
         res.status(404).json({
@@ -149,8 +149,8 @@ router.put(
 
       const [existingBlog] = await db
         .select()
-        .from(blogsTable)
-        .where(eq(blogsTable.id, id));
+        .from(blogs)
+        .where(eq(blogs.id, Number(id)));
 
       if (!existingBlog) {
         res.status(404).json({
@@ -162,7 +162,7 @@ router.put(
       }
 
       await db
-        .update(blogsTable)
+        .update(blogs)
         .set({
           title:
             body.title ??
@@ -188,12 +188,12 @@ router.put(
 
           updatedAt: new Date(),
         })
-        .where(eq(blogsTable.id, id));
+        .where(eq(blogs.id, Number(id)));
 
       const [updatedBlog] = await db
         .select()
-        .from(blogsTable)
-        .where(eq(blogsTable.id, id));
+        .from(blogs)
+        .where(eq(blogs.id, Number(id)));
 
       res.status(200).json({
         success: true,
@@ -223,8 +223,8 @@ router.delete(
       const { id } = req.params;
 
       await db
-        .delete(blogsTable)
-        .where(eq(blogsTable.id, id));
+        .delete(blogs)
+        .where(eq(blogs.id, Number(id)));
 
       res.json({
         success: true,

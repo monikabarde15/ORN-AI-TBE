@@ -1,47 +1,18 @@
-
 import {
   pgTable,
-  uuid,
+  serial,
+  varchar,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
 
-export const blogsTable = pgTable("blogs", {
-  id: uuid("id")
-    .primaryKey()
-    .defaultRandom(),
-
-  title: text("title").notNull(),
-
-  description: text("description").notNull(),
-
-  category: text("category"),
-
+export const blogs = pgTable("blogs", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 100 }),
   thumbnail: text("thumbnail"),
-
-  status: text("status")
-    .notNull()
-    .default("Draft"),
-
-  createdAt: timestamp("created_at", {
-    withTimezone: true,
-  })
-    .notNull()
-    .defaultNow(),
-
-  updatedAt: timestamp("updated_at", {
-    withTimezone: true,
-  })
-    .notNull()
-    .defaultNow(),
+  status: varchar("status", { length: 50 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
-
-/* =========================================
-   TYPES
-========================================= */
-
-export type BlogRow =
-  typeof blogsTable.$inferSelect;
-
-export type InsertBlogRow =
-  typeof blogsTable.$inferInsert;

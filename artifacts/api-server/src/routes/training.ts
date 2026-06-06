@@ -640,6 +640,8 @@ router.post(
     }
   }
 );
+
+
 router.post(
   "/mcq/create",
   async (req, res): Promise<void> => {
@@ -1250,7 +1252,74 @@ router.get(
 // ======================================================
 // UPDATE COURSE
 // ======================================================
+router.post(
+  "/course/editCourse",
+  upload.fields([
+    { name: "thumbnailImage", maxCount: 1 },
+    { name: "promotionalVideo", maxCount: 1 },
+  ]),
+  async (req, res): Promise<void> => {
+    try {
 
+      console.log("BODY =>", req.body);
+
+      const body = req.body;
+
+      const { courseId } = body;
+
+      if (!courseId) {
+        res.status(400).json({
+          success: false,
+          message: "courseId is required",
+        });
+        return;
+      }
+
+      const thumbnail =
+        (req.files as any)?.thumbnailImage?.[0];
+
+      const promoVideo =
+        (req.files as any)?.promotionalVideo?.[0];
+
+      await db
+  .update(coursesTable)
+  .set({
+    title: body.courseName,
+    subtitle: body.subtitle,
+    description: body.courseDescription,
+    category: body.category,
+    difficulty: body.difficulty,
+    instructor: body.instructor,
+    price: body.price,
+
+    ...(thumbnail && {
+      thumbnail: thumbnail.location,
+    }),
+
+    ...(promoVideo && {
+      promotionalVideo: promoVideo.location,
+    }),
+  })
+  .where(
+    eq(coursesTable.id, courseId)
+  );
+
+      res.json({
+        success: true,
+        message: "Course updated",
+      });
+
+    } catch (error: any) {
+
+      console.log(error);
+
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+);
 
 router.put(
   "/courses/:id",
