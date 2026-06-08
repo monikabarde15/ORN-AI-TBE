@@ -51,6 +51,7 @@ const corsOptions =
         origin: [
           "https://orn-ai.com",
           "http://orn-ai.com",
+          "http://85.217.171.42",
           "http://103.176.85.169:8080",
         ],
         credentials: true,
