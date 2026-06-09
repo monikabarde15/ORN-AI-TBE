@@ -197,7 +197,7 @@ const isDashboard =
                        Course Management
                       </Link>
 
-                      <Link href="#" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/courses" || location === "/recruiter/course/add" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
+                      <Link href="/recruiter/learning-path" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/learning-path" || location === "/recruiter/learning-path" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
                         <UserPlus className="size-4" />
                         Learning Paths
                       </Link>
