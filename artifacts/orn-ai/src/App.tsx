@@ -28,6 +28,8 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import TrainingDashboard from "@/pages/TrainingDashboard";
 import CandidateTraining from "@/pages/CandidateTraining";
 import Pricing from "@/pages/Pricing";
+import LearningPath from "@/pages/LearningPath";
+
 import DataScientce from "@/pages/Data";
 import Advancedprograms from "@/pages/Advancedprograms";
 import BusinessDataAnalytics from "@/pages/BusinessDataAnalytics";
@@ -108,6 +110,11 @@ function Router() {
       <Route path="/recruiter/add">
         <ProtectedRoute roles={["recruiter", "admin"]}>
           <RecruiterAddCandidate />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/recruiter/learning-path">
+        <ProtectedRoute roles={["recruiter", "admin"]}>
+          <LearningPath />
         </ProtectedRoute>
       </Route>
        <Route path="/admin/blog/add">

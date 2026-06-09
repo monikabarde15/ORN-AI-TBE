@@ -29,6 +29,20 @@
       "when": 1780726822875,
       "tag": "0003_right_diamondback",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780992884562,
+      "tag": "0004_natural_snowbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781006445292,
+      "tag": "0005_wealthy_fallen_one",
+      "breakpoints": true
     }
   ]
 }

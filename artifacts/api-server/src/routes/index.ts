@@ -11,6 +11,7 @@ import adminRouter from "./admin";
 import demoRouter from "./demo";
 import trainingRouter from "./training";
 import blogRouter from "./blog";
+import payment from "./payment";
 
 
 const router: IRouter = Router();
@@ -27,5 +28,6 @@ router.use(adminRouter);
 router.use(demoRouter);
 router.use(trainingRouter);
 router.use(blogRouter);
+router.use(payment);
 
 export default router;
