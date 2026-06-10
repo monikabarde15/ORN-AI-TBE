@@ -206,7 +206,7 @@ const isDashboard =
                         <UserPlus className="size-4" />
                         Course Categories
                       </Link>
-                      <Link href="#" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/courses" || location === "/recruiter/course/add" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-add-candidate">
+                      <Link href="/recruiter/live-session" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/live-session" || location === "/recruiter/live-session" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`} data-testid="link-nav-live-session">
                         <UserPlus className="size-4" />
                        Live Training Sessions
                       </Link>

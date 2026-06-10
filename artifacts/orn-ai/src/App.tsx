@@ -27,8 +27,11 @@ import MyFeed from "@/pages/MyFeed";
 import AdminDashboard from "@/pages/AdminDashboard";
 import TrainingDashboard from "@/pages/TrainingDashboard";
 import CandidateTraining from "@/pages/CandidateTraining";
-import Pricing from "@/pages/Pricing";
+import Pricing from "@/pages/Pricing"; 
 import LearningPath from "@/pages/LearningPath";
+import PaymentPage from "@/pages/PaymentPage";
+import PaymentSuccess from "@/pages/PaymentSuccess";
+import LiveSessionCourses from "@/pages/LiveSessionCourses";
 
 import DataScientce from "@/pages/Data";
 import Advancedprograms from "@/pages/Advancedprograms";
@@ -117,6 +120,21 @@ function Router() {
           <LearningPath />
         </ProtectedRoute>
       </Route>
+       <Route path="/recruiter/live-session">
+        {/* <ProtectedRoute roles={["candidate"]}> */}
+          <LiveSessionCourses  />
+        {/* </ProtectedRoute> */}
+      </Route>
+      <Route path="/payment/:paymentId">
+        {/* <ProtectedRoute roles={["candidate"]}> */}
+          <PaymentPage  />
+        {/* </ProtectedRoute> */}
+      </Route>
+      <Route
+          path="/payment-success/:paymentId"
+        >
+          <PaymentSuccess />
+        </Route>
        <Route path="/admin/blog/add">
         <ProtectedRoute roles={["recruiter", "admin"]}>
           <BlogAdd />

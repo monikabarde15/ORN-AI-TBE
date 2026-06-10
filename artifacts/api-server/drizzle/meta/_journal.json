@@ -43,6 +43,13 @@
       "when": 1781006445292,
       "tag": "0005_wealthy_fallen_one",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781091548999,
+      "tag": "0006_milky_blazing_skull",
+      "breakpoints": true
     }
   ]
 }

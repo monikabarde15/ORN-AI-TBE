@@ -2,9 +2,10 @@ import { Router, type IRouter } from "express";
 import crypto from "crypto";
 import Razorpay from "razorpay";
 import { db, paymentLinksTable } from "@workspace/db";
-import { requireAuth, requireRole } from "../lib/auth";
-import { desc } from "drizzle-orm";
+import { coursesTable } from "@workspace/db";
 
+import { requireAuth, requireRole } from "../lib/auth";
+import { desc, eq } from "drizzle-orm";
 const router: IRouter = Router();
 
 const razorpay = new Razorpay({
@@ -32,23 +33,20 @@ router.post(
 
       const paymentId = crypto.randomUUID();
 
-     const link = await razorpay.paymentLink.create({
-  amount: Math.round(amount * 100),
-  currency: "INR",
-  description: "Learning Path Payment",
+    const link = await razorpay.paymentLink.create({
+        amount: Math.round(amount * 100),
+        currency: "INR",
 
-  notify: {
-    sms: false,
-    email: false,
-  },
+        callback_url:
+          `${process.env.FRONTEND_URL}/payment-success/${paymentId}`,
 
-  reminder_enable: false,
+        callback_method: "get",
 
-  notes: {
-    paymentId,
-    courseIds: courseIds.join(","),
-  },
-});
+        notes: {
+          paymentId,
+          courseIds: courseIds.join(","),
+        },
+      });
 
       const [row] = await db
         .insert(paymentLinksTable)
@@ -139,72 +137,69 @@ VERIFY PAYMENT
 ========================================= */
 
 router.post(
-"/payment/verify",
-requireAuth,
-async (req, res): Promise<void> => {
-try {
-const {
-razorpay_order_id,
-razorpay_payment_id,
-razorpay_signature,
-} = req.body;
+  "/payment/verify",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    try {
+      const {
+        paymentId,
+        studentName,
+        studentEmail,
+        studentPhone,
+        razorpay_payment_id,
+        razorpay_signature,
+      } = req.body;
 
-  if (
-    !razorpay_order_id ||
-    !razorpay_payment_id ||
-    !razorpay_signature
-  ) {
-    res.status(400).json({
-      error: "Missing payment details",
-    });
-    return;
+      if (
+        !paymentId ||
+        !razorpay_payment_id
+      ) {
+        return res.status(400).json({
+          error: "Missing payment details",
+        });
+      }
+
+      const [payment] = await db
+        .update(paymentLinksTable)
+        .set({
+          status: "paid",
+          paidAt: new Date(),
+
+          studentName,
+          studentEmail,
+          studentPhone,
+
+          razorpayPaymentId:
+            razorpay_payment_id,
+        })
+        .where(
+          eq(
+            paymentLinksTable.paymentId,
+            paymentId
+          )
+        )
+        .returning();
+
+      if (!payment) {
+        return res.status(404).json({
+          error: "Payment not found",
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Payment verified",
+        payment,
+      });
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).json({
+        error: "Verification failed",
+      });
+    }
   }
-
-  const body =
-    razorpay_order_id +
-    "|" +
-    razorpay_payment_id;
-
-  const expectedSignature =
-    crypto
-      .createHmac(
-        "sha256",
-        process.env.RAZORPAY_KEY_SECRET!
-      )
-      .update(body)
-      .digest("hex");
-
-  const isValid =
-    expectedSignature ===
-    razorpay_signature;
-
-  if (!isValid) {
-    res.status(400).json({
-      success: false,
-      error: "Invalid signature",
-    });
-    return;
-  }
-
-  res.status(200).json({
-    success: true,
-    message: "Payment verified",
-  });
-} catch (error: any) {
-  console.error(
-    "VERIFY ERROR =>",
-    error
-  );
-
-  res.status(500).json({
-    error: "Verification failed",
-  });
-}
-
-}
 );
-
-
 
 router.get(
   "/payment/list",
@@ -285,4 +280,85 @@ router.get(
     });
   }
 );
+router.get(
+  "/payment/students-courses",
+  requireAuth,
+  requireRole("admin", "recruiter"),
+  async (req, res) => {
+    try {
+      const payments = await db
+        .select()
+        .from(paymentLinksTable);
+
+      const result = [];
+
+      for (const payment of payments) {
+        const allCourses = await db
+          .select()
+          .from(coursesTable);
+
+        const courses = allCourses.filter((c) =>
+          payment.courseIds.includes(c.id)
+        );
+
+        result.push({
+          paymentId: payment.paymentId,
+          studentName: payment.studentName,
+          studentEmail: payment.studentEmail,
+          studentPhone: payment.studentPhone,
+          amount: payment.amount,
+          status: payment.status,
+          courses,
+        });
+      }
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).json({
+        error: "Failed to fetch data",
+      });
+    }
+  }
+);
+router.get(
+  "/payment/:paymentId",
+  async (req, res) => {
+    try {
+      const paymentId = req.params.paymentId;
+
+      const [payment] = await db
+        .select()
+        .from(paymentLinksTable)
+        .where(
+          eq(
+            paymentLinksTable.paymentId,
+            paymentId
+          )
+        );
+
+      if (!payment) {
+        return res.status(404).json({
+          error: "Payment not found",
+        });
+      }
+
+      res.json({
+        success: true,
+        payment,
+      });
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).json({
+        error: "Failed to fetch payment",
+      });
+    }
+  }
+);
+
 export default router;

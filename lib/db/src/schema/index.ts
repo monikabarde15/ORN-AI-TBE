@@ -6,3 +6,4 @@ export * from "./projects";
 export * from "./auditLogs";
 export * from "./blogs";
 export * from "./paymentLinks";
+export * from "./liveSessionsTable";

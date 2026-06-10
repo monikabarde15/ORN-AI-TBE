@@ -99,18 +99,21 @@ const paginatedCourses =
         amount: grandTotal,
       }
     );
+const paymentPageUrl =
+`${window.location.origin}/payment/${res.data.paymentId}`;
 
-    setPaymentLink(
-      res.data.paymentLink
-    );
+setPaymentLink(paymentPageUrl);
+    // setPaymentLink(
+    //   res.data.paymentLink
+    // );
 
-    await navigator.clipboard.writeText(
-      res.data.paymentLink
-    );
+    // await navigator.clipboard.writeText(
+    //   res.data.paymentLink
+    // );
 
-    toast.success(
-      "Payment link copied"
-    );
+    // toast.success(
+    //   "Payment link copied"
+    // );
   } catch {
     toast.error(
       "Failed to generate link"

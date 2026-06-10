@@ -48,7 +48,18 @@ export default function Login() {
       title: "Welcome back",
       description: `Signed in as ${session.user.email}`,
     });
+    const params = new URLSearchParams(
+  window.location.search
+);
 
+const redirect = params.get("redirect");
+
+console.log("REDIRECT =", redirect);
+
+if (redirect) {
+  window.location.href = redirect;
+  return;
+}else{
     const role = session.user.role;
 
     if (role === "admin") {
@@ -56,11 +67,11 @@ export default function Login() {
     } else if (role === "recruiter") {
       window.location.href = "/recruiter";
     } else if (role === "candidate" && session.user.candidateId) {
-      window.location.href = `/candidate/${session.user.candidateId}/evaluation`;
+     // window.location.href = `/candidate/${session.user.candidateId}/evaluation`;
     } else {
       window.location.href = "/";
     }
-
+  }
   } catch (err) {
     const message =
       err instanceof ApiError &&
