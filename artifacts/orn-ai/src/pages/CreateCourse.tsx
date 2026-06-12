@@ -409,6 +409,10 @@ function CreateCourseForm() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
   const [courseId, setCourseId] = useState("")
+  const [mediaUploading, setMediaUploading] = useState({
+  cover: false,
+  video: false,
+});
   const [modules, setModules] = useState<Module[]>([])
   const [moduleTitle, setModuleTitle] = useState("")
   const [lessonForms, setLessonForms] = useState<Record<string, Lesson>>({})
@@ -1225,56 +1229,63 @@ setLessonUploading((prev) => ({
 
   // ========== FILE UPLOAD HANDLERS ==========
 
-  const handleCoverUpload = (
+const handleCoverUpload = (
   e: React.ChangeEvent<HTMLInputElement>
 ) => {
-
-  const file =
-    e.target.files?.[0];
+  const file = e.target.files?.[0];
 
   if (!file) return;
 
-  setFormData((prev) => ({
+  setMediaUploading((prev) => ({
     ...prev,
-    thumbnailImage: file,
+    cover: true,
   }));
 
-  const reader =
-    new FileReader();
+  const reader = new FileReader();
 
-  reader.onloadend = () =>
+  reader.onloadend = () => {
+    setFormData((prev) => ({
+      ...prev,
+      thumbnailImage: file,
+    }));
+
     setCoverPreview(
       reader.result as string
     );
 
+    setMediaUploading((prev) => ({
+      ...prev,
+      cover: false,
+    }));
+  };
+
   reader.readAsDataURL(file);
-
-  setUploadProgress((prev) => ({
-    ...prev,
-    cover: "completed",
-  }));
 };
-
-  const handleVideoUpload = (
+const handleVideoUpload = (
   e: React.ChangeEvent<HTMLInputElement>
 ) => {
-
-  const file =
-    e.target.files?.[0];
+  const file = e.target.files?.[0];
 
   if (!file) return;
+
+  setMediaUploading((prev) => ({
+    ...prev,
+    video: true,
+  }));
 
   setFormData((prev) => ({
     ...prev,
     promotionalVideo: file,
   }));
 
-  setVideoPreview(file.name);
+  setTimeout(() => {
+    setVideoPreview(file.name);
 
-  setUploadProgress((prev) => ({
-    ...prev,
-    video: "completed",
-  }));
+    setMediaUploading((prev) => ({
+      ...prev,
+      video: false,
+    }));
+  }, 800);
 };
 
   const formatFileSize = (bytes) => {
@@ -1961,12 +1972,20 @@ toast.success(
                   onClick={() => document.getElementById('coverInput').click()}
                 >
                   <div className="upload-icon">
-                    {uploadProgress.cover === 'uploading' ? (
-                      <div className="uploading-spinner-large"></div>
-                    ) : (
-                      '📷'
-                    )}
-                  </div>
+                 <div className="file-status-area">
+                  {loading ? (
+                    <div className="uploading-status">
+                      <div className="button-spinner"></div>
+                      <span>Uploading...</span>
+                    </div>
+                  ) : (
+                    <div className="upload-complete">
+                      <Check size={16} />
+                      <span>Ready</span>
+                    </div>
+                  )}
+                </div>
+                </div>
                   <div className="upload-text">
                     Drag & Drop image or <span className="upload-browse">Browse</span>
                   </div>
@@ -2016,12 +2035,20 @@ toast.success(
                   onDrop={handleVideoDrop}
                   onClick={() => document.getElementById('videoInput').click()}
                 >
-                  <div className="upload-icon">
-                    {uploadProgress.video === 'uploading' ? (
-                      <div className="uploading-spinner-large"></div>
-                    ) : (
-                      '🎥'
-                    )}
+                 <div className="upload-icon">
+                 <div className="file-status-area">
+  {loading ? (
+    <div className="uploading-status">
+      <div className="button-spinner"></div>
+      <span>Uploading...</span>
+    </div>
+  ) : (
+    <div className="upload-complete">
+      <Check size={16} />
+      <span>Ready</span>
+    </div>
+  )}
+</div>
                   </div>
                   <div className="upload-text">
                     Drag & Drop video or <span className="upload-browse">Browse</span>

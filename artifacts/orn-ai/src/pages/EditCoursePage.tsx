@@ -2257,11 +2257,19 @@ const handleAddQuiz = async (
                   onClick={() => document.getElementById('coverInput').click()}
                 >
                   <div className="upload-icon">
-                    {uploadProgress.cover === 'uploading' ? (
-                      <div className="uploading-spinner-large"></div>
-                    ) : (
-                      '📷'
-                    )}
+                    <div className="file-status-area">
+                      {loading ? (
+                        <div className="uploading-status">
+                          <div className="button-spinner"></div>
+                          <span>Uploading...</span>
+                        </div>
+                      ) : (
+                        <div className="upload-complete">
+                          <Check size={16} />
+                          <span>Ready</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                     {coverPreview && (
                       <div className="mt-3">
@@ -2324,11 +2332,19 @@ const handleAddQuiz = async (
                   onClick={() => document.getElementById('videoInput').click()}
                 >
                   <div className="upload-icon">
-                    {uploadProgress.video === 'uploading' ? (
-                      <div className="uploading-spinner-large"></div>
+                  <div className="file-status-area">
+                    {loading ? (
+                      <div className="uploading-status">
+                        <div className="button-spinner"></div>
+                        <span>Uploading...</span>
+                      </div>
                     ) : (
-                      '🎥'
+                      <div className="upload-complete">
+                        <Check size={16} />
+                        <span>Ready</span>
+                      </div>
                     )}
+                  </div>
                   </div>
                   {videoPreview && (
   <div className="mt-3">
