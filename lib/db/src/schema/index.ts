@@ -7,3 +7,4 @@ export * from "./auditLogs";
 export * from "./blogs";
 export * from "./paymentLinks";
 export * from "./liveSessionsTable";
+export * from "./learningpathTable";

@@ -32,6 +32,7 @@ import LearningPath from "@/pages/LearningPath";
 import PaymentPage from "@/pages/PaymentPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import LiveSessionCourses from "@/pages/LiveSessionCourses";
+import LearningPathList from "@/pages/LearningPathList";
 
 import DataScientce from "@/pages/Data";
 import Advancedprograms from "@/pages/Advancedprograms";
@@ -118,6 +119,11 @@ function Router() {
       <Route path="/recruiter/learning-path">
         <ProtectedRoute roles={["recruiter", "admin"]}>
           <LearningPath />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/recruiter/learning-path-list">
+        <ProtectedRoute roles={["recruiter","admin"]}>
+          <LearningPathList  />
         </ProtectedRoute>
       </Route>
        <Route path="/recruiter/live-session">

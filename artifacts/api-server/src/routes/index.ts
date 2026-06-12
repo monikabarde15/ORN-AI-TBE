@@ -13,6 +13,8 @@ import trainingRouter from "./training";
 import blogRouter from "./blog";
 import payment from "./payment";
 import liveSessions from "./live-sessions";
+import learningPaths from "./learning-paths";
+
 
 
 const router: IRouter = Router();
@@ -31,5 +33,6 @@ router.use(trainingRouter);
 router.use(blogRouter);
 router.use(payment);
 router.use(liveSessions);
+router.use(learningPaths);
 
 export default router;

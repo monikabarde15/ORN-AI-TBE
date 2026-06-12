@@ -1,336 +1,402 @@
-
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  Search, ShoppingCart, Trash2, CreditCard,
-  Layers, PlayCircle, ClipboardList
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import api from "../../services/api";
 import { Shell } from "@/components/layout/Shell";
-import { PlusCircle, CheckCircle2 } from "lucide-react";
+
+import LearningPathForm from "./learning-path/LearningPathForm";
+import UploadMedia from "./learning-path/UploadMedia";
+import CourseSearch from "./learning-path/CourseSearch";
+import CourseGrid from "./learning-path/CourseGrid";
+import SelectedCourses from "./learning-path/SelectedCourses";
+import PaymentSummary from "./learning-path/PaymentSummary";
+import PaymentLinkBox from "./learning-path/PaymentLinkBox";
+
 interface Course {
   _id: string;
   title: string;
   description?: string;
   thumbnail?: string;
   price?: string;
-  status?: string;
   lessonCount?: number;
   quizCount?: number;
   videoCount?: number;
 }
 
 export default function LearningPath() {
+const [courseModalOpen, setCourseModalOpen] =
+  useState(false);
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [search, setSearch] = useState("");
+
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
-const [currentPage, setCurrentPage] = useState(1);
-const [paymentLink, setPaymentLink] = useState("");
-const coursesPerPage = 6;
+const [learningPathId, setLearningPathId] =
+  useState("");
+  const [search, setSearch] = useState("");
+
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+
+  const [thumbnail, setThumbnail] =
+    useState<File | null>(null);
+
+  const [introVideo, setIntroVideo] =
+    useState<File | null>(null);
+
+  const [paymentLink, setPaymentLink] =
+    useState("");
+
   useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const res = await api.get("/api/courses");
-        setCourses(res?.data?.courses || res?.data?.data || res?.data || []);
-      } catch {
-        toast.error("Failed to load courses");
-      } finally {
-        setLoading(false);
-      }
-    })();
+    loadCourses();
   }, []);
 
-  const filteredCourses = useMemo(
-    () => courses.filter(c => c.title?.toLowerCase().includes(search.toLowerCase())),
-    [courses, search]
-  );
-
-  const isSelected = (_id: string) =>
-    selectedCourses.some(c => c._id === _id);
-
-  const toggleCourse = (course: Course) => {
-    setSelectedCourses(prev =>
-      prev.some(c => c._id === course._id)
-        ? prev.filter(c => c._id !== course._id)
-        : [...prev, course]
-    );
-  };
-const totalPages = Math.ceil(
-  filteredCourses.length / coursesPerPage
-);
-
-const paginatedCourses =
-  filteredCourses.slice(
-    (currentPage - 1) * coursesPerPage,
-    currentPage * coursesPerPage
-  );
-  const removeCourse = (_id: string) =>
-    setSelectedCourses(prev => prev.filter(c => c._id !== _id));
-
-  const subtotal = selectedCourses.reduce((s, c) => s + Number(c.price || 0), 0);
-  const gst = Number((subtotal * 0.18).toFixed(2));
-  const grandTotal = Number((subtotal + gst).toFixed(2));
-
-  const createLearningPath = async () => {
+  const loadCourses = async () => {
     try {
-      setSaving(true);
-      await api.post("/learning-path/create", {
-        courseIds: selectedCourses.map(c => c._id),
-      });
-      toast.success("Learning Path Created");
+      setLoading(true);
+
+      const res =
+        await api.get("/api/courses");
+
+      setCourses(
+        res?.data?.courses ||
+        res?.data?.data ||
+        res?.data ||
+        []
+      );
     } catch {
-      toast.error("Failed to create learning path");
+      toast.error(
+        "Failed to load courses"
+      );
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
-  const generatePaymentLink = async () => {
-  try {
-    const res = await api.post(
-      "/api/payment/generate-link",
-      {
-        courseIds: selectedCourses.map(
-          (c) => c._id
-        ),
-        amount: grandTotal,
+  const filteredCourses =
+    useMemo(() => {
+      return courses.filter((course) =>
+        course.title
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          )
+      );
+    }, [courses, search]);
+
+  const toggleCourse = (
+    course: Course
+  ) => {
+    setSelectedCourses((prev) =>
+      prev.some(
+        (c) => c._id === course._id
+      )
+        ? prev.filter(
+            (c) =>
+              c._id !== course._id
+          )
+        : [...prev, course]
+    );
+  };
+
+  const removeCourse = (
+    id: string
+  ) => {
+    setSelectedCourses((prev) =>
+      prev.filter(
+        (c) => c._id !== id
+      )
+    );
+  };
+
+  const subtotal =
+    selectedCourses.reduce(
+      (sum, course) =>
+        sum +
+        Number(course.price || 0),
+      0
+    );
+
+  const gst = Number(
+    (subtotal * 0.18).toFixed(2)
+  );
+
+  const total = Number(
+    (subtotal + gst).toFixed(2)
+  );
+
+  const generatePaymentLink =
+  async () => {
+    try {
+      if (!learningPathId) {
+        toast.error(
+          "Create Learning Path First"
+        );
+        return;
       }
-    );
-const paymentPageUrl =
-`${window.location.origin}/payment/${res.data.paymentId}`;
 
-setPaymentLink(paymentPageUrl);
-    // setPaymentLink(
-    //   res.data.paymentLink
-    // );
+      const res =
+        await api.post(
+          "/api/payment/generate-link",
+          {
+            learningPathId,
+            courseIds:
+              selectedCourses.map(
+                (c) => c._id
+              ),
+            amount: total,
+          }
+        );
 
-    // await navigator.clipboard.writeText(
-    //   res.data.paymentLink
-    // );
+      // Frontend Payment Page URL
+      const paymentPageUrl =
+        `${window.location.origin}/payment/${res.data.paymentId}`;
 
-    // toast.success(
-    //   "Payment link copied"
-    // );
-  } catch {
-    toast.error(
-      "Failed to generate link"
-    );
-  }
-};
-const copyPaymentLink = async () => {
+      setPaymentLink(
+        paymentPageUrl
+      );
+
+      // Save URL in Learning Path
+      await api.put(
+        `/api/learning-paths/${learningPathId}`,
+        {
+          paymentLink:
+            paymentPageUrl,
+        }
+      );
+
+      toast.success(
+        "Payment Link Generated"
+      );
+
+    } catch (error) {
+      console.error(error);
+
+      toast.error(
+        "Failed to generate payment link"
+      );
+    }
+  };
+const createLearningPath = async () => {
   try {
-    await navigator.clipboard.writeText(paymentLink);
-    toast.success("Payment Link Copied");
-  } catch {
-    toast.error("Failed to copy link");
+    if (!title) {
+      toast.error("Enter title");
+      return;
+    }
+
+    if (!description) {
+      toast.error("Enter description");
+      return;
+    }
+
+    if (selectedCourses.length === 0) {
+      toast.error("Select courses");
+      return;
+    }
+
+    setSaving(true);
+
+    const formData = new FormData();
+
+    formData.append("title", title);
+    formData.append("description", description);
+
+    if (thumbnail) {
+      formData.append(
+        "thumbnail",
+        thumbnail
+      );
+    }
+
+    if (introVideo) {
+      formData.append(
+        "introVideo",
+        introVideo
+      );
+    }
+
+    formData.append(
+      "courseIds",
+      JSON.stringify(
+        selectedCourses.map(
+          (c) => c._id
+        )
+      )
+    );
+
+    const res =
+      await api.post(
+        "/api/learning-paths",
+        formData,
+        {
+          headers: {
+            "Content-Type":
+              "multipart/form-data",
+          },
+        }
+      );
+
+    setLearningPathId(
+      res.data.data.id
+    );
+
+    toast.success(
+      "Learning Path Created"
+    );
+
+  } catch (error) {
+    console.log(error);
+
+    toast.error(
+      "Failed to create learning path"
+    );
+  } finally {
+    setSaving(false);
   }
 };
-
   return (
     <Shell>
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-6">
-            <h1 className="text-4xl font-bold">Learning Path</h1>
-            <p className="mt-2 text-slate-500">Create personalized learning journeys and payment bundles</p>
-        </div>
+      
+     <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_360px]">
-          <div className="">
-            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="rounded-2xl bg-white p-5 shadow-sm">
-                    <p className="text-sm text-slate-500">Courses</p>
-                    <h3 className="text-3xl font-bold">{courses.length}</h3>
-                </div>
+  {/* Left */}
+  <div className="space-y-8">
+   <LearningPathForm
+  title={title}
+  description={description}
+  setTitle={setTitle}
+  setDescription={setDescription}
+/>
+   <UploadMedia
+  setThumbnail={setThumbnail}
+  setVideo={setIntroVideo}
+/>
+<button
+  onClick={() =>
+    setCourseModalOpen(true)
+  }
+  className="
+    flex
+    w-full
+    items-center
+    justify-center
+    rounded-[24px]
+    bg-gradient-to-r
+    from-blue-600
+    to-indigo-600
+    py-4
+    text-lg
+    font-semibold
+    text-white
+    shadow-lg
+  "
+>
+  Manage Courses
+  ({selectedCourses.length})
+</button>
 
-                <div className="rounded-2xl bg-white p-5 shadow-sm">
-                    <p className="text-sm text-slate-500">Selected</p>
-                    <h3 className="text-3xl font-bold text-blue-600">
-                    {selectedCourses.length}
-                    </h3>
-                </div>
+  
+  </div>
 
-                <div className="rounded-2xl bg-white p-5 shadow-sm">
-                    <p className="text-sm text-slate-500">Amount</p>
-                    <h3 className="text-3xl font-bold text-green-600">
-                    ₹{grandTotal}
-                    </h3>
-                </div>
-            </div>
+  {/* Right */}
+  <div className="sticky top-6 space-y-6">
+    <SelectedCourses
+  courses={selectedCourses}
+  removeCourse={removeCourse}
+/>
+   <PaymentSummary
+  subtotal={subtotal}
+  gst={gst}
+  total={total}
+  paymentLink={paymentLink}
+  generatePaymentLink={generatePaymentLink}
+/>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {loading ? "Loading..." : paginatedCourses.map(course => (
-                <div key={course._id} className={`overflow-hidden rounded-3xl border bg-white ${isSelected(course._id) ? "border-green-500" : ""}`}>
-                  <img
-                    src={course.thumbnail || "https://placehold.co/600x400"}
-                    className="h-48 w-full object-cover"
-                  />
-                  <div className="p-4">
-                    <h3 className="line-clamp-1 text-sm font-semibold">{course.title}</h3>
-                    <p className="line-clamp-2 text-xs text-slate-500">{course.description}</p>
+    <button
+      onClick={createLearningPath}
+      className="
+        w-full
+        rounded-[24px]
+        bg-gradient-to-r
+        from-blue-600
+        to-indigo-600
+        py-4
+        text-lg
+        font-semibold
+        text-white
+        shadow-lg
+      "
+    >
+      Create Learning Path
+    </button>
+  </div>
 
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                      <span className="rounded-full bg-blue-50 px-2 py-1"><Layers size={12} className="inline" /> {course.lessonCount || 0}</span>
-                      <span className="rounded-full bg-purple-50 px-2 py-1"><ClipboardList size={12} className="inline" /> {course.quizCount || 0}</span>
-                      <span className="rounded-full bg-orange-50 px-2 py-1"><PlayCircle size={12} className="inline" /> {course.videoCount || 0}</span>
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between">
-                        <span className="font-bold text-green-600">
-                            ₹{Number(course.price || 0)}
-                        </span>
-
-                        <button
-                        onClick={() => toggleCourse(course)}
-                        className={
-                            isSelected(course._id)
-                            ? "flex items-center gap-2 rounded-xl bg-green-50 px-4 py-2 text-sm font-semibold text-green-600"
-                            : "flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
-                        }
-                        >
-                        {isSelected(course._id) ? (
-                            <>
-                            <CheckCircle2 size={16} />
-                            Added
-                            </>
-                        ) : (
-                            <>
-                            <PlusCircle size={16} />
-                            Add
-                            </>
-                        )}
-                        </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="border-t bg-white px-5 py-6">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-            <button
-                disabled={currentPage === 1}
-                onClick={() =>
-                setCurrentPage((p) => p - 1)
-                }
-                className="rounded-lg border px-4 py-2 disabled:opacity-50"
-            >
-                Previous
-            </button>
-
-            {Array.from(
-                { length: totalPages },
-                (_, i) => (
-                <button
-                    key={i}
-                    onClick={() =>
-                    setCurrentPage(i + 1)
-                    }
-                    className={`h-10 w-10 rounded-lg ${
-                    currentPage === i + 1
-                        ? "bg-blue-600 text-white"
-                        : "border"
-                    }`}
-                >
-                    {i + 1}
-                </button>
-                )
-            )}
-
-            <button
-                disabled={currentPage === totalPages}
-                onClick={() =>
-                setCurrentPage((p) => p + 1)
-                }
-                className="rounded-lg border px-4 py-2 disabled:opacity-50"
-            >
-                Next
-            </button>
-        </div>
 </div>
-          </div>
+{courseModalOpen && (
+  <div className="fixed inset-0 z-50 bg-black/40">
 
-          <div className="sticky top-6 h-fit rounded-3xl bg-white shadow-sm">
-            <div className="border-b p-5 flex justify-between">
-              <h2 className="font-bold">Cart</h2>
-              <ShoppingCart className="h-14 w-14 text-slate-300" />
-            </div>
+    <div className="mx-auto mt-10 h-[85vh] w-[90%] max-w-6xl rounded-3xl bg-white shadow-2xl">
 
-            <div className="max-h-96 overflow-auto p-4 space-y-3">
-              {selectedCourses.map(course => (
-                <div key={course._id} className="flex gap-3 rounded-xl border p-2">
-                 <img
-                    src={course.thumbnail}
-                    alt={course.title}
-                    className="h-16 w-20 rounded-lg object-cover flex-shrink-0"
-                    />
-                  <div className="flex-1">
-                    <div className="line-clamp-1 text-sm font-semibold">{course.title}</div>
-                    <div className="text-green-600">₹{Number(course.price || 0)}</div>
-                  </div>
-                  <button onClick={() => removeCourse(course._id)}>
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b px-6 py-4">
 
-            <div className="border-t p-5">
-              <div className="flex justify-between"><span>Courses</span><span>{selectedCourses.length}</span></div>
-              <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal}</span></div>
-              <div className="flex justify-between"><span>GST</span><span>₹{gst}</span></div>
-              <div className="mt-3 flex justify-between font-bold"><span>Total</span><span>₹{grandTotal}</span></div>
+        <div>
+          <h2 className="text-2xl font-bold">
+            Manage Courses
+          </h2>
 
-              <button onClick={generatePaymentLink} className="mt-4 w-full rounded-xl bg-green-600 py-3 text-white">
-                <CreditCard className="mr-2 inline h-4 w-4" /> Proceed To Payment
-              </button>
-
-              {/* <button onClick={createLearningPath} disabled={saving} className="mt-3 w-full rounded-xl bg-blue-600 py-3 text-white">
-                {saving ? "Creating..." : "Create Learning Path"}
-              </button> */}
-            </div>
-            {paymentLink && (
-                <div className="mt-4 rounded-xl border p-3">
-                    <p className="mb-2 text-xs">
-                    Payment Link
-                    </p>
-
-                    <input
-                    value={paymentLink}
-                    readOnly
-                    className="w-full rounded-lg border p-2"
-                    />
-
-                    <button
-                    onClick={() =>
-                        navigator.clipboard.writeText(
-                        paymentLink
-                        )
-                    }
-                    className="mt-2 w-full rounded-lg bg-blue-600 py-2 text-white"
-                    >
-                    Copy Link
-                    </button>
-
-                    <button
-                    onClick={() =>
-                        window.open(
-                        paymentLink,
-                        "_blank"
-                        )
-                    }
-                    className="mt-2 w-full rounded-lg bg-slate-900 py-2 text-white"
-                    >
-                    Open Link
-                    </button>
-                </div>
-                )}
-          </div>
+          <p className="text-sm text-slate-500">
+            Select courses for this learning path
+          </p>
         </div>
+
+        <button
+          onClick={() =>
+            setCourseModalOpen(false)
+          }
+          className="rounded-xl p-2 hover:bg-slate-100"
+        >
+          ✕
+        </button>
+
       </div>
+
+      {/* Search */}
+      <div className="p-6">
+
+        <div className="relative">
+
+          <input
+            value={search}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
+            placeholder="Search courses..."
+            className="w-full rounded-2xl border p-4"
+          />
+
+        </div>
+
+      </div>
+
+      {/* Grid */}
+      <div className="h-[calc(85vh-170px)] overflow-auto px-6 pb-6">
+
+        <CourseGrid
+          courses={filteredCourses}
+          selectedCourses={selectedCourses}
+          toggleCourse={toggleCourse}
+          loading={loading}
+        />
+
+      </div>
+
     </div>
+
+  </div>
+)}
+
     </Shell>
   );
 }
+

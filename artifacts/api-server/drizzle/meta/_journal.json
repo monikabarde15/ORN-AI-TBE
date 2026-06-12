@@ -57,6 +57,13 @@
       "when": 1781158232754,
       "tag": "0007_plain_omega_flight",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781263752652,
+      "tag": "0008_strong_william_stryker",
+      "breakpoints": true
     }
   ]
 }
