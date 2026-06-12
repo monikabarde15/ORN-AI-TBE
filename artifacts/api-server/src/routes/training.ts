@@ -490,6 +490,7 @@ router.post(
   upload.fields([
     { name: "thumbnailImage", maxCount: 1 },
     { name: "promotionalVideo", maxCount: 1 },
+    { name: "ebook", maxCount: 1 },
   ]),
   async (req, res): Promise<void> => {
     try {
@@ -501,38 +502,116 @@ router.post(
       const promoVideo =
         (req.files as any)?.promotionalVideo?.[0];
 
+      const ebook =
+        (req.files as any)?.ebook?.[0];
+
       const [course] = await db
         .insert(coursesTable)
         .values({
+          // Basic Details
           title: body.courseName,
-          description: body.courseDescription,
-          category: body.category,
-          price: body.price,
-          status: "Draft",
+
+          subtitle:
+            body.subtitle || null,
+
+          description:
+            body.courseDescription,
+
+          category:
+            body.category || null,
+
+          difficulty:
+            body.difficulty || null,
+
+          duration:
+            body.duration || null,
+
+          instructor:
+            body.instructor || null,
+
+          subscriptionName:
+            body.subscription_name || null,
+
+          price:
+            body.price || "0",
+
+          // Learning Outcomes
+          whatYouWillLearn:
+            body.whatYouWillLearn
+              ? JSON.parse(
+                  body.whatYouWillLearn
+                )
+              : [],
+
+          // Prerequisites
+          instructions:
+            body.instructions
+              ? JSON.parse(
+                  body.instructions
+                )
+              : [],
+
+          // FAQS
+          faqs:
+            body.faqs
+              ? JSON.parse(
+                  body.faqs
+                )
+              : [],
+
+          // Tags
+          tags:
+            body.tag
+              ? JSON.parse(
+                  body.tag
+                )
+              : [],
+
+          // Media
           thumbnail:
-            (thumbnail as any)?.location || null,
+            thumbnail?.location ||
+            null,
 
           promotionalVideo:
-            (promoVideo as any)?.location || null,
+            promoVideo?.location ||
+            null,
+
+          ebook:
+            ebook?.location || null,
+
+          // Status
+          status:
+            body.status || "Draft",
         })
         .returning();
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
+        message:
+          "Course created successfully",
         data: {
           _id: course.id,
+          course,
         },
       });
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      console.error(
+        "CREATE COURSE ERROR =>",
+        error
+      );
 
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: "Failed to create course",
+        message:
+          "Failed to create course",
+        error:
+          error?.message ||
+          "Unknown Error",
       });
     }
   }
 );
+
 router.post(
   "/course/addSection",
   async (req, res): Promise<void> => {
@@ -1151,86 +1230,89 @@ router.get(
       // RESPONSE
       // ==================================================
 
-      res.json({
+res.json({
+  success: true,
 
-        success: true,
+  data: {
+    // ==============================================
+    // COURSE
+    // ==============================================
 
-        data: {
+    id: course.id,
 
-          // ==============================================
-          // COURSE
-          // ==============================================
+    title: course.title,
 
-          id:
-            course.id,
+    subtitle: course.subtitle,
 
-          title:
-            course.title,
+    description: course.description,
 
-          subtitle:
-            course.subtitle,
+    category: course.category,
 
-          description:
-            course.description,
+    difficulty: course.difficulty,
 
-          category:
-            course.category,
+    duration: course.duration,
 
-          difficulty:
-            course.difficulty,
+    instructor: course.instructor,
 
-          duration:
-            course.duration,
+    subscriptionName:
+      course.subscriptionName,
 
-          instructor:
-            course.instructor,
+    price: course.price,
 
-          subscriptionName:
-            course.subscriptionName,
+    // NEW JSON FIELDS
+    whatYouWillLearn:
+      course.whatYouWillLearn || [],
 
-          price:
-            course.price,
+    instructions:
+      course.instructions || [],
 
-          thumbnail:
-            course.thumbnail,
+    faqs:
+      course.faqs || [],
 
-          promotionalVideo:
-            course.promotionalVideo,
+    tags:
+      course.tags || [],
 
-          ebook:
-            course.ebook,
+    thumbnail:
+      course.thumbnail,
 
-          status:
-            course.status,
+    promotionalVideo:
+      course.promotionalVideo,
 
-          createdAt:
-            course.createdAt,
+    ebook:
+      course.ebook,
 
-          updatedAt:
-            course.updatedAt,
+    status:
+      course.status,
 
-          // ==============================================
-          // COUNTS
-          // ==============================================
+    createdAt:
+      course.createdAt,
 
-          totalModules,
+    updatedAt:
+      course.updatedAt,
 
-          totalLessons,
+    // ==============================================
+    // COUNTS
+    // ==============================================
 
-          totalQuizzes,
+    totalModules,
 
-          totalVideos,
+    totalLessons,
 
-          totalPdfs,
+    totalQuizzes,
 
-          // ==============================================
-          // SECTIONS
-          // ==============================================
+    totalVideos,
 
-          sections:
-            finalSections,
-        },
-      });
+    totalPdfs,
+
+    // ==============================================
+    // SECTIONS
+    // ==============================================
+
+    sections:
+      finalSections,
+  },
+});
+
 
     } catch (error) {
 
@@ -1442,4 +1524,318 @@ router.put(
   }
 );
 
+router.post(
+  "/course/updateSection",
+  async (req, res): Promise<void> => {
+    try {
+
+      const {
+        sectionId,
+        sectionName,
+      } = req.body;
+
+      await db
+        .update(sectionsTable)
+        .set({
+          sectionName,
+        })
+        .where(
+          eq(
+            sectionsTable.id,
+            sectionId
+          )
+        );
+
+      res.json({
+        success: true,
+        message:
+          "Module updated",
+      });
+
+    } catch (error) {
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Failed to update module",
+      });
+    }
+  }
+);
+router.post(
+  "/course/deleteSection",
+  async (req, res): Promise<void> => {
+
+    try {
+
+      const { sectionId } =
+        req.body;
+
+      const lessons =
+        await db
+          .select()
+          .from(subSectionsTable)
+          .where(
+            eq(
+              subSectionsTable.sectionId,
+              sectionId
+            )
+          );
+
+      const lessonIds =
+        lessons.map(
+          (l) => l.id
+        );
+
+      if (
+        lessonIds.length
+      ) {
+
+        await db
+          .delete(mcqTable)
+          .where(
+            inArray(
+              mcqTable.subsectionId,
+              lessonIds
+            )
+          );
+      }
+
+      await db
+        .delete(
+          subSectionsTable
+        )
+        .where(
+          eq(
+            subSectionsTable.sectionId,
+            sectionId
+          )
+        );
+
+      await db
+        .delete(
+          sectionsTable
+        )
+        .where(
+          eq(
+            sectionsTable.id,
+            sectionId
+          )
+        );
+
+      res.json({
+        success: true,
+      });
+
+    } catch {
+
+      res.status(500).json({
+        success: false,
+      });
+    }
+  }
+);
+router.post(
+  "/course/updateSubSection",
+  upload.fields([
+    {
+      name: "video",
+      maxCount: 1,
+    },
+    {
+      name: "pdf",
+      maxCount: 1,
+    },
+  ]),
+  async (req, res): Promise<void> => {
+
+    try {
+
+      const {
+        subSectionId,
+        title,
+        description,
+        timeDuration,
+      } = req.body;
+
+      const video =
+        (req.files as any)
+          ?.video?.[0];
+
+      const pdf =
+        (req.files as any)
+          ?.pdf?.[0];
+
+      const updateData: any = {
+        title,
+        description,
+        timeDuration,
+      };
+
+      if (video?.location) {
+        updateData.videoUrl =
+          video.location;
+      }
+
+      if (pdf?.location) {
+        updateData.pdfUrl =
+          pdf.location;
+      }
+
+      await db
+        .update(
+          subSectionsTable
+        )
+        .set(updateData)
+        .where(
+          eq(
+            subSectionsTable.id,
+            subSectionId
+          )
+        );
+
+      res.json({
+        success: true,
+        message:
+          "Lesson updated",
+      });
+
+    } catch (error) {
+
+      console.log(
+        "UPDATE SUBSECTION ERROR =>",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        error:
+          String(error),
+      });
+    }
+  }
+);
+router.post(
+  "/course/deleteSubSection",
+  async (req, res): Promise<void> => {
+
+    try {
+
+      const {
+        subSectionId,
+      } = req.body;
+
+      await db
+        .delete(mcqTable)
+        .where(
+          eq(
+            mcqTable.subsectionId,
+            subSectionId
+          )
+        );
+
+      await db
+        .delete(
+          subSectionsTable
+        )
+        .where(
+          eq(
+            subSectionsTable.id,
+            subSectionId
+          )
+        );
+
+      res.json({
+        success: true,
+      });
+
+    } catch {
+
+      res.status(500).json({
+        success: false,
+      });
+    }
+  }
+);
+router.post(
+  "/mcq/update",
+  async (req, res): Promise<void> => {
+
+    try {
+
+      console.log(
+        "MCQ UPDATE BODY =>",
+        req.body
+      );
+
+      const {
+        mcqId,
+        question,
+        options,
+        correctAnswer,
+      } = req.body;
+
+      await db
+        .update(mcqTable)
+        .set({
+          question,
+          options,
+          correctAnswer,
+        })
+        .where(
+          eq(
+            mcqTable.id,
+            mcqId
+          )
+        );
+
+      res.json({
+        success: true,
+      });
+
+    } catch (error: any) {
+
+      console.log(
+        "MCQ UPDATE ERROR =>",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          error?.message,
+      });
+    }
+  }
+);
+router.delete(
+  "/mcq/:id",
+  async (req, res): Promise<void> => {
+
+    try {
+
+      const { id } =
+        req.params;
+
+      await db
+        .delete(mcqTable)
+        .where(
+          eq(
+            mcqTable.id,
+            id
+          )
+        );
+
+      res.json({
+        success: true,
+      });
+
+    } catch {
+
+      res.status(500).json({
+        success: false,
+      });
+    }
+  }
+);
 export default router;

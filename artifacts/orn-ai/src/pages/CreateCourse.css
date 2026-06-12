@@ -1075,3 +1075,17 @@ textarea.form-control {
   border-color: #4361ee;
   background: #f8fafc;
 }
+.button-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #2563eb;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

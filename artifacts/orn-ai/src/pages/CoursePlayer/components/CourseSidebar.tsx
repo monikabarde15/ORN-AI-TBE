@@ -143,7 +143,7 @@ const progress =
         </div>
 
         {/* Add Note */}
-        <button
+        {/* <button
           className="
             mt-6
             h-12
@@ -157,10 +157,10 @@ const progress =
           "
         >
           Add A New Note
-        </button>
+        </button> */}
 
         {/* Search */}
-        <div className="relative mt-4">
+        {/* <div className="relative mt-4">
           <Search
             size={18}
             className="
@@ -189,7 +189,7 @@ const progress =
               focus:border-red-500
             "
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Chapters */}

@@ -50,6 +50,13 @@
       "when": 1781091548999,
       "tag": "0006_milky_blazing_skull",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781158232754,
+      "tag": "0007_plain_omega_flight",
+      "breakpoints": true
     }
   ]
 }

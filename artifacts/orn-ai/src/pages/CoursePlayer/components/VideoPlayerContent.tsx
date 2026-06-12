@@ -1,5 +1,10 @@
-import { PlayCircle } from "lucide-react";
+import {
+  PlayCircle,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
+import { useState } from "react";
 interface VideoPlayerContentProps {
   course: any;
   lecture: any;
@@ -9,6 +14,10 @@ const VideoPlayerContent = ({
   course,
   lecture,
 }: VideoPlayerContentProps) => {
+  console.log("course=",course);
+
+const [openFaq, setOpenFaq] =
+  useState<number | null>(0);
   return (
     <div className="space-y-6">
       {/* Video Section */}
@@ -67,7 +76,7 @@ const VideoPlayerContent = ({
         <div className="space-y-3 text-gray-600">
           <p>
             <strong>Course:</strong>{" "}
-            {course?.courseName}
+            {course?.title}
           </p>
 
           <p>
@@ -80,7 +89,57 @@ const VideoPlayerContent = ({
             {course?.status}
           </p>
         </div>
+            {/* FAQs */}
       </div>
+      {course?.faqs?.length > 0 && (
+  <div className="rounded-3xl bg-white p-8 shadow-sm">
+    <h2 className="mb-6 text-xl font-semibold">
+      Frequently Asked Questions
+    </h2>
+
+    <div className="space-y-3">
+      {course.faqs.map(
+        (
+          faq: any,
+          index: number
+        ) => (
+          <div
+            key={index}
+            className="border rounded-xl overflow-hidden"
+          >
+            <button
+              onClick={() =>
+                setOpenFaq(
+                  openFaq === index
+                    ? null
+                    : index
+                )
+              }
+              className="w-full flex items-center justify-between p-4 text-left"
+            >
+              <span className="font-medium">
+                {faq.question}
+              </span>
+
+              {openFaq === index ? (
+                <ChevronUp size={18} />
+              ) : (
+                <ChevronDown size={18} />
+              )}
+            </button>
+
+            {openFaq === index && (
+              <div className="px-4 pb-4 text-gray-600 leading-7">
+                {faq.answer}
+              </div>
+            )}
+          </div>
+        )
+      )}
+    </div>
+  </div>
+)}
+  
     </div>
   );
 };

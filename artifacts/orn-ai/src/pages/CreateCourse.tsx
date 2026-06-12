@@ -64,6 +64,7 @@ interface CourseFormData {
 // Add Quiz interface
 interface QuizQuestion {
   id: string
+  mcqId?: string
   question: string
   options: string[]
   correctAnswer: string
@@ -73,17 +74,20 @@ interface Quiz {
   id: string
   title: string
   questions: QuizQuestion[]
+  lessonId?: string
 }
-
 interface Lesson {
-  id: string
-  title: string
-  duration: string
-  content: string
-  documentFile?: File | null
-  videoFile?: File | null
-}
+  id: string;
+  title: string;
+  duration: string;
+  content: string;
 
+  documentFile?: File | null;
+  videoFile?: File | null;
+
+  documentPreview?: string;
+  videoPreview?: string;
+}
 interface Module {
   id: string
   title: string
@@ -117,7 +121,6 @@ const mockApi = {
     formData.append("price", data.price || "0")
     const allTags = [data.category, data.difficulty, ...(data.tags || [])]
     formData.append("tag", JSON.stringify(allTags))
-    formData.append("instructions", JSON.stringify(data.prerequisites))
     formData.append("category", data.category)
     formData.append(
       "subtitle",
@@ -128,7 +131,7 @@ const mockApi = {
       "difficulty",
       data.difficulty
       )
-
+formData.append( "instructor", data.instructor )
       const cleanFaqs =
   data.faqs.map(
     ({ id, ...rest }) => rest
@@ -300,45 +303,54 @@ addQuiz: async (
   quiz: any
 ) => {
 
-  const promises =
-    quiz.questions.map(
-      async (question: any) => {
-
-        return await api.post(
-          "/api/mcq/create",
-          {
-            question:
-              question.question,
-
-            options:
-              question.options,
-
-            correctAnswer:
-              question.options.indexOf(
-                question.correctAnswer
-              ),
-
-            courseId,
-
-            subsectionId:
-              subSectionId,
-          }
-        );
-      }
-    );
-
   const responses =
     await Promise.all(
-      promises
+
+      quiz.questions.map(
+        async (
+          question: any
+        ) => {
+
+          const res =
+            await api.post(
+              "/api/mcq/create",
+              {
+                question:
+                  question.question,
+
+                options:
+                  question.options,
+
+                correctAnswer:
+                  question.options.indexOf(
+                    question.correctAnswer
+                  ),
+
+                courseId,
+
+                subsectionId:
+                  subSectionId,
+              }
+            );
+
+          return {
+            ...question,
+
+            id:
+              res.data.data.id ||
+              res.data.data._id,
+          };
+        }
+      )
     );
 
   return {
     success: true,
-    id:
-      responses[0]?.data
-        ?.data?._id,
-  };
-},
+
+    questions:
+      responses,
+  }
+}
 }
 
 
@@ -387,6 +399,12 @@ function Textarea(props: any) {
 ======================================================= */
 
 function CreateCourseForm() {
+ const [editingQuiz, setEditingQuiz] =
+  useState<{
+    moduleId: string
+    quizId: string
+  } | null>(null)
+  
   const [step, setStep] = useState(1)
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
@@ -394,7 +412,15 @@ function CreateCourseForm() {
   const [modules, setModules] = useState<Module[]>([])
   const [moduleTitle, setModuleTitle] = useState("")
   const [lessonForms, setLessonForms] = useState<Record<string, Lesson>>({})
-
+  const [editingLesson, setEditingLesson] =
+  useState<{
+    moduleId: string;
+    lessonId: string;
+  } | null>(null);
+  const [lessonUploading, setLessonUploading] =
+  useState<Record<string, boolean>>({});
+const [editingModuleId, setEditingModuleId] =
+  useState<string | null>(null);
   // NEW STATE VARIABLES (For STEP 1)
   const [coverPreview, setCoverPreview] = useState(null)
   const [videoPreview, setVideoPreview] = useState(null)
@@ -470,13 +496,395 @@ const [showLessonForm, setShowLessonForm] = useState<Record<string, boolean>>({}
     fetchCategories()
   }, [])
 
+const handleEditLesson = (
+  moduleId: string,
+  lesson: Lesson
+) => {
 
+  setEditingLesson({
+    moduleId,
+    lessonId: lesson.id,
+  });
+
+  setShowLessonForm((prev) => ({
+    ...prev,
+    [moduleId]: true,
+  }));
+
+  setLessonForms((prev) => ({
+    ...prev,
+    [moduleId]: {
+      ...lesson,
+    },
+  }));
+};
+const handleEditQuiz = (
+  moduleId: string,
+  quiz: Quiz
+) => {
+
+  setEditingQuiz({
+    moduleId,
+    quizId: quiz.id,
+  });
+
+  setQuizForms((prev) => ({
+    ...prev,
+    [moduleId]: {
+      ...quiz,
+    },
+  }));
+
+  setShowQuizForm((prev) => ({
+    ...prev,
+    [moduleId]: true,
+  }));
+};
+const handleDeleteQuiz = async (
+  moduleId: string,
+  quizId: string
+) => {
+
+  if (!window.confirm("Delete Quiz?"))
+    return;
+
+  try {
+
+    const module =
+      modules.find(
+        (m) => m.id === moduleId
+      );
+
+    const quiz =
+      module?.quizzes.find(
+        (q) => q.id === quizId
+      );
+
+    if (!quiz) return;
+
+    await Promise.all(
+      quiz.questions.map(
+        (question) =>
+          api.delete(
+            `/api/mcq/${question.id}`
+          )
+      )
+    );
+
+    setModules((prev) =>
+      prev.map((m) =>
+        m.id === moduleId
+          ? {
+              ...m,
+              quizzes:
+                m.quizzes.filter(
+                  (q) =>
+                    q.id !== quizId
+                ),
+            }
+          : m
+      )
+    );
+
+    toast.success(
+      "Quiz Deleted"
+    );
+
+  } catch (err) {
+
+    console.log(err);
+
+    toast.error(
+      "Delete Failed"
+    );
+  }
+};
   // ========== Helper Functions go HERE ==========
 
   /* =======================================================
      CREATE COURSE
   ======================================================= */
+const handleEditModule = (
+  moduleId: string
+) => {
 
+  const module =
+    modules.find(
+      (m) => m.id === moduleId
+    );
+
+  if (!module) return;
+
+  setEditingModuleId(
+    moduleId
+  );
+
+  setModuleTitle(
+    module.title
+  );
+};
+const handleDeleteModule = async (
+  moduleId: string
+) => {
+
+  if (
+    !window.confirm(
+      "Delete this module?"
+    )
+  )
+    return;
+
+  try {
+
+    await api.post(
+      "/api/course/deleteSection",
+      {
+        sectionId: moduleId,
+      }
+    );
+
+    setModules((prev) =>
+      prev.filter(
+        (m) => m.id !== moduleId
+      )
+    );
+
+    toast.success(
+      "Module Deleted"
+    );
+
+  } catch (error) {
+
+    console.log(error);
+
+    toast.error(
+      "Failed to delete module"
+    );
+  }
+};
+const handleUpdateLesson = async (
+  moduleId: string
+) => {
+
+  const lesson =
+    lessonForms[moduleId];
+
+  try {
+setLessonUploading((prev) => ({
+  ...prev,
+  [moduleId]: true,
+}));
+    const formData =
+      new FormData();
+
+    formData.append(
+      "subSectionId",
+      editingLesson!.lessonId
+    );
+
+    formData.append(
+      "title",
+      lesson.title
+    );
+
+    formData.append(
+      "description",
+      lesson.content
+    );
+
+    formData.append(
+      "timeDuration",
+      lesson.duration
+    );
+
+    if (lesson.videoFile) {
+      formData.append(
+        "video",
+        lesson.videoFile
+      );
+    }
+
+    if (
+      lesson.documentFile
+    ) {
+      formData.append(
+        "pdf",
+        lesson.documentFile
+      );
+    }
+
+    await api.post(
+      "/api/course/updateSubSection",
+      formData,
+      {
+        headers: {
+          "Content-Type":
+            "multipart/form-data",
+        },
+      }
+    );
+setModules((prev) =>
+  prev.map((m) =>
+    m.id === moduleId
+      ? {
+          ...m,
+          lessons: m.lessons.map(
+            (l) =>
+              l.id ===
+              editingLesson?.lessonId
+                ? {
+                    ...l,
+
+                    title:
+                      lesson.title,
+
+                    content:
+                      lesson.content,
+
+                    duration:
+                      lesson.duration,
+
+                    videoPreview:
+                      lesson.videoPreview ||
+                      l.videoPreview,
+
+                    documentPreview:
+                      lesson.documentPreview ||
+                      l.documentPreview,
+                  }
+                : l
+          ),
+        }
+      : m
+  )
+);
+    toast.success(
+      "Lesson Updated"
+    );
+setShowLessonForm((prev) => ({
+  ...prev,
+  [moduleId]: false,
+}));
+    setEditingLesson(
+      null
+    );
+
+  } catch (error) {
+
+    console.log(error);
+
+    toast.error(
+      "Failed to update lesson"
+    );
+  }finally {
+
+  setLessonUploading((prev) => ({
+    ...prev,
+    [moduleId]: false,
+  }));
+
+}
+};
+const handleDeleteLesson = async (
+  lessonId: string,
+  moduleId: string
+) => {
+
+  try {
+
+    await api.post(
+      "/api/course/deleteSubSection",
+      {
+        subSectionId:
+          lessonId,
+      }
+    );
+
+    setModules((prev) =>
+      prev.map((m) =>
+        m.id === moduleId
+          ? {
+              ...m,
+              lessons:
+              
+                m.lessons.filter(
+                  (l) =>
+                    l.id !==
+                    lessonId
+                ),
+            }
+          : m
+      )
+    );
+
+    toast.success(
+      "Lesson Deleted"
+    );
+
+  } catch (error) {
+
+    console.log(error);
+
+    toast.error(
+      "Failed to delete lesson"
+    );
+  }
+};
+const handleSaveModule = async () => {
+
+  if (!editingModuleId) return;
+
+  if (!moduleTitle.trim()) {
+    toast.error(
+      "Module title required"
+    );
+    return;
+  }
+
+  try {
+
+    await api.post(
+      "/api/course/updateSection",
+      {
+        sectionId:
+          editingModuleId,
+
+        sectionName:
+          moduleTitle,
+      }
+    );
+
+    setModules((prev) =>
+      prev.map((m) =>
+        m.id === editingModuleId
+          ? {
+              ...m,
+              title:
+                moduleTitle,
+            }
+          : m
+      )
+    );
+
+    setEditingModuleId(
+      null
+    );
+
+    setModuleTitle("");
+
+    toast.success(
+      "Module Updated"
+    );
+
+  } catch (error) {
+
+    console.log(error);
+
+    toast.error(
+      "Failed to update module"
+    );
+  }
+};
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -636,7 +1044,10 @@ const handleAddLesson = async (
   }
 
   try {
-
+setLessonUploading((prev) => ({
+  ...prev,
+  [moduleId]: true,
+}));
     // ✅ ADD SUBSECTION API
     const res =
       await mockApi.addLesson(
@@ -733,7 +1144,14 @@ const handleAddLesson = async (
     toast.error(
       "Failed to add lesson"
     );
-  }
+  }finally {
+
+  setLessonUploading((prev) => ({
+    ...prev,
+    [moduleId]: false,
+  }));
+
+}
 };
 
   /* =======================================================
@@ -954,22 +1372,23 @@ const handleAddQuiz = async (
         quiz
       );
 
-    setModules((prev) =>
-      prev.map((m) =>
-        m.id === moduleId
-          ? {
-              ...m,
-              quizzes: [
-                ...m.quizzes,
-                {
-                  ...quiz,
-                  id: res.id,
-                },
-              ],
-            }
-          : m
-      )
-    );
+   setModules((prev) =>
+  prev.map((m) =>
+    m.id === moduleId
+      ? {
+          ...m,
+          quizzes: [
+            ...m.quizzes,
+            {
+              ...quiz,
+              id: crypto.randomUUID(), // ✅ unique quiz id
+              questions: res.questions,
+            },
+          ],
+        }
+      : m
+  )
+);
 
     // ✅ RESET QUIZ FORM
     setQuizForms((prev) => ({
@@ -999,30 +1418,167 @@ const handleAddQuiz = async (
     );
   }
 };
+const handleUpdateQuiz = async (
+  moduleId: string
+) => {
+  try {
+    const quiz =
+      quizForms[moduleId];
 
-  const addQuestionToQuiz = (moduleId: string) => {
-    const currentQuiz = quizForms[moduleId] || {
+    if (
+      !quiz ||
+      !quiz.questions?.length
+    ) {
+      toast.error(
+        "No questions found"
+      );
+      return;
+    }
+
+    console.log(
+      "UPDATE QUIZ =>",
+      quiz
+    );
+
+    await Promise.all(
+      quiz.questions.map(
+        async (
+          question: any
+        ) => {
+          return api.post(
+            "/api/mcq/update",
+            {
+              mcqId:
+                question.mcqId,
+
+              question:
+                question.question,
+
+              options:
+                question.options,
+
+              correctAnswer:
+                question.options.indexOf(
+                  question.correctAnswer
+                ),
+            }
+          );
+        }
+      )
+    );
+
+   
+   await Promise.all(
+  quiz.questions.map(
+    async (question: any) => {
+      return api.post(
+        "/api/mcq/update",
+        {
+          mcqId: question.mcqId,
+          question: question.question,
+          options: question.options,
+          correctAnswer:
+            question.options.indexOf(
+              question.correctAnswer
+            ),
+        }
+      );
+    }
+  )
+);
+
+// UI refresh
+setModules((prev) =>
+  prev.map((m) =>
+    m.id === moduleId
+      ? {
+          ...m,
+          quizzes: m.quizzes.map((q) =>
+            q.id === editingQuiz?.quizId
+              ? {
+                  ...q,
+                  title: quiz.title,
+                  questions: quiz.questions,
+                }
+              : q
+          ),
+        }
+      : m
+  )
+);
+
+setEditingQuiz(null);
+
+setShowQuizForm((prev) => ({
+  ...prev,
+  [moduleId]: false,
+}));
+
+toast.success(
+  "Quiz updated successfully"
+);
+   
+
+  } catch (error) {
+    console.error(
+      "UPDATE QUIZ ERROR =>",
+      error
+    );
+
+    toast.error(
+      "Failed to update quiz"
+    );
+  }
+};
+  const addQuestionToQuiz = (
+  moduleId: string
+) => {
+
+  const currentQuiz =
+    quizForms[moduleId] || {
       id: "",
       title: "",
       questions: [],
-    }
+    };
 
-    setQuizForms((prev) => ({
-      ...prev,
-      [moduleId]: {
-        ...currentQuiz,
-        questions: [
-          ...currentQuiz.questions,
-          {
-            id: Date.now().toString(),
-            question: "",
-            options: ["", ""],
-            correctAnswer: "",
-          },
-        ],
-      },
-    }))
-  }
+  console.log(
+    "CURRENT QUIZ =>",
+    currentQuiz
+  );
+
+  const existingQuestions =
+    Array.isArray(
+      currentQuiz.questions
+    )
+      ? currentQuiz.questions
+      : [];
+
+  setQuizForms((prev) => ({
+    ...prev,
+
+    [moduleId]: {
+      ...currentQuiz,
+
+      questions: [
+        ...existingQuestions,
+
+        {
+          id:
+            Date.now().toString(),
+
+          question: "",
+
+          options: [
+            "",
+            "",
+          ],
+
+          correctAnswer: "",
+        },
+      ],
+    },
+  }));
+};
 
   const updateQuizQuestion = (
     moduleId: string,
@@ -1531,7 +2087,47 @@ const handleAddQuiz = async (
             <h1>Create New Course</h1>
           </div>
 
-          {/* Modules List */}
+         
+          {/* Add Module Button at Bottom */}
+          <div className="add-module-bottom">
+            <div className="add-module-section" style={{ marginBottom: '0' }}>
+              <input
+                type="text"
+                className="add-module-input"
+                placeholder="Module Title (e.g., Greetings and Introduction)"
+                value={moduleTitle}
+                onChange={(e) => setModuleTitle(e.target.value)}
+              />
+              <button
+                type="button"
+                className="add-module-btn"
+                onClick={() => {
+
+                  if (editingModuleId) {
+                    handleSaveModule();
+                  } else {
+                    handleAddModule();
+                  }
+
+                }}
+                              >
+                                {
+                  editingModuleId ? (
+                    <>
+                      <Check size={16} />
+                      Update Module
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={16} />
+                      Add Module
+                    </>
+                  )
+                }
+              </button>
+            </div>
+          </div>
+           {/* Modules List */}
           {modules.length === 0 ? (
             <div className="empty-modules">
               <div className="empty-modules-icon">📚</div>
@@ -1556,6 +2152,14 @@ const handleAddQuiz = async (
                       Module {moduleIndex + 1}: {module.title}
                     </h3>
                   </div>
+                  <div style={{ display: "flex",gap: "10px",alignItems: "center",}}>
+                      <button type="button" onClick={(e) => {e.stopPropagation(); handleEditModule(module.id);}}>
+                        <Edit size={16} />
+                      </button>
+                      <button type="button"onClick={(e) => {e.stopPropagation();handleDeleteModule(module.id);}}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <span className="module-number">
                       📚 {module.lessons.length} Lessons
@@ -1563,7 +2167,9 @@ const handleAddQuiz = async (
                     <span className="module-number">
                       📝 {module.quizzes.length} Quizzes
                     </span>
+                    
                   </div>
+                   
                 </div>
 
                 {/* Collapsible Content */}
@@ -1616,20 +2222,16 @@ const handleAddQuiz = async (
                         className="lesson-input"
                         placeholder="Lesson Title (e.g., What is Amazon KDP?)"
                         value={lessonForms[module.id]?.title || ""}
-                        onChange={(e) =>
-                          setLessonForms((prev) => ({
-                            ...prev,
-                            [module.id]: {
-                              ...prev[module.id],
-                              id: "",
-                              title: e.target.value,
-                              duration: "",
-                              content: "",
-                              documentFile: null,
-                              videoFile: null,
-                            },
-                          }))
-                        }
+                      onChange={(e) =>
+  setLessonForms((prev) => ({
+    ...prev,
+    [module.id]: {
+      ...prev[module.id],
+      title: e.target.value,
+    },
+  }))
+}
+                        
                       />
 
                       <input
@@ -1681,23 +2283,77 @@ const handleAddQuiz = async (
                               accept=".pdf,image/*"
                               style={{ display: 'none' }}
                               id={`lesson-doc-${module.id}`}
-                              onChange={(e) =>
-                                setLessonForms((prev) => ({
-                                  ...prev,
-                                  [module.id]: {
-                                    ...prev[module.id],
-                                    documentFile: e.target.files?.[0] || null,
-                                  },
-                                }))
-                              }
+                              onChange={(e) => {
+
+  const file =
+    e.target.files?.[0] || null;
+
+  if (!file) return;
+
+  setLessonForms((prev) => ({
+    ...prev,
+    [module.id]: {
+      ...prev[module.id],
+      documentFile: file,
+      documentPreview:
+        URL.createObjectURL(file),
+    },
+  }));
+}}
                             />
                           </div>
-                          {lessonForms[module.id]?.documentFile && (
-                            <p style={{ fontSize: '11px', marginTop: '4px', color: '#22c55e' }}>
-                              ✓ {lessonForms[module.id]?.documentFile?.name}
-                            </p>
-                          )}
+                           {
+  lessonForms[module.id]
+    ?.documentPreview && (
+
+    <div
+      style={{
+        marginTop: "10px",
+      }}
+    >
+
+      <a
+        href={
+          lessonForms[module.id]
+            ?.documentPreview
+        }
+        target="_blank"
+        rel="noreferrer"
+      >
+        📄 View Document
+      </a>
+
+    </div>
+  )
+}
+                         {lessonForms[module.id]?.documentFile && (
+
+  lessonUploading[module.id] ? (
+
+    <div
+      className="button-spinner"
+      style={{
+        marginTop: "6px",
+      }}
+    />
+
+  ) : (
+
+    <p
+      style={{
+        fontSize: "11px",
+        marginTop: "4px",
+        color: "#22c55e",
+      }}
+    >
+      ✓ Document Ready
+    </p>
+
+  )
+
+)}
                         </div>
+                       
 
                         {/* Video Upload */}
                         <div>
@@ -1714,32 +2370,111 @@ const handleAddQuiz = async (
                               accept="video/*"
                               style={{ display: 'none' }}
                               id={`lesson-video-${module.id}`}
-                              onChange={(e) =>
-                                setLessonForms((prev) => ({
-                                  ...prev,
-                                  [module.id]: {
-                                    ...prev[module.id],
-                                    videoFile: e.target.files?.[0] || null,
-                                  },
-                                }))
-                              }
+                            onChange={(e) => {
+
+                              const file =
+                                e.target.files?.[0] || null;
+
+                              if (!file) return;
+
+                              setLessonForms((prev) => ({
+                                ...prev,
+                                [module.id]: {
+                                  ...prev[module.id],
+                                  videoFile: file,
+                                  videoPreview:
+                                    URL.createObjectURL(file),
+                                },
+                              }));
+                            }}
                             />
                           </div>
+                          {
+  lessonForms[module.id]
+    ?.videoPreview && (
+
+    <video
+      controls
+      style={{
+        width: "220px",
+        marginTop: "10px",
+        borderRadius: "8px",
+      }}
+      src={
+        lessonForms[module.id]
+          ?.videoPreview
+      }
+    />
+
+  )
+}
                           {lessonForms[module.id]?.videoFile && (
-                            <p style={{ fontSize: '11px', marginTop: '4px', color: '#22c55e' }}>
-                              ✓ {lessonForms[module.id]?.videoFile?.name}
-                            </p>
-                          )}
+
+                        lessonUploading[module.id] ? (
+
+                          <div
+                            className="button-spinner"
+                            style={{
+                              marginTop: "6px",
+                            }}
+                          />
+
+                        ) : (
+
+                          <p
+                            style={{
+                              fontSize: "11px",
+                              marginTop: "4px",
+                              color: "#22c55e",
+                            }}
+                          >
+                            ✓ Video Ready
+                          </p>
+
+                        )
+
+                      )}
                         </div>
+                        
                       </div>
 
                       <button
-                        type="button"
-                        className="add-lesson-btn"
-                        onClick={() => handleAddLesson(module.id)}
-                      >
-                        <Check size={16} /> Add This Lesson
-                      </button>
+  type="button"
+  className="add-lesson-btn"
+  onClick={() => {
+
+    if (
+      editingLesson?.lessonId
+    ) {
+
+      handleUpdateLesson(
+        module.id
+      );
+
+    } else {
+
+      handleAddLesson(
+        module.id
+      );
+
+    }
+
+  }}
+>
+  {
+    editingLesson?.lessonId ? (
+      <>
+        <Check size={16} />
+        Update Lesson
+      </>
+    ) : (
+      <>
+        <Check size={16} />
+        Add This Lesson
+      </>
+    )
+  }
+</button>
                     </div>
                   )}
 
@@ -1756,16 +2491,14 @@ const handleAddQuiz = async (
                         placeholder="Quiz Title (e.g., First Quiz of this module)"
                         value={quizForms[module.id]?.title || ""}
                         onChange={(e) =>
-                          setQuizForms((prev) => ({
-                            ...prev,
-                            [module.id]: {
-                              ...prev[module.id],
-                              id: "",
-                              title: e.target.value,
-                              questions: prev[module.id]?.questions || [],
-                            },
-                          }))
-                        }
+  setQuizForms((prev) => ({
+    ...prev,
+    [module.id]: {
+      ...prev[module.id],
+      title: e.target.value,
+    },
+  }))
+}
                       />
 
                       {/* Questions List */}
@@ -1838,14 +2571,32 @@ const handleAddQuiz = async (
                         <Plus size={16} /> Add Question
                       </button>
 
-                      <button
-                        type="button"
-                        className="btn-primary"
-                        style={{ marginTop: '16px', width: '100%' }}
-                        onClick={() => handleAddQuiz(module.id)}
-                      >
-                        Save Quiz
-                      </button>
+                       <button
+  type="button"
+  className="btn-primary"
+  style={{
+    marginTop: "16px",
+    width: "100%",
+  }}
+  onClick={() => {
+    if (
+      editingQuiz?.moduleId ===
+      module.id
+    ) {
+      handleUpdateQuiz(
+        module.id
+      );
+    } else {
+      handleAddQuiz(
+        module.id
+      );
+    }
+  }}
+>
+  {editingQuiz?.moduleId === module.id
+    ? "Update Quiz"
+    : "Save Quiz"}
+</button>
                     </div>
                   )}
 
@@ -1864,52 +2615,121 @@ const handleAddQuiz = async (
                               <span className="existing-lesson-duration">⏱ {lesson.duration}</span>
                             )}
                           </div>
+                          <div
+                              style={{
+                                display: "flex",
+                                gap: "10px",
+                                alignItems:
+                                  "center",
+                              }}
+                            >
+
+                              <Edit
+                                size={16}
+                                style={{
+                                  cursor: "pointer",
+                                  color: "#2563eb",
+                                }}
+                                onClick={() =>
+                                  handleEditLesson(
+                                    module.id,
+                                    lesson
+                                  )
+                                }
+                              />
+
+                              <Trash2
+                                size={16}
+                                style={{
+                                  cursor:
+                                    "pointer",
+                                  color:
+                                    "#ef4444",
+                                }}
+                                onClick={() =>
+                                  handleDeleteLesson(
+                                    lesson.id,
+                                    module.id
+                                  )
+                                }
+                              />
+
+                            </div>
                         </div>
+                        
                       ))}
                     </div>
                   )}
 
                   {/* ========== EXISTING QUIZZES LIST ========== */}
-                  {module.quizzes.length > 0 && (
-                    <div className="lessons-list">
-                      <h4 style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#64748b' }}>
-                        📝 Quizzes in this module:
-                      </h4>
-                      {module.quizzes.map((quiz, quizIndex) => (
-                        <div key={quiz.id} className="existing-lesson-item">
-                          <div className="existing-lesson-info">
-                            <span className="lesson-number">Quiz {quizIndex + 1}</span>
-                            <span className="existing-lesson-title">{quiz.title}</span>
-                            <span className="existing-lesson-duration">📋 {quiz.questions.length} questions</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {module.quizzes.map((quiz, quizIndex) => {
+
+  console.log(
+    "QUIZ LIST DATA =>",
+    quiz
+  );
+
+  return (
+    <div
+      key={quiz.id}
+      className="existing-lesson-item"
+    >
+      <div className="existing-lesson-info">
+        <span className="lesson-number">
+          Quiz {quizIndex + 1}
+        </span>
+
+        <span className="existing-lesson-title">
+          {quiz.title}
+        </span>
+
+        <span className="existing-lesson-duration">
+          📋 {quiz.questions.length} questions
+        </span>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+        }}
+      >
+        <Edit
+          size={16}
+          style={{
+            cursor: "pointer",
+            color: "#2563eb",
+          }}
+          onClick={() =>
+            handleEditQuiz(
+              module.id,
+              quiz
+            )
+          }
+        />
+
+        <Trash2
+          size={16}
+          style={{
+            cursor: "pointer",
+            color: "#ef4444",
+          }}
+          onClick={() =>
+            handleDeleteQuiz(
+              module.id,
+              quiz.id
+            )
+          }
+        />
+      </div>
+    </div>
+  );
+})}
                 </div>
               </div>
             ))
           )}
 
-          {/* Add Module Button at Bottom */}
-          <div className="add-module-bottom">
-            <div className="add-module-section" style={{ marginBottom: '0' }}>
-              <input
-                type="text"
-                className="add-module-input"
-                placeholder="Module Title (e.g., Greetings and Introduction)"
-                value={moduleTitle}
-                onChange={(e) => setModuleTitle(e.target.value)}
-              />
-              <button
-                type="button"
-                className="add-module-btn"
-                onClick={handleAddModule}
-              >
-                <Plus size={16} /> Add Module
-              </button>
-            </div>
-          </div>
 
           {/* Bottom Buttons */}
           <div className="bottom-btn-group">

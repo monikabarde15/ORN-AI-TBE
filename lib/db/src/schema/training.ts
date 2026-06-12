@@ -73,13 +73,24 @@ export const coursesTable = pgTable("courses", {
 
   price: text("price"),
 
+  // NEW FIELDS
+  whatYouWillLearn: jsonb("what_you_will_learn"),
+
+  instructions: jsonb("instructions"),
+
+  faqs: jsonb("faqs"),
+
+  tags: jsonb("tags"),
+
   thumbnail: text("thumbnail"),
 
   promotionalVideo: text("promotional_video"),
 
   ebook: text("ebook"),
 
-  status: text("status").notNull().default("Draft"),
+  status: text("status")
+    .notNull()
+    .default("Draft"),
 
   createdAt: timestamp("created_at", {
     withTimezone: true,

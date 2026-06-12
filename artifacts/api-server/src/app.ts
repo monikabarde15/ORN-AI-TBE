@@ -99,7 +99,72 @@ router.get("/test", (_req, res) => {
  * API routes
  */
 app.use("/api", router);
+app.use("/api", router);
 
+/**
+ * MULTER ERROR HANDLER
+ */
+import multer from "multer";
+
+app.use(
+  (
+    err: any,
+    req: any,
+    res: any,
+    next: any
+  ) => {
+
+    if (
+      err instanceof multer.MulterError &&
+      err.code === "LIMIT_FILE_SIZE"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Maximum file size is 500MB",
+      });
+    }
+
+    if (err) {
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      });
+    }
+
+    next();
+  }
+);
+
+/**
+ * 404 handler
+ */
+app.use((_req, res) => {
+  res.status(404).json({
+    success: false,
+    error: "Route not found",
+  });
+});
+
+/**
+ * Global error handler
+ */
+app.use(
+  (
+    err: Error,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction,
+  ) => {
+
+    logger.error(err);
+
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  },
+);
 /**
  * Serve Frontend (Vite build)
  */
