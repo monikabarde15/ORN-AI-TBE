@@ -64,6 +64,13 @@
       "when": 1781263752652,
       "tag": "0008_strong_william_stryker",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781508460950,
+      "tag": "0009_rare_green_goblin",
+      "breakpoints": true
     }
   ]
 }

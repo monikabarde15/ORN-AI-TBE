@@ -25,14 +25,23 @@ interface Course {
 export default function LearningPath() {
 const [courseModalOpen, setCourseModalOpen] =
   useState(false);
+const [thumbnailPreview,
+  setThumbnailPreview] =
+  useState("");
 
+const [videoPreview,
+  setVideoPreview] =
+  useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-
+const [videoName, setVideoName] =
+  useState("");
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
 const [learningPathId, setLearningPathId] =
   useState("");
+  const [editingId, setEditingId] =
+  useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   const [title, setTitle] = useState("");
@@ -72,7 +81,57 @@ const [learningPathId, setLearningPathId] =
       setLoading(false);
     }
   };
+  const handleThumbnailChange = (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  const file =
+    e.target.files?.[0];
 
+  if (!file) return;
+
+  setThumbnail(file);
+};
+const loadLearningPath = async (
+  id: string
+) => {
+  const res = await api.get(
+    `/api/learning-paths/${id}`
+  );
+
+  const path = res.data.data;
+
+  setEditingId(path.id);
+
+  setTitle(path.title || "");
+  setDescription(path.description || "");
+
+  setThumbnailPreview(
+    path.thumbnail || ""
+  );
+
+  setVideoPreview(
+    path.introVideo || ""
+  );
+
+  setSelectedCourses(
+    path.courses || []
+  );
+};
+useEffect(() => {
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const id =
+    params.get("edit");
+
+  if (id) {
+    loadLearningPath(id);
+  }
+
+  loadCourses();
+}, []);
   const filteredCourses =
     useMemo(() => {
       return courses.filter((course) =>
@@ -177,20 +236,97 @@ const [learningPathId, setLearningPathId] =
       );
     }
   };
-const createLearningPath = async () => {
+  const createLearningPath = async () => {
+    try {
+      if (!title) {
+        toast.error("Enter title");
+        return;
+      }
+
+      if (!description) {
+        toast.error("Enter description");
+        return;
+      }
+
+      if (selectedCourses.length === 0) {
+        toast.error("Select courses");
+        return;
+      }
+
+      setSaving(true);
+
+      const formData = new FormData();
+
+      formData.append("title", title);
+      formData.append("description", description);
+
+      if (thumbnail) {
+        formData.append(
+          "thumbnail",
+          thumbnail
+        );
+      }
+
+      if (introVideo) {
+        formData.append(
+          "introVideo",
+          introVideo
+        );
+      }
+
+      formData.append(
+        "courseIds",
+        JSON.stringify(
+          selectedCourses.map(
+            (c) => c._id
+          )
+        )
+      );
+
+      const res =
+        await api.post(
+          "/api/learning-paths",
+          formData,
+          {
+            headers: {
+              "Content-Type":
+                "multipart/form-data",
+            },
+          }
+        );
+
+      setLearningPathId(
+        res.data.data.id
+      );
+
+      toast.success(
+        "Learning Path Created"
+      );
+
+    } catch (error) {
+      console.log(error);
+
+      toast.error(
+        "Failed to create learning path"
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+  const saveLearningPath = async () => {
   try {
-    if (!title) {
+    if (!title.trim()) {
       toast.error("Enter title");
       return;
     }
 
-    if (!description) {
+    if (!description.trim()) {
       toast.error("Enter description");
       return;
     }
 
     if (selectedCourses.length === 0) {
-      toast.error("Select courses");
+      toast.error("Select at least one course");
       return;
     }
 
@@ -198,8 +334,15 @@ const createLearningPath = async () => {
 
     const formData = new FormData();
 
-    formData.append("title", title);
-    formData.append("description", description);
+    formData.append(
+      "title",
+      title.trim()
+    );
+
+    formData.append(
+      "description",
+      description.trim()
+    );
 
     if (thumbnail) {
       formData.append(
@@ -215,17 +358,54 @@ const createLearningPath = async () => {
       );
     }
 
-    formData.append(
-      "courseIds",
-      JSON.stringify(
-        selectedCourses.map(
-          (c) => c._id
+    if (paymentLink) {
+      formData.append(
+        "paymentLink",
+        paymentLink
+      );
+    }
+
+    const courseIds =
+      selectedCourses
+        .map((c: any) =>
+          c._id || c.id
         )
-      )
+        .filter(Boolean);
+
+    console.log(
+      "Selected Courses =>",
+      selectedCourses
     );
 
-    const res =
-      await api.post(
+    console.log(
+      "Course IDs =>",
+      courseIds
+    );
+
+    formData.append(
+      "courseIds",
+      JSON.stringify(courseIds)
+    );
+
+    let res;
+
+    if (editingId) {
+      res = await api.put(
+        `/api/learning-paths/${editingId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type":
+              "multipart/form-data",
+          },
+        }
+      );
+
+      toast.success(
+        "Learning Path Updated Successfully"
+      );
+    } else {
+      res = await api.post(
         "/api/learning-paths",
         formData,
         {
@@ -236,24 +416,66 @@ const createLearningPath = async () => {
         }
       );
 
-    setLearningPathId(
-      res.data.data.id
+      setLearningPathId(
+        res.data.data.id
+      );
+
+      toast.success(
+        "Learning Path Created Successfully"
+      );
+    }
+
+    console.log(
+      "API Response =>",
+      res.data
     );
 
-    toast.success(
-      "Learning Path Created"
+  } catch (error: any) {
+
+    console.error(
+      "SAVE ERROR =>",
+      error
     );
 
-  } catch (error) {
-    console.log(error);
+    console.error(
+      "BACKEND RESPONSE =>",
+      error?.response?.data
+    );
 
     toast.error(
-      "Failed to create learning path"
+      error?.response?.data?.error ||
+      error?.message ||
+      "Failed to save learning path"
     );
+
   } finally {
     setSaving(false);
   }
 };
+  const editLearningPath = (
+    path: any
+  ) => {
+    setEditingId(path.id);
+
+    setTitle(path.title || "");
+
+    setDescription(
+      path.description || ""
+    );
+
+    setPaymentLink(
+      path.paymentLink || ""
+    );
+
+    setSelectedCourses(
+      path.courses || []
+    );
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
   return (
     <Shell>
       
@@ -267,9 +489,13 @@ const createLearningPath = async () => {
   setTitle={setTitle}
   setDescription={setDescription}
 />
-   <UploadMedia
+ <UploadMedia
   setThumbnail={setThumbnail}
   setVideo={setIntroVideo}
+  thumbnailPreview={thumbnailPreview}
+  videoPreview={videoPreview}
+  setThumbnailPreview={setThumbnailPreview}
+  setVideoPreview={setVideoPreview}
 />
 <button
   onClick={() =>
@@ -312,7 +538,7 @@ const createLearningPath = async () => {
   generatePaymentLink={generatePaymentLink}
 />
 
-    <button
+    {/* <button
       onClick={createLearningPath}
       className="
         w-full
@@ -328,7 +554,26 @@ const createLearningPath = async () => {
       "
     >
       Create Learning Path
-    </button>
+    </button> */}
+    <button
+  onClick={saveLearningPath}
+  disabled={saving}
+  className="
+    w-full
+    rounded-[24px]
+    bg-gradient-to-r
+    from-blue-600
+    to-indigo-600
+    py-4
+    text-lg
+    font-semibold
+    text-white
+  "
+>
+  {editingId
+    ? "Update Learning Path"
+    : "Create Learning Path"}
+</button>
   </div>
 
 </div>

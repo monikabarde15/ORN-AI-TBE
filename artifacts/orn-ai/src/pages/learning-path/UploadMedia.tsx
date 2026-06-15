@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   ImageIcon,
   Video,
@@ -6,44 +5,66 @@ import {
 } from "lucide-react";
 
 interface Props {
-  setThumbnail: (file: File | null) => void;
-  setVideo: (file: File | null) => void;
+  setThumbnail: (
+    file: File | null
+  ) => void;
+
+  setVideo: (
+    file: File | null
+  ) => void;
+
+  thumbnailPreview?: string;
+  videoPreview?: string;
+
+  setThumbnailPreview?: (
+    value: string
+  ) => void;
+
+  setVideoPreview?: (
+    value: string
+  ) => void;
 }
 
 export default function UploadMedia({
   setThumbnail,
   setVideo,
+  thumbnailPreview,
+  videoPreview,
+  setThumbnailPreview,
+  setVideoPreview,
 }: Props) {
-  const [thumbnailPreview, setThumbnailPreview] =
-    useState("");
-
-  const [videoName, setVideoName] =
-    useState("");
-
   const handleThumbnailChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const file = e.target.files?.[0];
+    const file =
+      e.target.files?.[0];
 
     if (!file) return;
 
     setThumbnail(file);
 
-    setThumbnailPreview(
-      URL.createObjectURL(file)
-    );
+    if (setThumbnailPreview) {
+      setThumbnailPreview(
+        URL.createObjectURL(file)
+      );
+    }
   };
 
   const handleVideoChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const file = e.target.files?.[0];
+    const file =
+      e.target.files?.[0];
 
     if (!file) return;
 
     setVideo(file);
 
-    setVideoName(file.name);
+    if (setVideoPreview) {
+      setVideoPreview(
+        URL.createObjectURL(file)
+      );
+    }
   };
 
   return (
@@ -77,14 +98,18 @@ export default function UploadMedia({
             hidden
             type="file"
             accept="image/*"
-            onChange={handleThumbnailChange}
+            onChange={
+              handleThumbnailChange
+            }
           />
 
           <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center transition-all group-hover:border-blue-500 group-hover:bg-blue-50">
 
             {thumbnailPreview ? (
               <img
-                src={thumbnailPreview}
+                src={
+                  thumbnailPreview
+                }
                 alt="Preview"
                 className="h-40 w-full rounded-2xl object-cover"
               />
@@ -120,35 +145,49 @@ export default function UploadMedia({
             hidden
             type="file"
             accept="video/*"
-            onChange={handleVideoChange}
+            onChange={
+              handleVideoChange
+            }
           />
 
           <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center transition-all group-hover:border-purple-500 group-hover:bg-purple-50">
 
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100">
-              <Video
-                size={30}
-                className="text-purple-600"
-              />
-            </div>
+            {videoPreview ? (
+              <video
+                controls
+                className="h-40 w-full rounded-2xl object-cover"
+              >
+                <source
+                  src={videoPreview}
+                />
+              </video>
+            ) : (
+              <>
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100">
+                  <Video
+                    size={30}
+                    className="text-purple-600"
+                  />
+                </div>
 
-            <h3 className="text-lg font-semibold">
-              Upload Intro Video
-            </h3>
+                <h3 className="text-lg font-semibold">
+                  Upload Intro Video
+                </h3>
 
-            <p className="mt-2 text-sm text-slate-500">
-              {videoName || "MP4, MOV, WEBM"}
-            </p>
+                <p className="mt-2 text-sm text-slate-500">
+                  MP4, MOV, WEBM
+                </p>
 
-            <span className="mt-4 rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium text-white">
-              Choose Video
-            </span>
+                <span className="mt-4 rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium text-white">
+                  Choose Video
+                </span>
+              </>
+            )}
 
           </div>
         </label>
 
       </div>
-
     </div>
   );
 }

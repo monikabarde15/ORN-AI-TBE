@@ -14,7 +14,7 @@ export const liveSessionsTable = pgTable(
 
     courseId: text("course_id").notNull(),
 
-    paymentId: text("payment_id").notNull(),
+   paymentId: text("payment_id"),
 
     studentName: text("student_name"),
     studentEmail: text("student_email"),

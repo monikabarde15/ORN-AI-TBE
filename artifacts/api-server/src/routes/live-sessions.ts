@@ -33,20 +33,20 @@ router.post(
       const [session] = await db
         .insert(liveSessionsTable)
         .values({
-          courseId,
-          paymentId,
-          studentName,
-          studentEmail,
-          studentPhone,
-          sessionTitle,
-          trainerName,
-          meetingLink,
-          sessionDate,
-          startTime,
-          endTime,
-          description,
-          status: "scheduled",
-        })
+  courseId,
+  paymentId: paymentId || null,
+  studentName: studentName || null,
+  studentEmail: studentEmail || null,
+  studentPhone: studentPhone || null,
+  sessionTitle,
+  trainerName,
+  meetingLink,
+  sessionDate,
+  startTime,
+  endTime,
+  description,
+  status: "scheduled",
+})
         .returning();
 
       res.status(201).json({
@@ -54,12 +54,12 @@ router.post(
         session,
       });
     } catch (error) {
-      console.error(error);
+  console.error("LIVE SESSION ERROR =>", error);
 
-      res.status(500).json({
-        error: "Failed to create live session",
-      });
-    }
+  res.status(500).json({
+    error: String(error),
+  });
+}
   }
 );
 

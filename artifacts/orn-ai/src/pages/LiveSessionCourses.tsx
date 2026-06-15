@@ -8,23 +8,17 @@ import { toast } from "sonner";
 import api from "../../services/api";
 import { Shell } from "@/components/layout/Shell";
 import { PlusCircle, CheckCircle2 } from "lucide-react";
-interface Course {
+interface LearningPath {
   id: string;
   title: string;
   description?: string;
   thumbnail?: string;
-  price?: string;
-
-  studentName?: string;
-  studentEmail?: string;
-  studentPhone?: string;
-  paymentId?: string;
-
-  lessonCount?: number;
-  quizCount?: number;
-  videoCount?: number;
+  introVideo?: string;
+  paymentLink?: string | null;
+  courseIds?: string[];
+  courses?: any[];
+  createdAt?: string;
 }
-
 export default function LearningPath() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -34,7 +28,8 @@ export default function LearningPath() {
 const [selectedCourse, setSelectedCourse] =
   useState<any>(null);
   const [search, setSearch] = useState("");
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] =
+  useState<LearningPath[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
 const [currentPage, setCurrentPage] = useState(1);
 const [paymentLink, setPaymentLink] = useState("");
@@ -63,34 +58,29 @@ const [description, setDescription] =
 const [creating, setCreating] =
   useState(false);  
 const coursesPerPage = 6;
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const res = await api.get(
-            "/api/payment/students-courses"
-            );
+  
+useEffect(() => {
+  (async () => {
+    try {
+      setLoading(true);
 
-            const paidCourses =
-            res.data.data.flatMap(
-                (item: any) =>
-                item.courses.map((course: any) => ({
-                    ...course,
-                    studentName: item.studentName,
-                    studentEmail: item.studentEmail,
-                    studentPhone: item.studentPhone,
-                    paymentId: item.paymentId,
-                }))
-            );
+      const res = await api.get(
+        "/api/learning-paths"
+      );
 
-            setCourses(paidCourses);
-      } catch {
-        toast.error("Failed to load courses");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+      setCourses(
+        res.data?.data || []
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        "Failed to load Learning Paths"
+      );
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, []);
 
   const filteredCourses = useMemo(
     () => courses.filter(c => c.title?.toLowerCase().includes(search.toLowerCase())),
@@ -112,56 +102,29 @@ const totalPages = Math.ceil(
 );
 const createLiveSession = async () => {
   try {
-    setCreating(true);
+    await api.post("/api/live-sessions", {
+      courseId: selectedCourse.id,
+      paymentId: selectedCourse.paymentId,
+      studentName: selectedCourse.studentName,
+      studentEmail: selectedCourse.studentEmail,
+      studentPhone: selectedCourse.studentPhone,
+      sessionTitle,
+      trainerName,
+      meetingLink,
+      sessionDate,
+      startTime,
+      endTime,
+      description,
+    });
 
-    await api.post(
-      "/api/live-sessions",
-      {
-        courseId: selectedCourse._id,
+    await loadSessions(); // <-- add this
 
-        paymentId:
-          selectedCourse.paymentId,
-
-        studentName:
-          selectedCourse.studentName,
-
-        studentEmail:
-          selectedCourse.studentEmail,
-
-        studentPhone:
-          selectedCourse.studentPhone,
-
-        sessionTitle,
-        trainerName,
-        meetingLink,
-        sessionDate,
-        startTime,
-        endTime,
-        description,
-      }
-    );
-
-    toast.success(
-      "Live Session Created"
-    );
-
+    toast.success("Session Created");
     setOpenModal(false);
 
-    setSessionTitle("");
-    setTrainerName("");
-    setMeetingLink("");
-    setSessionDate("");
-    setStartTime("");
-    setEndTime("");
-    setDescription("");
   } catch (error) {
     console.error(error);
-
-    toast.error(
-      "Failed to create session"
-    );
-  } finally {
-    setCreating(false);
+    toast.error("Failed to create session");
   }
 };
 const [sessions, setSessions] =
@@ -203,94 +166,102 @@ const paginatedCourses =
 
         <div className="w-full">
           <div className="">
-           <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-                <div className="rounded-2xl bg-white p-5 shadow-sm">
-                    <p className="text-sm text-slate-500">
-                    Total Courses
-                    </p>
-                    <h3 className="text-3xl font-bold">
-                    {courses.length}
-                    </h3>
-                </div>
+           <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
 
-                <div className="rounded-2xl bg-white p-5 shadow-sm">
-                    <p className="text-sm text-slate-500">
-                    Paid Students
-                    </p>
-                    <h3 className="text-3xl font-bold text-green-600">
-                    {
-                        new Set(
-                        courses.map(
-                            (c) => c.studentEmail
-                        )
-                        ).size
-                    }
-                    </h3>
-                </div>
+  {/* Total Courses */}
+  <div className="rounded-2xl bg-white p-5 shadow-sm">
+    <p className="text-sm text-slate-500">
+      Total Courses
+    </p>
 
-                <div className="rounded-2xl bg-white p-5 shadow-sm">
-                    <p className="text-sm text-slate-500">
-                    Live Sessions
-                    </p>
-                    <h3 className="text-3xl font-bold text-orange-600">
-                        0
-                    </h3>
-                </div>
+    <h3 className="text-3xl font-bold">
+      {courses.length}
+    </h3>
+  </div>
 
-                <div className="rounded-2xl bg-white p-5 shadow-sm">
-                    <p className="text-sm text-slate-500">
-                    Upcoming
-                    </p>
-                    <h3 className="text-3xl font-bold text-orange-600">
-                    0
-                    </h3>
-                </div>
-                </div>
+  {/* Live Sessions */}
+  <div className="rounded-2xl bg-white p-5 shadow-sm">
+    <p className="text-sm text-slate-500">
+      Live Sessions
+    </p>
 
+    <h3 className="text-3xl font-bold text-orange-600">
+      {sessions.length}
+    </h3>
+  </div>
+
+  {/* Upcoming Sessions */}
+  <div className="rounded-2xl bg-white p-5 shadow-sm">
+    <p className="text-sm text-slate-500">
+      Upcoming Sessions
+    </p>
+
+    <h3 className="text-3xl font-bold text-blue-600">
+      {
+        sessions.filter(
+          (s: any) =>
+            s.status === "scheduled"
+        ).length
+      }
+    </h3>
+  </div>
+
+  {/* Completed Sessions */}
+  <div className="rounded-2xl bg-white p-5 shadow-sm">
+    <p className="text-sm text-slate-500">
+      Completed Sessions
+    </p>
+
+    <h3 className="text-3xl font-bold text-green-600">
+      {
+        sessions.filter(
+          (s: any) =>
+            s.status === "completed"
+        ).length
+      }
+    </h3>
+  </div>
+
+</div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {loading ? "Loading..." : paginatedCourses.map(course => (
-                <div key={course._id} className={`overflow-hidden rounded-3xl border bg-white ${isSelected(course._id) ? "border-green-500" : ""}`}>
-                  <img
-                    src={course.thumbnail || "https://placehold.co/600x400"}
-                    className="h-48 w-full object-cover"
-                  />
-                  <div className="p-4">
-                    <h3 className="line-clamp-1 text-sm font-semibold">{course.title}</h3>
-                    <p className="line-clamp-2 text-xs text-slate-500">{course.description}</p>
+               <div
+  key={course.id}
+  className="overflow-hidden rounded-3xl border bg-white"
+>
+  <img
+    src={course.thumbnail || "https://placehold.co/600x400"}
+    className="h-48 w-full object-cover"
+  />
 
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                      <span className="rounded-full bg-blue-50 px-2 py-1"><Layers size={12} className="inline" /> {course.lessonCount || 0}</span>
-                      <span className="rounded-full bg-purple-50 px-2 py-1"><ClipboardList size={12} className="inline" /> {course.quizCount || 0}</span>
-                      <span className="rounded-full bg-orange-50 px-2 py-1"><PlayCircle size={12} className="inline" /> {course.videoCount || 0}</span>
-                    </div>
+  <div className="p-4">
+    <h3 className="font-semibold">
+      {course.title}
+    </h3>
 
-                    <div className="mt-3 flex items-center justify-between">
-                        <span className="font-bold text-green-600">
-                            ₹{Number(course.price || 0)}
-                        </span>
+    <p className="text-sm text-slate-500">
+      {course.description}
+    </p>
 
-                        <button
-                        onClick={() => {
-                            setSelectedCourse(course);
-                            setOpenModal(true);
-                        }}
-                        className="rounded-xl bg-purple-600 px-4 py-2 text-white"
-                        >
-                        Create Session
-                        </button>
-                        </div>
-                        <div className="mt-2 flex items-center gap-2">
-                        <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                            Paid
-                        </span>
-                        <span className="text-xs text-slate-500">
-                            Purchased By:
-                            {course.studentName}
-                        </span>
-                    </div>
-                  </div>
-                    
-                </div>
+    <div className="mt-3">
+      <span className="rounded-full bg-blue-50 px-3 py-1 text-xs">
+        {course.courses?.length || 0} Courses
+      </span>
+    </div>
+
+    <button
+      onClick={() => {
+        setSelectedCourse(course);
+        setOpenModal(true);
+      }}
+      className="mt-4 w-full rounded-xl bg-gradient-to-r
+    from-blue-600
+    to-indigo-600 py-2 text-white"
+    >
+      Start Lession
+    </button>
+  </div>
+</div>
                 
               ))}
             </div>
@@ -380,39 +351,62 @@ const paginatedCourses =
             className="rounded-xl border p-3"
             />
         <input
-          placeholder="Trainer Name"
-          className="rounded-xl border p-3"
-        />
+  value={trainerName}
+  onChange={(e) =>
+    setTrainerName(e.target.value)
+  }
+  placeholder="Trainer Name"
+  className="rounded-xl border p-3"
+/>
 
-        <input
-          placeholder="Meeting Link"
-          className="rounded-xl border p-3"
-        />
+<input
+  value={meetingLink}
+  onChange={(e) =>
+    setMeetingLink(e.target.value)
+  }
+  placeholder="Meeting Link"
+  className="rounded-xl border p-3"
+/>
 
-        <input
-          type="date"
-          className="rounded-xl border p-3"
-        />
+<input
+  type="date"
+  value={sessionDate}
+  onChange={(e) =>
+    setSessionDate(e.target.value)
+  }
+  className="rounded-xl border p-3"
+/>
 
-            <input
-            type="time"
-            value={endTime}
-            onChange={(e) =>
-                setEndTime(e.target.value)
-            }
-            className="rounded-xl border p-3"
-            />
-        <input
-          placeholder="Max Students"
-          className="rounded-xl border p-3"
-        />
+<input
+  type="time"
+  value={startTime}
+  onChange={(e) =>
+    setStartTime(e.target.value)
+  }
+  className="rounded-xl border p-3"
+/>
+
+<input
+  type="time"
+  value={endTime}
+  onChange={(e) =>
+    setEndTime(e.target.value)
+  }
+  className="rounded-xl border p-3"
+/>
+
+<textarea
+  rows={4}
+  value={description}
+  onChange={(e) =>
+    setDescription(e.target.value)
+  }
+  placeholder="Description"
+  className="mt-4 w-full rounded-xl border p-3"
+/>
       </div>
 
-      <textarea
-        rows={4}
-        placeholder="Description"
-        className="mt-4 w-full rounded-xl border p-3"
-      />
+      
 
      <button
         onClick={createLiveSession}

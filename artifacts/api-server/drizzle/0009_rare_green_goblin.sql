@@ -1,0 +1,1 @@
+ALTER TABLE "live_sessions" ALTER COLUMN "payment_id" DROP NOT NULL;

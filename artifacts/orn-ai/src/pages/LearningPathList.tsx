@@ -6,11 +6,19 @@ import {
   ExternalLink,
   Eye,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function LearningPathList() {
+  const [editingId, setEditingId] =
+  useState<string | null>(null);
   const [loading, setLoading] =
     useState(true);
-
+const editLearningPath = (
+  path: any
+) => {
+  window.location.href =
+    `/recruiter/learning-path?edit=${path.id}`;
+};
   const [paths, setPaths] =
     useState<any[]>([]);
 
@@ -35,7 +43,32 @@ export default function LearningPathList() {
         setLoading(false);
       }
     };
+const deleteLearningPath = async (
+  id: string
+) => {
+  try {
+    await api.delete(
+      `/api/learning-paths/${id}`
+    );
 
+    setPaths((prev) =>
+      prev.filter(
+        (path) => path.id !== id
+      )
+    );
+
+    toast.success(
+      "Learning Path Deleted"
+    );
+
+  } catch (error) {
+    console.error(error);
+
+    toast.error(
+      "Delete failed"
+    );
+  }
+};
   return (
     <Shell>
       <div className="p-6">
@@ -57,7 +90,7 @@ export default function LearningPathList() {
             {paths.length} Paths
           </div>
         <a
-  href="/learning-paths"
+  href="/recruiter/learning-path"
   className="
     inline-flex
     items-center
@@ -71,7 +104,7 @@ export default function LearningPathList() {
     text-white
   "
 >
-  📚 Learning Paths
+  📚 Learning Paths 
 </a>
 
         </div>
@@ -125,7 +158,7 @@ export default function LearningPathList() {
 
                   <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
                     <BookOpen size={16} />
-                    {path.courses?.length || 0}
+                    {path.courses?.length || 0} &nbsp;
                     Courses
                   </div>
 
@@ -169,6 +202,29 @@ export default function LearningPathList() {
                         />
                       </a>
                     )}
+                    <div className="flex gap-2">
+
+  <button
+    onClick={() =>
+      editLearningPath(path)
+    }
+    className="rounded-xl bg-amber-500 px-4 py-2 text-white"
+  >
+    Edit
+  </button>
+
+  <button
+    onClick={() =>
+      deleteLearningPath(
+        path.id
+      )
+    }
+    className="rounded-xl bg-red-600 px-4 py-2 text-white"
+  >
+    Delete
+  </button>
+
+</div>
 
                   </div>
 

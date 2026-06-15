@@ -252,15 +252,34 @@ router.put(
     "admin",
     "recruiter"
   ),
+
+  upload.fields([
+    {
+      name: "thumbnail",
+      maxCount: 1,
+    },
+    {
+      name: "introVideo",
+      maxCount: 1,
+    },
+  ]),
+
   async (req, res) => {
     try {
+
       const {
         title,
         description,
-        thumbnail,
-        introVideo,
         paymentLink,
       } = req.body;
+
+      const thumbnailFile =
+        (req.files as any)
+          ?.thumbnail?.[0];
+
+      const introVideoFile =
+        (req.files as any)
+          ?.introVideo?.[0];
 
       const courseIds =
         typeof req.body.courseIds ===
@@ -271,19 +290,33 @@ router.put(
           : req.body.courseIds ||
             [];
 
+      const updateData: any = {
+        title,
+        description,
+        paymentLink,
+        courseIds,
+      };
+
+      if (
+        thumbnailFile?.location
+      ) {
+        updateData.thumbnail =
+          thumbnailFile.location;
+      }
+
+      if (
+        introVideoFile?.location
+      ) {
+        updateData.introVideo =
+          introVideoFile.location;
+      }
+
       const [learningPath] =
         await db
           .update(
             learningPathsTable
           )
-          .set({
-            title,
-            description,
-            thumbnail,
-            introVideo,
-            paymentLink,
-            courseIds,
-          })
+          .set(updateData)
           .where(
             eq(
               learningPathsTable.id,
@@ -298,18 +331,23 @@ router.put(
           "Learning Path Updated Successfully",
         data: learningPath,
       });
-    } catch (error) {
-      console.error(error);
+
+    } catch (error: any) {
+
+      console.error(
+        "UPDATE ERROR =>",
+        error
+      );
 
       res.status(500).json({
         success: false,
         error:
+          error?.message ||
           "Failed to update learning path",
       });
     }
   }
 );
-
 /* =========================================
 DELETE LEARNING PATH
 ========================================= */
