@@ -145,15 +145,20 @@ const isDashboard =
                   <BarChart3 className="size-4" />
                   Feed
                 </Link>
+                
 
                 <Link href="#" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
                   <GraduationCap className="size-4" />
                   Workshops
                 </Link>
 
-                <Link href="/courses" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted">
+                <Link href="/courses" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/courses" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <GraduationCap className="size-4" />
                   Courses
+                </Link>
+                <Link href="/recruiter/student-live-session" className={`flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${location === "/recruiter/student-live-session" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                  <BarChart3 className="size-4" />
+                  Live Session Courses
                 </Link>
 
                 

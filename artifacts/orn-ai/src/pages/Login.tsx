@@ -67,7 +67,7 @@ if (redirect) {
     } else if (role === "recruiter") {
       window.location.href = "/recruiter";
     } else if (role === "candidate" && session.user.candidateId) {
-     // window.location.href = `/candidate/${session.user.candidateId}/evaluation`;
+     window.location.href = `/candidate/${session.user.candidateId}/evaluation`;
     } else {
       window.location.href = "/";
     }

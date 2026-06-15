@@ -32,6 +32,8 @@ import LearningPath from "@/pages/LearningPath";
 import PaymentPage from "@/pages/PaymentPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import LiveSessionCourses from "@/pages/LiveSessionCourses";
+import LearningPathStudent from "@/pages/LearningPathStudent";
+
 import LearningPathList from "@/pages/LearningPathList";
 
 import DataScientce from "@/pages/Data";
@@ -129,6 +131,11 @@ function Router() {
        <Route path="/recruiter/live-session">
         {/* <ProtectedRoute roles={["candidate"]}> */}
           <LiveSessionCourses  />
+        {/* </ProtectedRoute> */}
+      </Route>
+      <Route path="/recruiter/student-live-session">
+        {/* <ProtectedRoute roles={["candidate"]}> */}
+          <LearningPathStudent  />
         {/* </ProtectedRoute> */}
       </Route>
       <Route path="/payment/:paymentId">
