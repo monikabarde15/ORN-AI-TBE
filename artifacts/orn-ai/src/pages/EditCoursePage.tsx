@@ -675,73 +675,53 @@ setCoverPreview(
 setVideoPreview(
   course.promotionalVideo || null
 );
-    const mappedModules =
-      (course.sections || []).map(
-        (section: any) => ({
-          id: section.id,
-          title:
-            section.sectionName,
-          description: "",
+    const mappedModules = [...(course.sections || [])]
+  .reverse()
+  .map((section: any) => ({
+    id: section.id,
+    title: section.sectionName,
+    description: "",
 
-         lessons: section.lessons.map(
-  (lesson: any) => ({
-    id: lesson.id,
-    title: lesson.title,
-    duration: lesson.timeDuration,
-    content: lesson.description,
+    lessons: (section.lessons || []).map(
+      (lesson: any) => ({
+        id: lesson.id,
+        title: lesson.title,
+        duration: lesson.timeDuration,
+        content: lesson.description,
 
-    videoUrl:
-      lesson.videoUrl,
+        videoUrl: lesson.videoUrl,
+        pdfUrl: lesson.pdfUrl,
+      })
+    ),
 
-    pdfUrl:
-      lesson.pdfUrl,
-  })
-),
+    quizzes: (section.lessons || []).flatMap(
+      (lesson: any) =>
+        (lesson.quizzes || []).map(
+          (quiz: any) => ({
+            id: quiz.id,
+            title: quiz.question,
 
-          quizzes:
-            (
-              section.lessons ||
-              []
-            ).flatMap(
-              (
-                lesson: any
-              ) =>
-                (
-                  lesson.quizzes ||
-                  []
-                ).map(
-                  (
-                    quiz: any
-                  ) => ({
-                    id:
-                      quiz.id,
-                    title:
-                      quiz.question,
+            questions: [
+              {
+                id: quiz.id,
+                mcqId: quiz.id,
 
-                    questions: [
-                      {
-                        id: quiz.id,
+                question: quiz.question,
 
-  mcqId:
-    quiz.id,
+                options: quiz.options,
 
-  question:
-    quiz.question,
+                correctAnswer:
+                  quiz.options[
+                    quiz.correctAnswer
+                  ] || "",
+              },
+            ],
+          })
+        )
+    ),
+  }));
 
-  options:
-    quiz.options,
-
-  correctAnswer:
-    quiz.options[
-      quiz.correctAnswer
-    ] || "",
-                      },
-                    ],
-                  })
-                )
-            ),
-        })
-      );
+setModules(mappedModules);
 
     setModules(
       mappedModules
