@@ -267,6 +267,27 @@ router.put(
   async (req, res) => {
     try {
 
+      const [existingPath] =
+        await db
+          .select()
+          .from(
+            learningPathsTable
+          )
+          .where(
+            eq(
+              learningPathsTable.id,
+              req.params.id
+            )
+          );
+
+      if (!existingPath) {
+        return res.status(404).json({
+          success: false,
+          error:
+            "Learning Path not found",
+        });
+      }
+
       const {
         title,
         description,
@@ -281,21 +302,54 @@ router.put(
         (req.files as any)
           ?.introVideo?.[0];
 
-      const courseIds =
-        typeof req.body.courseIds ===
-        "string"
-          ? JSON.parse(
-              req.body.courseIds
-            )
-          : req.body.courseIds ||
-            [];
+      let courseIds =
+        existingPath.courseIds || [];
 
-      const updateData: any = {
-        title,
-        description,
-        paymentLink,
-        courseIds,
-      };
+      if (
+        req.body.courseIds !==
+        undefined
+      ) {
+        courseIds =
+          typeof req.body.courseIds ===
+          "string"
+            ? JSON.parse(
+                req.body.courseIds
+              )
+            : req.body.courseIds;
+      }
+
+      console.log(
+        "EXISTING COURSE IDS =>",
+        existingPath.courseIds
+      );
+
+      console.log(
+        "UPDATED COURSE IDS =>",
+        courseIds
+      );
+
+      const updateData: any = {};
+
+      if (title !== undefined) {
+        updateData.title = title;
+      }
+
+      if (
+        description !== undefined
+      ) {
+        updateData.description =
+          description;
+      }
+
+      if (
+        paymentLink !== undefined
+      ) {
+        updateData.paymentLink =
+          paymentLink;
+      }
+
+      updateData.courseIds =
+        courseIds;
 
       if (
         thumbnailFile?.location

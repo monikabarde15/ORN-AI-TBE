@@ -65,7 +65,7 @@ export default function SelectedCourses({
             {courses.map(
               (course: any) => (
                 <div
-                  key={course._id}
+                  key={course.id || course._id}
                   className="
                     flex
                     items-center
@@ -109,7 +109,7 @@ export default function SelectedCourses({
                   <button
                     onClick={() =>
                       removeCourse(
-                        course._id
+                       course.id || course._id
                       )
                     }
                     className="

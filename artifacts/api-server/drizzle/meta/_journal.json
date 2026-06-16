@@ -71,6 +71,13 @@
       "when": 1781508460950,
       "tag": "0009_rare_green_goblin",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1781526946982,
+      "tag": "0010_friendly_typhoid_mary",
+      "breakpoints": true
     }
   ]
 }

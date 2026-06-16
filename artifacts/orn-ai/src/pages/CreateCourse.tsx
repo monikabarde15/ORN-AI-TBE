@@ -995,16 +995,16 @@ useEffect(() => {
     try {
       const res = await mockApi.addModule(courseId, { title: moduleTitle })
 
-      setModules((prev) => [
-        ...prev,
-        {
-          id: res.id,
-          title: moduleTitle,
-          description: "",
-          lessons: [],
-          quizzes: [],
-        },
-      ])
+     setModules((prev) => [
+      ...prev,
+      {
+        id: res.id,
+        title: moduleTitle,
+        description: "",
+        lessons: [],
+        quizzes: [],
+      },
+    ]);
 
       setModuleTitle("")
       toast.success("Module Added")

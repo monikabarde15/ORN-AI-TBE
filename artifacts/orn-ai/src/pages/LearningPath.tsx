@@ -67,12 +67,18 @@ const [learningPathId, setLearningPathId] =
       const res =
         await api.get("/api/courses");
 
-      setCourses(
-        res?.data?.courses ||
-        res?.data?.data ||
-        res?.data ||
-        []
-      );
+      const courseData =
+  res?.data?.courses ||
+  res?.data?.data ||
+  res?.data ||
+  [];
+
+setCourses(
+  courseData.map((c: any) => ({
+    ...c,
+    id: c.id || c._id,
+  }))
+);
     } catch {
       toast.error(
         "Failed to load courses"
@@ -100,11 +106,11 @@ const loadLearningPath = async (
 
   const path = res.data.data;
 
-  setEditingId(path.id);
+setEditingId(path.id);
+setLearningPathId(path.id);
 
-  setTitle(path.title || "");
-  setDescription(path.description || "");
-
+setTitle(path.title || "");
+setDescription(path.description || "");
   setThumbnailPreview(
     path.thumbnail || ""
   );
@@ -114,7 +120,12 @@ const loadLearningPath = async (
   );
 
   setSelectedCourses(
-    path.courses || []
+    (path.courses || []).map(
+      (c: any) => ({
+        ...c,
+        id: c.id || c._id,
+      })
+    )
   );
 };
 useEffect(() => {
@@ -143,31 +154,42 @@ useEffect(() => {
       );
     }, [courses, search]);
 
-  const toggleCourse = (
-    course: Course
-  ) => {
-    setSelectedCourses((prev) =>
-      prev.some(
-        (c) => c._id === course._id
-      )
-        ? prev.filter(
-            (c) =>
-              c._id !== course._id
-          )
-        : [...prev, course]
-    );
-  };
+const toggleCourse = (course: any) => {
+  const courseId =
+    course.id || course._id;
 
-  const removeCourse = (
-    id: string
-  ) => {
-    setSelectedCourses((prev) =>
-      prev.filter(
-        (c) => c._id !== id
-      )
+  setSelectedCourses((prev) => {
+    const exists = prev.some(
+      (c: any) =>
+        (c.id || c._id) === courseId
     );
-  };
 
+    if (exists) {
+      return prev.filter(
+        (c: any) =>
+          (c.id || c._id) !== courseId
+      );
+    }
+
+    return [
+      ...prev,
+      {
+        ...course,
+        id: courseId,
+      },
+    ];
+  });
+};
+ const removeCourse = (
+  id: string
+) => {
+  setSelectedCourses((prev) =>
+    prev.filter(
+      (c: any) =>
+        (c.id || c._id) !== id
+    )
+  );
+};
   const subtotal =
     selectedCourses.reduce(
       (sum, course) =>
@@ -201,8 +223,9 @@ useEffect(() => {
             learningPathId,
             courseIds:
               selectedCourses.map(
-                (c) => c._id
-              ),
+              (c: any) =>
+                c.id || c._id
+            ),
             amount: total,
           }
         );
@@ -216,11 +239,17 @@ useEffect(() => {
       );
 
       // Save URL in Learning Path
-      await api.put(
+     await api.put(
         `/api/learning-paths/${learningPathId}`,
         {
           paymentLink:
             paymentPageUrl,
+
+          courseIds:
+            selectedCourses.map(
+              (c: any) =>
+                c.id || c._id
+            ),
         }
       );
 
@@ -278,7 +307,8 @@ useEffect(() => {
         "courseIds",
         JSON.stringify(
           selectedCourses.map(
-            (c) => c._id
+            (c: any) =>
+              c.id || c._id
           )
         )
       );
@@ -315,6 +345,7 @@ useEffect(() => {
   };
   const saveLearningPath = async () => {
   try {
+    
     if (!title.trim()) {
       toast.error("Enter title");
       return;
@@ -329,7 +360,21 @@ useEffect(() => {
       toast.error("Select at least one course");
       return;
     }
+    console.log(
+  "SELECTED COURSES =>",
+  selectedCourses
+);
 
+console.log(
+  "COURSE IDS =>",
+  selectedCourses.map(
+    (c: any) => c.id
+  )
+);
+await new Promise(
+      (resolve) =>
+        setTimeout(resolve, 50)
+    );
     setSaving(true);
 
     const formData = new FormData();
@@ -365,13 +410,9 @@ useEffect(() => {
       );
     }
 
-    const courseIds =
-      selectedCourses
-        .map((c: any) =>
-          c._id || c.id
-        )
-        .filter(Boolean);
-
+    const courseIds = selectedCourses
+  .map((c: any) => c.id || c._id)
+  .filter(Boolean);
     console.log(
       "Selected Courses =>",
       selectedCourses
@@ -456,6 +497,7 @@ useEffect(() => {
     path: any
   ) => {
     setEditingId(path.id);
+setLearningPathId(path.id);
 
     setTitle(path.title || "");
 
@@ -468,8 +510,13 @@ useEffect(() => {
     );
 
     setSelectedCourses(
-      path.courses || []
-    );
+  (path.courses || []).map(
+    (c: any) => ({
+      ...c,
+      id: c.id || c._id,
+    })
+  )
+);
 
     window.scrollTo({
       top: 0,
@@ -530,32 +577,7 @@ useEffect(() => {
   courses={selectedCourses}
   removeCourse={removeCourse}
 />
-   <PaymentSummary
-  subtotal={subtotal}
-  gst={gst}
-  total={total}
-  paymentLink={paymentLink}
-  generatePaymentLink={generatePaymentLink}
-/>
-
-    {/* <button
-      onClick={createLearningPath}
-      className="
-        w-full
-        rounded-[24px]
-        bg-gradient-to-r
-        from-blue-600
-        to-indigo-600
-        py-4
-        text-lg
-        font-semibold
-        text-white
-        shadow-lg
-      "
-    >
-      Create Learning Path
-    </button> */}
-    <button
+ <button
   onClick={saveLearningPath}
   disabled={saving}
   className="
@@ -568,12 +590,55 @@ useEffect(() => {
     text-lg
     font-semibold
     text-white
+    disabled:opacity-70
+    disabled:cursor-not-allowed
+    flex
+    items-center
+    justify-center
+    gap-3
   "
 >
-  {editingId
-    ? "Update Learning Path"
-    : "Create Learning Path"}
+  {saving ? (
+    <>
+      <svg
+        className="h-5 w-5 animate-spin"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+        />
+      </svg>
+
+      Saving...
+    </>
+  ) : editingId ? (
+    "Update Learning Path"
+  ) : (
+    "Create Learning Path"
+  )}
 </button>
+   <PaymentSummary
+  subtotal={subtotal}
+  gst={gst}
+  total={total}
+  paymentLink={paymentLink}
+  generatePaymentLink={generatePaymentLink}
+/>
+
+  
+   
   </div>
 
 </div>

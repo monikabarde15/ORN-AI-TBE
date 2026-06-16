@@ -1363,7 +1363,7 @@ router.post(
       const promoVideo =
         (req.files as any)?.promotionalVideo?.[0];
 
-      await db
+     await db
   .update(coursesTable)
   .set({
     title: body.courseName,
@@ -1374,6 +1374,22 @@ router.post(
     instructor: body.instructor,
     price: body.price,
 
+    whatYouWillLearn: body.whatYouWillLearn
+      ? JSON.parse(body.whatYouWillLearn)
+      : [],
+
+    instructions: body.instructions
+      ? JSON.parse(body.instructions)
+      : [],
+
+    faqs: body.faqs
+      ? JSON.parse(body.faqs)
+      : [],
+
+    tags: body.tag
+      ? JSON.parse(body.tag)
+      : [],
+
     ...(thumbnail && {
       thumbnail: thumbnail.location,
     }),
@@ -1382,10 +1398,8 @@ router.post(
       promotionalVideo: promoVideo.location,
     }),
   })
-  .where(
-    eq(coursesTable.id, courseId)
-  );
-
+  .where(eq(coursesTable.id, courseId));
+  
       res.json({
         success: true,
         message: "Course updated",

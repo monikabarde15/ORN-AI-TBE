@@ -3988,9 +3988,10 @@ syllabusText:"",
 
 const SkillQuestPage = () => {
   const { id } = useParams();
-
+console.log("URL Param:", id);
+console.log(window.location.pathname);
   const data = cyberLabs.find((item) => item.id === Number(id)) || cyberLabs[0];
-console.log('bannerImage=',data.bannerImage);
+console.log('bannerImage=',data);
   return (
      <Shell>
     <div className="w-full">
