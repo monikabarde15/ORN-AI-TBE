@@ -549,6 +549,10 @@ const editCourseId =
   const [modules, setModules] = useState<Module[]>([])
   const [moduleTitle, setModuleTitle] = useState("")
   const [lessonForms, setLessonForms] = useState<Record<string, Lesson>>({})
+  const [mediaUploading, setMediaUploading] = useState({
+  cover: false,
+  video: false,
+});
 
   // NEW STATE VARIABLES (For STEP 1)
   const [coverPreview, setCoverPreview] = useState(null)
