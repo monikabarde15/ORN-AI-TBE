@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react"
 import { Shell } from "@/components/layout/Shell";
-
+import { useLocation } from "wouter";
 import {
   Plus,
   X,
@@ -87,13 +87,13 @@ interface Lesson {
 
   documentPreview?: string;
   videoPreview?: string;
+  quizzes?: Quiz[];
 }
 interface Module {
   id: string
   title: string
   description: string
   lessons: Lesson[]
-  quizzes: Quiz[]  // ADD THIS
 }
 
 interface FAQ {
@@ -119,9 +119,12 @@ const mockApi = {
       JSON.stringify(data.learningOutcomes)
     )
     formData.append("price", data.price || "0")
-    const allTags = [data.category, data.difficulty, ...(data.tags || [])]
-    formData.append("tag", JSON.stringify(allTags))
-    formData.append("category", data.category)
+const allTags = [data.category, data.difficulty, ...(data.tags || [])]
+
+formData.append(
+  "tag",
+  JSON.stringify(allTags)
+);    formData.append("category", data.category)
     formData.append(
       "subtitle",
       data.subtitle
@@ -399,12 +402,14 @@ function Textarea(props: any) {
 ======================================================= */
 
 function CreateCourseForm() {
+  const [, navigate] = useLocation();
  const [editingQuiz, setEditingQuiz] =
   useState<{
     moduleId: string
     quizId: string
   } | null>(null)
-  
+  const [selectedLessonId, setSelectedLessonId] =
+  useState<string | null>(null);
   const [step, setStep] = useState(1)
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
@@ -548,19 +553,22 @@ const handleDeleteQuiz = async (
   moduleId: string,
   quizId: string
 ) => {
-
   if (!window.confirm("Delete Quiz?"))
     return;
 
   try {
-
-    const module =
-      modules.find(
-        (m) => m.id === moduleId
-      );
+    const lesson =
+      modules
+        .find((m) => m.id === moduleId)
+        ?.lessons.find(
+          (l) =>
+            l.quizzes?.some(
+              (q) => q.id === quizId
+            )
+        );
 
     const quiz =
-      module?.quizzes.find(
+      lesson?.quizzes?.find(
         (q) => q.id === quizId
       );
 
@@ -580,29 +588,28 @@ const handleDeleteQuiz = async (
         m.id === moduleId
           ? {
               ...m,
-              quizzes:
-                m.quizzes.filter(
-                  (q) =>
-                    q.id !== quizId
-                ),
+              lessons: m.lessons.map(
+                (lesson) => ({
+                  ...lesson,
+                  quizzes:
+                    lesson.quizzes?.filter(
+                      (q) =>
+                        q.id !== quizId
+                    ) || [],
+                })
+              ),
             }
           : m
       )
     );
 
-    toast.success(
-      "Quiz Deleted"
-    );
-
+    toast.success("Quiz Deleted");
   } catch (err) {
-
     console.log(err);
-
-    toast.error(
-      "Delete Failed"
-    );
+    toast.error("Delete Failed");
   }
 };
+
   // ========== Helper Functions go HERE ==========
 
   /* =======================================================
@@ -1002,7 +1009,6 @@ useEffect(() => {
         title: moduleTitle,
         description: "",
         lessons: [],
-        quizzes: [],
       },
     ]);
 
@@ -1021,7 +1027,19 @@ useEffect(() => {
       [moduleId]: !prev[moduleId]
     }))
   }
+const handleTagInput = (value: string) => {
+  const newTags = value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
 
+  setFormData((prev) => ({
+    ...prev,
+    tags: [...new Set([...(prev.tags || []), ...newTags])],
+  }));
+
+  setTagInput("");
+};
   /* =======================================================
      ADD LESSON
   ======================================================= */
@@ -1181,6 +1199,10 @@ setLessonUploading((prev) => ({
       toast.success("Course Published Successfully!")
 
       setStep(4)  // Go to success page (or final step)
+      setTimeout(() => {
+        window.location.href =
+          "/recruiter/courses";
+      }, 200);
     } catch (err) {
       console.error("Publish error:", err)
       toast.error("Failed to publish course")
@@ -1204,30 +1226,62 @@ setLessonUploading((prev) => ({
   }
 
   const handleCoverDrop = (e) => {
-    e.preventDefault()
-    setIsDraggingCover(false)
-    const file = e.dataTransfer.files?.[0]
-    if (file && file.type.startsWith('image/')) {
-      setFormData({ ...formData, thumbnailImage: file })
-      const reader = new FileReader()
-      reader.onloadend = () => setCoverPreview(reader.result)
-      reader.readAsDataURL(file)
-      setUploadProgress({ ...uploadProgress, cover: 65 })
-    }
+  e.preventDefault();
+  setIsDraggingCover(false);
+
+  const file = e.dataTransfer.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    toast.error("Only image files are allowed");
+    return;
   }
+
+  if (file.size > MAX_FILE_SIZE) {
+    toast.error("File size cannot exceed 500MB");
+    return;
+  }
+
+  setFormData({
+    ...formData,
+    thumbnailImage: file,
+  });
+
+  const reader = new FileReader();
+
+  reader.onloadend = () =>
+    setCoverPreview(reader.result);
+
+  reader.readAsDataURL(file);
+};
 
   const handleVideoDrop = (e) => {
-    e.preventDefault()
-    setIsDraggingVideo(false)
-    const file = e.dataTransfer.files?.[0]
-    if (file && file.type.startsWith('video/')) {
-      setFormData({ ...formData, promotionalVideo: file })
-      setVideoPreview(file.name)
-      setUploadProgress({ ...uploadProgress, video: 65 })
-    }
+  e.preventDefault();
+  setIsDraggingVideo(false);
+
+  const file = e.dataTransfer.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("video/")) {
+    toast.error("Only video files are allowed");
+    return;
   }
 
+  if (file.size > MAX_FILE_SIZE) {
+    toast.error("File size cannot exceed 500MB");
+    return;
+  }
+
+  setFormData({
+    ...formData,
+    promotionalVideo: file,
+  });
+
+  setVideoPreview(file.name);
+};
+
   // ========== FILE UPLOAD HANDLERS ==========
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
 
 const handleCoverUpload = (
   e: React.ChangeEvent<HTMLInputElement>
@@ -1235,6 +1289,20 @@ const handleCoverUpload = (
   const file = e.target.files?.[0];
 
   if (!file) return;
+
+  // Only Image
+  if (!file.type.startsWith("image/")) {
+    toast.error("Only image files are allowed");
+    e.target.value = "";
+    return;
+  }
+
+  // Max Size
+  if (file.size > MAX_FILE_SIZE) {
+    toast.error("File size cannot exceed 500MB");
+    e.target.value = "";
+    return;
+  }
 
   setMediaUploading((prev) => ({
     ...prev,
@@ -1249,9 +1317,7 @@ const handleCoverUpload = (
       thumbnailImage: file,
     }));
 
-    setCoverPreview(
-      reader.result as string
-    );
+    setCoverPreview(reader.result as string);
 
     setMediaUploading((prev) => ({
       ...prev,
@@ -1268,6 +1334,20 @@ const handleVideoUpload = (
 
   if (!file) return;
 
+  // Only Video
+  if (!file.type.startsWith("video/")) {
+    toast.error("Only video files are allowed");
+    e.target.value = "";
+    return;
+  }
+
+  // Max Size
+  if (file.size > MAX_FILE_SIZE) {
+    toast.error("File size cannot exceed 500MB");
+    e.target.value = "";
+    return;
+  }
+
   setMediaUploading((prev) => ({
     ...prev,
     video: true,
@@ -1278,16 +1358,13 @@ const handleVideoUpload = (
     promotionalVideo: file,
   }));
 
-  setTimeout(() => {
-    setVideoPreview(file.name);
+  setVideoPreview(file.name);
 
-    setMediaUploading((prev) => ({
-      ...prev,
-      video: false,
-    }));
-  }, 800);
+  setMediaUploading((prev) => ({
+    ...prev,
+    video: false,
+  }));
 };
-
   const formatFileSize = (bytes) => {
     if (!bytes) return ''
     if (bytes < 1024) return bytes + ' B'
@@ -1298,11 +1375,18 @@ const handleVideoUpload = (
   // ========== LEARNING OUTCOMES FUNCTIONS ==========
 
 
-  const updateLearningOutcome = (index: number, value: string) => {
-    const newOutcomes = [...formData.learningOutcomes]
-    newOutcomes[index] = value
-    setFormData({ ...formData, learningOutcomes: newOutcomes })
-  }
+  const updateLearningOutcome = (
+  index: number,
+  value: string
+) => {
+  const newOutcomes = [...formData.learningOutcomes];
+  newOutcomes[index] = value;
+
+  setFormData({
+    ...formData,
+    learningOutcomes: newOutcomes,
+  });
+};
 
   const addLearningOutcome = () => {
     setFormData({
@@ -1330,12 +1414,7 @@ const handleAddQuiz = async (
   const quiz =
     quizForms[moduleId];
 
-  if (!quiz?.title) {
-    toast.error(
-      "Quiz title required"
-    );
-    return;
-  }
+  
 
   if (
     !quiz.questions ||
@@ -1359,8 +1438,8 @@ const handleAddQuiz = async (
   );
 
   // ✅ REAL SUBSECTION ID
-  const realSubSectionId =
-    latestLesson?.id;
+    const realSubSectionId =
+  selectedLessonId;
 
   console.log(
     "REAL SUBSECTION ID",
@@ -1383,19 +1462,28 @@ const handleAddQuiz = async (
         quiz
       );
 
-   setModules((prev) =>
+  setModules((prev) =>
   prev.map((m) =>
     m.id === moduleId
       ? {
           ...m,
-          quizzes: [
-            ...m.quizzes,
-            {
-              ...quiz,
-              id: crypto.randomUUID(), // ✅ unique quiz id
-              questions: res.questions,
-            },
-          ],
+          lessons: m.lessons.map(
+            (lesson) =>
+              lesson.id === selectedLessonId
+                ? {
+                    ...lesson,
+                    quizzes: [
+                      ...(lesson.quizzes || []),
+                      {
+                        ...quiz,
+                        id: crypto.randomUUID(),
+                        questions:
+                          res.questions,
+                      },
+                    ],
+                  }
+                : lesson
+          ),
         }
       : m
   )
@@ -1504,15 +1592,19 @@ setModules((prev) =>
     m.id === moduleId
       ? {
           ...m,
-          quizzes: m.quizzes.map((q) =>
-            q.id === editingQuiz?.quizId
-              ? {
-                  ...q,
-                  title: quiz.title,
-                  questions: quiz.questions,
-                }
-              : q
-          ),
+          lessons: m.lessons.map((lesson) => ({
+            ...lesson,
+            quizzes:
+              lesson.quizzes?.map((q) =>
+                q.id === editingQuiz?.quizId
+                  ? {
+                      ...q,
+                      title: quiz.title,
+                      questions: quiz.questions,
+                    }
+                  : q
+              ) || [],
+          })),
         }
       : m
   )
@@ -1648,18 +1740,47 @@ toast.success(
     }))
   }
 
-  const removeQuizQuestion = (moduleId: string, questionIndex: number) => {
-    const currentQuiz = quizForms[moduleId]
-    const updatedQuestions = currentQuiz.questions.filter((_, i) => i !== questionIndex)
+  const removeQuizQuestion = (
+  moduleId: string,
+  questionIndex: number
+) => {
+  const currentQuiz =
+    quizForms[moduleId];
+
+  if (!currentQuiz) return;
+
+  const updatedQuestions =
+    currentQuiz.questions.filter(
+      (_, index) =>
+        index !== questionIndex
+    );
+
+  // Last question remove ho gayi
+  if (updatedQuestions.length === 0) {
+    setShowQuizForm((prev) => ({
+      ...prev,
+      [moduleId]: false,
+    }));
 
     setQuizForms((prev) => ({
       ...prev,
       [moduleId]: {
         ...currentQuiz,
-        questions: updatedQuestions,
+        questions: [],
       },
-    }))
+    }));
+
+    return;
   }
+
+  setQuizForms((prev) => ({
+    ...prev,
+    [moduleId]: {
+      ...currentQuiz,
+      questions: updatedQuestions,
+    },
+  }));
+};
 
   // ========== TAGS FUNCTIONS ==========
 
@@ -1730,26 +1851,7 @@ toast.success(
   ======================================================= */
 
   {/* ========== STEP 4 - SUCCESS PAGE ========== */ }
-  if (step === 4) {
-    return (
-      <div className="max-w-3xl mx-auto p-10 text-center">
-        <div className="text-4xl mb-4">✅</div>
-        <h2 className="text-2xl font-bold">Course Published Successfully!</h2>
-        <p className="text-gray-500 mt-2">Your course is now live.</p>
-        <button
-          className="btn-primary mt-6"
-          onClick={() => {
-            // Reset form or redirect
-            window.location.href = "/recruiter/courses"
-          }}
-        >
-          View All Courses
-        </button>
-      </div>
-    )
-  }
-
-
+  
 
   return (
     <Shell>
@@ -1889,19 +1991,16 @@ toast.success(
                     ))}
                   </div>
                   <div className="tag-input-wrapper">
-                    <input
-                      type="text"
-                      placeholder="Add tag and press Enter"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && tagInput.trim()) {
-                          e.preventDefault()
-                          addTag(tagInput.trim())
-                          setTagInput('')
-                        }
-                      }}
-                    />
+                  <input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleTagInput(tagInput);
+                    }
+                  }}
+                />
                   </div>
                 </div>
                 <p className="upload-hint" style={{ marginTop: '4px' }}>
@@ -1935,7 +2034,34 @@ toast.success(
                   className="form-control"
                   placeholder="e.g., Learn Figma Basic to Advanced Design"
                   value={outcome}
-                  onChange={(e) => updateLearningOutcome(index, e.target.value)}
+  onChange={(e) =>
+    updateLearningOutcome(
+      index,
+      e.target.value
+    )
+  }
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+
+      const values = outcome
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      if (values.length > 1) {
+        setFormData((prev) => ({
+          ...prev,
+          learningOutcomes: [
+            ...prev.learningOutcomes.filter(
+              (_, i) => i !== index
+            ),
+            ...values,
+          ],
+        }));
+      }
+    }
+  }}
                 />
                 {formData.learningOutcomes.length > 1 && (
                   <button
@@ -1989,7 +2115,7 @@ toast.success(
                   <div className="upload-text">
                     Drag & Drop image or <span className="upload-browse">Browse</span>
                   </div>
-                  <div className="upload-hint">SVG, PNG, JPG or GIF (max 360×250)</div>
+                  <div className="upload-hint">JPG, PNG, GIF, WEBP (Max 500MB)</div>
                   <input
                     id="coverInput"
                     type="file"
@@ -2037,23 +2163,23 @@ toast.success(
                 >
                  <div className="upload-icon">
                  <div className="file-status-area">
-  {loading ? (
-    <div className="uploading-status">
-      <div className="button-spinner"></div>
-      <span>Uploading...</span>
-    </div>
-  ) : (
-    <div className="upload-complete">
-      <Check size={16} />
-      <span>Ready</span>
-    </div>
-  )}
-</div>
+                  {loading ? (
+                    <div className="uploading-status">
+                      <div className="button-spinner"></div>
+                      <span>Uploading...</span>
+                    </div>
+                  ) : (
+                    <div className="upload-complete">
+                      <Check size={16} />
+                      <span>Ready</span>
+                    </div>
+                  )}
+                </div>
                   </div>
                   <div className="upload-text">
                     Drag & Drop video or <span className="upload-browse">Browse</span>
                   </div>
-                  <div className="upload-hint">MP4, MOV, AVI (max. 2GB)</div>
+                  <div className="upload-hint">  MP4, MOV, AVI (Max 500MB)</div>
                   <input
                     id="videoInput"
                     type="file"
@@ -2192,7 +2318,14 @@ toast.success(
                       📚 {module.lessons.length} Lessons
                     </span>
                     <span className="module-number">
-                      📝 {module.quizzes.length} Quizzes
+                     📝 {
+                    module.lessons.reduce(
+                      (total, lesson) =>
+                        total +
+                        (lesson.quizzes?.length || 0),
+                      0
+                    )
+                  } Quizzes
                     </span>
                     
                   </div>
@@ -2201,7 +2334,154 @@ toast.success(
 
                 {/* Collapsible Content */}
                 <div className={`module-content ${collapsedModules[module.id] ? 'collapsed' : ''}`}>
+                {module.lessons.map((lesson, lessonIndex) => (
+  <div key={lesson.id}>
+    
+    {/* LESSON ROW */}
+    <div className="existing-lesson-item">
+      <div className="existing-lesson-info">
+        <span className="lesson-number">
+          Lesson {lessonIndex + 1}
+        </span>
 
+        <span className="existing-lesson-title">
+          {lesson.title}
+        </span>
+
+        {lesson.duration && (
+          <span className="existing-lesson-duration">
+            ⏱ {lesson.duration}
+          </span>
+        )}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          alignItems: "center",
+        }}
+      >
+        <button
+          type="button"
+          className="add-lesson-btn"
+          onClick={() => {
+            setSelectedLessonId(lesson.id);
+
+            setShowQuizForm((prev) => ({
+              ...prev,
+              [module.id]: true,
+            }));
+
+            addQuestionToQuiz(module.id);
+          }}
+        >
+          <Plus size={14} />
+          Quiz
+        </button>
+        <Edit
+          size={16}
+          style={{
+            cursor: "pointer",
+            color: "#2563eb",
+          }}
+          onClick={() =>
+            handleEditLesson(
+              module.id,
+              lesson
+            )
+          }
+        />
+
+        <Trash2
+          size={16}
+          style={{
+            cursor: "pointer",
+            color: "#ef4444",
+          }}
+          onClick={() =>
+            handleDeleteLesson(
+              lesson.id,
+              module.id
+            )
+          }
+        />
+      </div>
+    </div>
+
+    {/* QUIZZES UNDER LESSON */}
+    {lesson.quizzes?.length > 0 && (
+      <div
+        style={{
+          marginLeft: "40px",
+          marginTop: "8px",
+          marginBottom: "12px",
+          borderLeft: "2px solid #e2e8f0",
+          paddingLeft: "15px",
+        }}
+      >
+        {lesson.quizzes.map(
+          (quiz, quizIndex) => (
+            <div
+              key={quiz.id}
+              className="existing-lesson-item"
+            >
+              <div className="existing-lesson-info">
+                <span className="lesson-number">
+                  📝 Quiz {quizIndex + 1}
+                </span>
+
+                <span className="existing-lesson-title">
+                  {quiz.title}
+                </span>
+
+                <span className="existing-lesson-duration">
+                  📋 {quiz.questions?.length || 0}
+                  {" "}questions
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                }}
+              >
+                <Edit
+                  size={16}
+                  style={{
+                    cursor: "pointer",
+                    color: "#2563eb",
+                  }}
+                  onClick={() =>
+                    handleEditQuiz(
+                      module.id,
+                      quiz
+                    )
+                  }
+                />
+
+                <Trash2
+                  size={16}
+                  style={{
+                    cursor: "pointer",
+                    color: "#ef4444",
+                  }}
+                  onClick={() =>
+                    handleDeleteQuiz(
+                      module.id,
+                      quiz.id
+                    )
+                  }
+                />
+              </div>
+            </div>
+          )
+        )}
+      </div>
+    )}
+  </div>
+))}
                   {/* Action Buttons - Add Lesson & Add Quiz */}
                   <div className="module-actions">
                     <button
@@ -2221,24 +2501,7 @@ toast.success(
                     >
                       <Plus size={16} /> Add Lesson
                     </button>
-                    <button
-                      type="button"
-                      className="add-lesson-btn"
-                      style={{ borderColor: '#22c55e', color: '#22c55e' }}
-                      onClick={() => {
-                        setShowQuizForm((prev) => ({
-                          ...prev,
-                          [module.id]: !prev[module.id]
-                        }))
-                        // Close lesson form if open
-                        setShowLessonForm((prev) => ({
-                          ...prev,
-                          [module.id]: false
-                        }))
-                      }}
-                    >
-                      <Plus size={16} /> Add Quiz
-                    </button>
+                    
                   </div>
 
                   {/* ========== LESSON FORM ========== */}
@@ -2249,16 +2512,16 @@ toast.success(
                         className="lesson-input"
                         placeholder="Lesson Title (e.g., What is Amazon KDP?)"
                         value={lessonForms[module.id]?.title || ""}
-                      onChange={(e) =>
-  setLessonForms((prev) => ({
-    ...prev,
-    [module.id]: {
-      ...prev[module.id],
-      title: e.target.value,
-    },
-  }))
-}
-                        
+                          onChange={(e) =>
+                            setLessonForms((prev) => ({
+                              ...prev,
+                              [module.id]: {
+                                ...prev[module.id],
+                                title: e.target.value,
+                              },
+                            }))
+                          }
+                            
                       />
 
                       <input
@@ -2304,138 +2567,114 @@ toast.success(
                           >
                             <div className="upload-icon">📄</div>
                             <div className="upload-text">PDF or Image</div>
-                            <div className="upload-hint">max 50MB</div>
+                            <div className="upload-hint">PDF Only (Max 500MB)</div>
+                            {lessonForms[module.id]?.documentFile && (
+
+                              lessonUploading[module.id] ? (
+
+                                <div
+                                  className="button-spinner"
+                                  style={{
+                                    marginTop: "6px",
+                                  }}
+                                />
+
+                              ) : (
+
+                                <p
+                                  style={{
+                                    fontSize: "11px",
+                                    marginTop: "4px",
+                                    color: "#22c55e",
+                                  }}
+                                >
+                                  {/* ✓ Document Ready */}
+                                </p>
+
+                              )
+
+                            )}
+                            {lessonForms[module.id]?.documentPreview && (
+                                <div style={{ marginTop: "10px" }}>
+                                  {lessonForms[module.id]?.documentFile?.type ===
+                                  "application/pdf" ? (
+                                    <iframe
+                                      src={lessonForms[module.id]?.documentPreview}
+                                      title="PDF Preview"
+                                      style={{
+                                        width: "100%",
+                                        height: "250px",
+                                        border: "1px solid #ddd",
+                                        borderRadius: "8px",
+                                        marginTop: "10px",
+                                      }}
+                                    />
+                                  ) : (
+                                    <img
+                                      src={lessonForms[module.id]?.documentPreview}
+                                      alt="Preview"
+                                      style={{
+                                        width: "220px",
+                                        maxHeight: "250px",
+                                        objectFit: "cover",
+                                        borderRadius: "8px",
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                              )}
                             <input
                               type="file"
-                              accept=".pdf,image/*"
+                              accept=".pdf"
                               style={{ display: 'none' }}
                               id={`lesson-doc-${module.id}`}
-                              onChange={(e) => {
+                             onChange={(e) => {
+                                const file = e.target.files?.[0];
 
-  const file =
-    e.target.files?.[0] || null;
+                                if (!file) return;
 
-  if (!file) return;
+                                // Only PDF
+                                if (file.type !== "application/pdf") {
+                                  toast.error("Only PDF files are allowed");
+                                  e.target.value = "";
+                                  return;
+                                }
 
-  setLessonForms((prev) => ({
-    ...prev,
-    [module.id]: {
-      ...prev[module.id],
-      documentFile: file,
-      documentPreview:
-        URL.createObjectURL(file),
-    },
-  }));
-}}
+                                // Max 500MB
+                                if (file.size > 500 * 1024 * 1024) {
+                                  toast.error("PDF size cannot exceed 500MB");
+                                  e.target.value = "";
+                                  return;
+                                }
+
+                                setLessonForms((prev) => ({
+                                  ...prev,
+                                  [module.id]: {
+                                    ...prev[module.id],
+                                    documentFile: file,
+                                    documentPreview: URL.createObjectURL(file),
+                                  },
+                                }));
+                              }}
                             />
                           </div>
-                           {
-  lessonForms[module.id]
-    ?.documentPreview && (
-
-    <div
-      style={{
-        marginTop: "10px",
-      }}
-    >
-
-      <a
-        href={
-          lessonForms[module.id]
-            ?.documentPreview
-        }
-        target="_blank"
-        rel="noreferrer"
-      >
-        📄 View Document
-      </a>
-
-    </div>
-  )
-}
-                         {lessonForms[module.id]?.documentFile && (
-
-  lessonUploading[module.id] ? (
-
-    <div
-      className="button-spinner"
-      style={{
-        marginTop: "6px",
-      }}
-    />
-
-  ) : (
-
-    <p
-      style={{
-        fontSize: "11px",
-        marginTop: "4px",
-        color: "#22c55e",
-      }}
-    >
-      ✓ Document Ready
-    </p>
-
-  )
-
-)}
+                          
+                         
                         </div>
                        
 
                         {/* Video Upload */}
                         <div>
                           <label style={{ fontSize: '12px', fontWeight: 500, marginBottom: '4px', display: 'block' }}>Video</label>
+                          
                           <div
                             className="file-upload-area-small"
                             onClick={() => document.getElementById(`lesson-video-${module.id}`)?.click()}
                           >
                             <div className="upload-icon">🎥</div>
+                            
                             <div className="upload-text">MP4, MOV</div>
-                            <div className="upload-hint">max 2GB</div>
-                            <input
-                              type="file"
-                              accept="video/*"
-                              style={{ display: 'none' }}
-                              id={`lesson-video-${module.id}`}
-                            onChange={(e) => {
-
-                              const file =
-                                e.target.files?.[0] || null;
-
-                              if (!file) return;
-
-                              setLessonForms((prev) => ({
-                                ...prev,
-                                [module.id]: {
-                                  ...prev[module.id],
-                                  videoFile: file,
-                                  videoPreview:
-                                    URL.createObjectURL(file),
-                                },
-                              }));
-                            }}
-                            />
-                          </div>
-                          {
-  lessonForms[module.id]
-    ?.videoPreview && (
-
-    <video
-      controls
-      style={{
-        width: "220px",
-        marginTop: "10px",
-        borderRadius: "8px",
-      }}
-      src={
-        lessonForms[module.id]
-          ?.videoPreview
-      }
-    />
-
-  )
-}
-                          {lessonForms[module.id]?.videoFile && (
+                             {lessonForms[module.id]?.videoFile && (
 
                         lessonUploading[module.id] ? (
 
@@ -2455,84 +2694,129 @@ toast.success(
                               color: "#22c55e",
                             }}
                           >
-                            ✓ Video Ready
+                            {/* ✓ Video Ready */}
                           </p>
 
                         )
 
                       )}
+                            {
+                                lessonForms[module.id]?.videoPreview && (
+                                  <div
+                                    style={{
+                                      width: "100%",
+                                      marginTop: "10px",
+                                    }}
+                                  >
+                                    <video
+                                      controls
+                                      src={
+                                        lessonForms[module.id]
+                                          ?.videoPreview
+                                      }
+                                      style={{
+                                        width: "100%",
+                                        height: "250px",
+                                        objectFit: "cover",
+                                        borderRadius: "8px",
+                                      }}
+                                    />
+                                  </div>
+                                )
+                              }
+                                                        
+                            <div className="upload-hint"> Video Only (Max 500MB)</div>
+                            <input
+                              type="file"
+                              accept="video/*"
+                              style={{ display: 'none' }}
+                              id={`lesson-video-${module.id}`}
+                              onChange={(e) => {
+                                    const file = e.target.files?.[0];
+
+                                    if (!file) return;
+
+                                    // Only Video
+                                    if (!file.type.startsWith("video/")) {
+                                      toast.error("Only video files are allowed");
+                                      e.target.value = "";
+                                      return;
+                                    }
+
+                                    // Max 500MB
+                                    if (file.size > 500 * 1024 * 1024) {
+                                      toast.error("Video size cannot exceed 500MB");
+                                      e.target.value = "";
+                                      return;
+                                    }
+
+                                    setLessonForms((prev) => ({
+                                      ...prev,
+                                      [module.id]: {
+                                        ...prev[module.id],
+                                        videoFile: file,
+                                        videoPreview: URL.createObjectURL(file),
+                                      },
+                                    }));
+                                  }}
+                            />
+                          </div>
+                        
+                     
                         </div>
                         
                       </div>
 
                       <button
-  type="button"
-  className="add-lesson-btn"
-  onClick={() => {
+                        type="button"
+                        className="add-lesson-btn"
+                        onClick={() => {
 
-    if (
-      editingLesson?.lessonId
-    ) {
+                          if (
+                            editingLesson?.lessonId
+                          ) {
 
-      handleUpdateLesson(
-        module.id
-      );
+                            handleUpdateLesson(
+                              module.id
+                            );
 
-    } else {
+                          } else {
 
-      handleAddLesson(
-        module.id
-      );
+                            handleAddLesson(
+                              module.id
+                            );
 
-    }
+                          }
 
-  }}
->
-  {
-    editingLesson?.lessonId ? (
-      <>
-        <Check size={16} />
-        Update Lesson
-      </>
-    ) : (
-      <>
-        <Check size={16} />
-        Add This Lesson
-      </>
-    )
-  }
-</button>
+                        }}
+                      >
+                        {
+                          editingLesson?.lessonId ? (
+                            <>
+                              <Check size={16} />
+                              Update Lesson
+                            </>
+                          ) : (
+                            <>
+                              <Check size={16} />
+                              Add This Lesson
+                            </>
+                          )
+                        }
+                      </button>
                     </div>
                   )}
 
                   {/* ========== QUIZ FORM ========== */}
                   {showQuizForm[module.id] && (
                     <div className="lesson-form" style={{ marginTop: '16px' }}>
-                      <h4 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px', color: '#22c55e' }}>
-                        Add New Quiz
-                      </h4>
-
-                      <input
-                        type="text"
-                        className="lesson-input"
-                        placeholder="Quiz Title (e.g., First Quiz of this module)"
-                        value={quizForms[module.id]?.title || ""}
-                        onChange={(e) =>
-  setQuizForms((prev) => ({
-    ...prev,
-    [module.id]: {
-      ...prev[module.id],
-      title: e.target.value,
-    },
-  }))
-}
-                      />
+                     
 
                       {/* Questions List */}
                       {quizForms[module.id]?.questions?.map((question, qIndex) => (
                         <div key={qIndex} className="module-card" style={{ marginTop: '16px', padding: '16px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                            <h5 style={{ fontWeight: 600 }}>Question {qIndex + 1}</h5>
+                            <h5 style={{ fontWeight: 600 }}> Question</h5>
                             <button
                               type="button"
                               className="remove-lesson-btn"
@@ -2589,169 +2873,36 @@ toast.success(
                           </div>
                         </div>
                       ))}
-
-                      <button
-                        type="button"
-                        className="add-lesson-btn"
-                        onClick={() => addQuestionToQuiz(module.id)}
-                      >
-                        <Plus size={16} /> Add Question
-                      </button>
-
-                       <button
-  type="button"
-  className="btn-primary"
-  style={{
-    marginTop: "16px",
-    width: "100%",
-  }}
-  onClick={() => {
-    if (
-      editingQuiz?.moduleId ===
-      module.id
-    ) {
-      handleUpdateQuiz(
-        module.id
-      );
-    } else {
-      handleAddQuiz(
-        module.id
-      );
-    }
-  }}
->
-  {editingQuiz?.moduleId === module.id
-    ? "Update Quiz"
-    : "Save Quiz"}
-</button>
-                    </div>
-                  )}
-
-                  {/* ========== EXISTING LESSONS LIST ========== */}
-                  {module.lessons.length > 0 && (
-                    <div className="lessons-list">
-                      <h4 style={{ fontSize: '14px', fontWeight: 500, marginBottom: '12px', color: '#64748b' }}>
-                        📚 Lessons in this module:
-                      </h4>
-                      {module.lessons.map((lesson, lessonIndex) => (
-                        <div key={lesson.id} className="existing-lesson-item">
-                          <div className="existing-lesson-info">
-                            <span className="lesson-number">Lesson {lessonIndex + 1}</span>
-                            <span className="existing-lesson-title">{lesson.title}</span>
-                            {lesson.duration && (
-                              <span className="existing-lesson-duration">⏱ {lesson.duration}</span>
-                            )}
-                          </div>
-                          <div
-                              style={{
-                                display: "flex",
-                                gap: "10px",
-                                alignItems:
-                                  "center",
-                              }}
-                            >
-
-                              <Edit
-                                size={16}
-                                style={{
-                                  cursor: "pointer",
-                                  color: "#2563eb",
-                                }}
-                                onClick={() =>
-                                  handleEditLesson(
-                                    module.id,
-                                    lesson
-                                  )
-                                }
-                              />
-
-                              <Trash2
-                                size={16}
-                                style={{
-                                  cursor:
-                                    "pointer",
-                                  color:
-                                    "#ef4444",
-                                }}
-                                onClick={() =>
-                                  handleDeleteLesson(
-                                    lesson.id,
-                                    module.id
-                                  )
-                                }
-                              />
-
-                            </div>
-                        </div>
+                      {quizForms[module.id]?.questions?.length > 0 ? (
+                        <>
                         
-                      ))}
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            style={{
+                              marginTop: "16px",
+                              width: "100%",
+                            }}
+                            onClick={() => {
+                              if (editingQuiz?.moduleId === module.id) {
+                                handleUpdateQuiz(module.id);
+                              } else {
+                                handleAddQuiz(module.id);
+                              }
+                            }}
+                          >
+                            {editingQuiz?.moduleId === module.id
+                              ? "Update Quiz"
+                              : "Save Quiz"}
+                          </button>
+                          
+                        </>
+                      ) : null}
                     </div>
                   )}
+                  
 
-                  {/* ========== EXISTING QUIZZES LIST ========== */}
-                  {module.quizzes.map((quiz, quizIndex) => {
-
-  console.log(
-    "QUIZ LIST DATA =>",
-    quiz
-  );
-
-  return (
-    <div
-      key={quiz.id}
-      className="existing-lesson-item"
-    >
-      <div className="existing-lesson-info">
-        <span className="lesson-number">
-          Quiz {quizIndex + 1}
-        </span>
-
-        <span className="existing-lesson-title">
-          {quiz.title}
-        </span>
-
-        <span className="existing-lesson-duration">
-          📋 {quiz.questions.length} questions
-        </span>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          gap: "10px",
-        }}
-      >
-        <Edit
-          size={16}
-          style={{
-            cursor: "pointer",
-            color: "#2563eb",
-          }}
-          onClick={() =>
-            handleEditQuiz(
-              module.id,
-              quiz
-            )
-          }
-        />
-
-        <Trash2
-          size={16}
-          style={{
-            cursor: "pointer",
-            color: "#ef4444",
-          }}
-          onClick={() =>
-            handleDeleteQuiz(
-              module.id,
-              quiz.id
-            )
-          }
-        />
-      </div>
-    </div>
-  );
-})}
+                  
                 </div>
               </div>
             ))
