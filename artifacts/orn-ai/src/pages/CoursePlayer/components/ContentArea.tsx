@@ -3,12 +3,13 @@ import PdfViewerContent from "./PdfViewerContent";
 import QuizPlayer from "./QuizPlayer";
 import VideoPlayerContent from "./VideoPlayerContent";
 import FinalAssessment from "./FinalAssessment";
+
 interface ContentAreaProps {
   mode: "about" | "lesson" | "quiz" | "finalAssessment";
   course: any;
   lecture: any;
   relatedCourses: any[];
-   onQuizCompleted: () => void;
+  onQuizCompleted: () => void;
 }
 
 const ContentArea = ({
@@ -24,13 +25,12 @@ const ContentArea = ({
         return (
           <AboutTab
             course={course}
+            relatedCourses={relatedCourses}
           />
         );
 
       case "lesson":
-        if (
-          lecture?.videoUrl
-        ) {
+        if (lecture?.videoUrl) {
           return (
             <VideoPlayerContent
               course={course}
@@ -39,9 +39,7 @@ const ContentArea = ({
           );
         }
 
-        if (
-          lecture?.pdfUrl
-        ) {
+        if (lecture?.pdfUrl) {
           return (
             <PdfViewerContent
               course={course}
@@ -51,26 +49,24 @@ const ContentArea = ({
         }
 
         return (
-          <div className="bg-white rounded-3xl p-8 shadow-sm">
-            <h2 className="text-xl font-semibold">
-              No content found
-            </h2>
+          <div className="flex items-center justify-center h-full bg-white rounded-lg border border-gray-200 p-8">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Content Found</h3>
+              <p className="text-gray-500">This lesson does not have any content available.</p>
+            </div>
           </div>
         );
 
-      case "finalAssessment":
-  return (
-    <FinalAssessment />
-  );
-        case "quiz":
+      case "quiz":
         return (
           <QuizPlayer
             lecture={lecture}
-            onQuizCompleted={
-        onQuizCompleted
-      }
+            onQuizCompleted={onQuizCompleted}
           />
         );
+
+      case "finalAssessment":
+        return <FinalAssessment course={course} />;
 
       default:
         return (
@@ -83,16 +79,20 @@ const ContentArea = ({
   };
 
   return (
-    <main
+    <main 
       className="
-        flex-1
-        overflow-y-auto
+        flex-1 
+        h-screen 
+        overflow-y-auto 
         bg-[#F7F8FA]
+        scrollbar-hide
+        [scrollbar-width:none]
+        [-ms-overflow-style:none]
+        [&::-webkit-scrollbar]:hidden
+        [&::-webkit-scrollbar]:w-0
       "
     >
-      <div className="max-w-[1200px] mx-auto p-6 lg:p-8">
-        {renderContent()}
-      </div>
+      {renderContent()}
     </main>
   );
 };

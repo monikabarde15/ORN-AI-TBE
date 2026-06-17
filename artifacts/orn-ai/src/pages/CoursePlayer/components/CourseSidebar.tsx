@@ -1,33 +1,19 @@
-import { Menu, X, Search } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Menu, X, ArrowLeft, Lock, CheckCircle } from "lucide-react";
+import { useLocation } from "wouter";
 import ChapterAccordion from "./ChapterAccordion";
 import ProgressBar from "./ProgressBar";
 
 interface CourseSidebarProps {
   course: any;
   sections: any[];
-
   currentLecture: any;
-
   expandedSections: string[];
-
-  setExpandedSections: React.Dispatch<
-    React.SetStateAction<string[]>
-  >;
-
+  setExpandedSections: React.Dispatch<React.SetStateAction<string[]>>;
   sidebarOpen: boolean;
-
-  setSidebarOpen: React.Dispatch<
-    React.SetStateAction<boolean>
-  >;
-
-  onLessonSelect: (
-    lesson: any
-  ) => void;
-
-  onQuizSelect: (
-    lesson: any
-  ) => void;
-
+  setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onLessonSelect: (lesson: any) => void;
+  onQuizSelect: (lesson: any) => void;
   onAboutSelect: () => void;
   onFinalAssessmentSelect: () => void;
 }
@@ -35,240 +21,196 @@ interface CourseSidebarProps {
 const CourseSidebar = ({
   course,
   sections,
-
   currentLecture,
-
   expandedSections,
   setExpandedSections,
-
   sidebarOpen,
   setSidebarOpen,
-
   onLessonSelect,
   onQuizSelect,
   onAboutSelect,
   onFinalAssessmentSelect,
 }: CourseSidebarProps) => {
-  // const progress = 35;
-  
-  const totalItems = sections.reduce(
-  (acc, section) =>
-    acc +
-    section.lessons.length +
-    section.lessons.reduce(
-      (quizAcc: number, lesson: any) =>
-        quizAcc +
-        (lesson.quizzes?.length > 0 ? 1 : 0),
-      0
-    ),
-  0
-);
-const totalLessons = sections.reduce(
-  (acc, section) =>
-    acc + section.lessons.length,
-  0
-);
+  const [, setLocation] = useLocation();
 
-const totalQuizzes = sections.reduce(
-  (acc, section) =>
-    acc +
-    section.lessons.filter(
-      (lesson: any) =>
-        lesson.quizzes?.length > 0
-    ).length,
-  0
-);
+  // Calculate overall progress
+  const calculateProgress = useCallback(() => {
+    let totalItems = 0;
+    let completedItems = 0;
 
-const completedQuizzes =
-  sections.reduce(
-    (acc, section) =>
-      acc +
-      section.lessons.filter(
-        (lesson: any) =>
-          localStorage.getItem(
-            `quiz_${lesson.id}`
-          ) === "completed"
-      ).length,
-    0
-  );
+    sections.forEach((section) => {
+      section.lessons?.forEach((lesson: any) => {
+        // Count lesson
+        totalItems++;
+        if (lesson.completed) {
+          completedItems++;
+        }
 
-const progress =
-  totalQuizzes > 0
-    ? Math.round(
-        (completedQuizzes /
-          totalQuizzes) *
-          100
-      )
-    : 0;
+        // Count quiz if it exists
+        if (lesson.quizzes?.length > 0) {
+          totalItems++;
+          if (lesson.quizCompleted) {
+            completedItems++;
+          }
+        }
+      });
+    });
+
+    return totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+  }, [sections]);
+
+  const progress = calculateProgress();
+  const isAllCompleted = progress === 100 && sections.length > 0;
+
+  // Count total lessons and quizzes
+  const getTotalItems = useCallback(() => {
+    let total = 0;
+    sections.forEach((section) => {
+      section.lessons?.forEach((lesson: any) => {
+        total++;
+        if (lesson.quizzes?.length > 0) {
+          total++;
+        }
+      });
+    });
+    return total;
+  }, [sections]);
+
+  const handleBackToDashboard = () => {
+    setLocation("/courses");
+  };
 
   const SidebarContent = () => (
     <>
       {/* Header */}
-      <div className="border-b border-[#1f1f1f] p-6">
-        <button
-          className="
-            mb-8
-            text-sm
-            font-medium
-            text-white
-            transition-colors
-            hover:text-red-500
-          "
-        >
-          Back to Dashboard
-        </button>
-
-        <button
-          onClick={onAboutSelect}
-          className="w-full text-center"
-        >
-          <h2
+      <div className="border-b border-[#2A2A2A] px-5 py-4 lg:px-6 lg:py-5 flex-shrink-0">
+        {/* Brand + Back */}
+        <div className="flex items-center justify-between mb-4 lg:mb-5">
+          <button
+            onClick={handleBackToDashboard}
             className="
-              text-[28px]
-              font-bold
-              leading-tight
-              text-white
+              flex items-center gap-1.5
+              text-xs lg:text-sm font-medium text-gray-400 
+              hover:text-white transition-colors
+              group
             "
           >
-            {course?.courseName ||
-              "Loading Course..."}
+            <ArrowLeft size={16} className="group-hover:translate-x-[-2px] transition-transform" />
+            <span className="hidden sm:inline">Back to Dashboard</span>
+          </button>
+        </div>
+
+        {/* Course Title */}
+        <button onClick={onAboutSelect} className="w-full text-left group">
+          <h2
+            className="
+              text-xl lg:text-2xl xl:text-[26px]
+              font-bold leading-tight
+              text-white group-hover:text-blue-900
+              transition-colors line-clamp-2
+            "
+          >
+            {course?.title || "Loading Course..."}
           </h2>
         </button>
 
         {/* Progress */}
-        <div className="mt-8">
-          <ProgressBar
-            progress={progress}
-          />
+        <div className="mt-4">
+          <ProgressBar progress={progress} label="Course Progress" />
         </div>
 
-        {/* Add Note */}
-        {/* <button
-          className="
-            mt-6
-            h-12
-            w-full
-            rounded-md
-            bg-red-700
-            font-medium
-            text-white
-            transition-colors
-            hover:bg-red-800
-          "
-        >
-          Add A New Note
-        </button> */}
-
-        {/* Search */}
-        {/* <div className="relative mt-4">
-          <Search
-            size={18}
-            className="
-              absolute
-              left-4
-              top-1/2
-              -translate-y-1/2
-              text-gray-400
-            "
-          />
-
-          <input
-            type="text"
-            placeholder="search lessons..."
-            className="
-              h-12
-              w-full
-              rounded-md
-              border
-              border-gray-300
-              bg-white
-              pl-11
-              pr-4
-              text-black
-              outline-none
-              focus:border-red-500
-            "
-          />
+        {/* Stats */}
+        {/* <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
+          <span>{getTotalItems()} items</span>
+          <span>•</span>
+          <span>{sections.length} chapters</span>
         </div> */}
       </div>
 
-      {/* Chapters */}
+      {/* Chapters - Scrollable with HIDDEN scrollbar */}
       <div
         className="
-    flex-1
-    overflow-y-auto
-    overflow-x-hidden
-
-    [scrollbar-width:none]
-    [-ms-overflow-style:none]
-
-    [&::-webkit-scrollbar]:w-0
-    [&::-webkit-scrollbar]:hidden
-  "
+          flex-1 overflow-y-auto overflow-x-hidden
+          scrollbar-hide
+          [scrollbar-width:none]
+          [-ms-overflow-style:none]
+          [&::-webkit-scrollbar]:hidden
+          [&::-webkit-scrollbar]:w-0
+        "
       >
-        {sections.map((section: any) => (
-          <ChapterAccordion
-            key={section.id}
-            section={section}
-            currentLecture={currentLecture}
-            expandedSections={expandedSections}
-            setExpandedSections={setExpandedSections}
-            onLessonSelect={onLessonSelect}
-            onQuizSelect={onQuizSelect}
-          />
-        ))}
+        {sections.length > 0 ? (
+          sections.map((section: any) => (
+            <ChapterAccordion
+              key={section.id}
+              section={section}
+              currentLecture={currentLecture}
+              expandedSections={expandedSections}
+              setExpandedSections={setExpandedSections}
+              onLessonSelect={onLessonSelect}
+              onQuizSelect={onQuizSelect}
+            />
+          ))
+        ) : (
+          <div className="flex items-center justify-center h-32">
+            <p className="text-gray-500 text-sm">No lessons available</p>
+          </div>
+        )}
       </div>
 
       {/* Final Assessment */}
-      {progress === 100 && (
-      <div
-        className="
-          border-t
-          border-[#1f1f1f]
-          px-6
-          py-5
-        "
-      >
+      <div className="border-t border-[#2A2A2A] px-5 py-3 lg:px-6 lg:py-4 bg-[#171717] flex-shrink-0">
         <button
-          className="
-            text-left
-            text-lg
-            font-semibold
-            text-white
-            transition-colors
-            hover:text-red-500
-          "
           onClick={onFinalAssessmentSelect}
+          disabled={!isAllCompleted}
+          className={`
+            w-full text-left
+            text-sm lg:text-[15px] font-semibold
+            transition-all duration-200
+            flex items-center justify-between
+            ${isAllCompleted 
+              ? "text-white hover:text-red-500 cursor-pointer" 
+              : "text-gray-600 cursor-not-allowed opacity-50"
+            }
+          `}
         >
-          Final Assessment
+          <div className="flex items-center gap-2">
+            <span>Final Assessment</span>
+            {isAllCompleted && (
+              <CheckCircle size={16} className="text-green-500" />
+            )}
+          </div>
+          {!isAllCompleted && (
+            <div className="flex items-center gap-1 text-xs font-normal text-gray-500">
+              <Lock size={12} />
+              <span className="hidden sm:inline">Locked</span>
+            </div>
+          )}
+          {isAllCompleted && (
+            <span className="text-xs font-normal text-green-500 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              Ready
+            </span>
+          )}
         </button>
       </div>
-      )}
     </>
   );
 
   return (
     <>
-      {/* Desktop */}
+      {/* Desktop Sidebar - Sticky with hidden scrollbar */}
       <aside
         className="
-    hidden
-    lg:flex
-
-    w-[480px]
-    shrink-0
-
-    h-screen
-    overflow-hidden
-
-    flex-col
-
-    bg-gradient-to-b
-from-[#0B1020]
-via-[#111827]
-to-[#0F172A]
-    text-white
-  "
+          hidden lg:flex
+          w-[380px] xl:w-[420px] 2xl:w-[460px]
+          shrink-0
+          h-screen
+          sticky
+          top-0
+          flex-col
+          bg-[#171717] text-white
+          border-r border-[#2A2A2A]
+        "
       >
         <SidebarContent />
       </aside>
@@ -276,23 +218,16 @@ to-[#0F172A]
       {/* Mobile Menu Button */}
       {!sidebarOpen && (
         <button
-          onClick={() =>
-            setSidebarOpen(true)
-          }
+          onClick={() => setSidebarOpen(true)}
           className="
-            fixed
-            left-4
-            top-4
-            z-50
-            rounded-lg
-            bg-gradient-to-b
-            from-[#0B1020]
-            via-[#111827]
-            to-[#0F172A]
-            p-3
-            text-white
-            lg:hidden
+            fixed left-4 top-4 z-50
+            rounded-lg bg-[#171717] p-2.5
+            text-white lg:hidden
+            hover:bg-[#2A2A2A] transition-colors
+            border border-[#2A2A2A]
+            shadow-lg
           "
+          aria-label="Open sidebar"
         >
           <Menu size={22} />
         </button>
@@ -301,37 +236,26 @@ to-[#0F172A]
       {/* Mobile Drawer */}
       <div
         className={`
-          fixed
-          inset-y-0
-          left-0
-          z-50
-          w-[360px]
-          bg-gradient-to-b
-          from-[#0B1020]
-          via-[#111827]
-          to-[#0F172A]
-          text-white
-          transform
-          transition-transform
-          duration-300
+          fixed inset-y-0 left-0 z-50
+          w-[320px] sm:w-[380px]
+          bg-[#171717] text-white
+          transform transition-transform duration-300 ease-in-out
           lg:hidden
-          ${sidebarOpen
-            ? "translate-x-0"
-            : "-translate-x-full"
-          }
+          shadow-2xl
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        <div className="flex items-center justify-end border-b border-[#1f1f1f] p-4">
+        <div className="flex items-center justify-between border-b border-[#2A2A2A] px-4 py-3.5 flex-shrink-0">
           <button
-            onClick={() =>
-              setSidebarOpen(false)
-            }
+            onClick={() => setSidebarOpen(false)}
+            className="hover:opacity-70 transition-opacity p-1"
+            aria-label="Close sidebar"
           >
-            <X size={24} />
+            <X size={22} />
           </button>
         </div>
 
-        <div className="flex h-[calc(100%-72px)] flex-col">
+        <div className="flex h-[calc(100%-56px)] flex-col overflow-hidden">
           <SidebarContent />
         </div>
       </div>
@@ -339,16 +263,9 @@ to-[#0F172A]
       {/* Overlay */}
       {sidebarOpen && (
         <div
-          onClick={() =>
-            setSidebarOpen(false)
-          }
-          className="
-            fixed
-            inset-0
-            z-40
-            bg-black/60
-            lg:hidden
-          "
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/70 lg:hidden backdrop-blur-sm"
+          aria-hidden="true"
         />
       )}
     </>
