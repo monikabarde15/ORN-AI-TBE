@@ -675,8 +675,22 @@ setCoverPreview(
 setVideoPreview(
   course.promotionalVideo || null
 );
+console.log(
+  "SECTIONS WITH LESSONS",
+  course.sections.map((s:any) => ({
+    id: s.id,
+    title: s.sectionName,
+    lessonCount: s.lessons?.length
+  }))
+);
+console.log(
+  "BEFORE REVERSE",
+  course.sections?.map((s:any) => ({
+    id: s.id,
+    title: s.sectionName
+  }))
+);
     const mappedModules = [...(course.sections || [])]
-  .reverse()
   .map((section: any) => ({
     id: section.id,
     title: section.sectionName,
@@ -720,6 +734,16 @@ setVideoPreview(
         )
     ),
   }));
+const reversedSections =
+  [...(course.sections || [])].reverse();
+
+console.log(
+  "AFTER REVERSE",
+  reversedSections.map((s:any) => ({
+    id: s.id,
+    title: s.sectionName
+  }))
+);
 
 setModules(mappedModules);
 
@@ -727,6 +751,19 @@ setModules(mappedModules);
       mappedModules
     );
 
+console.log("FULL COURSE =>", course);
+
+console.log(
+  "SECTIONS FROM API =>",
+  course.sections?.map((s:any) => ({
+    id: s.id,
+    name: s.sectionName,
+    lessons: s.lessons?.map((l:any) => ({
+      id: l.id,
+      title: l.title
+    }))
+  }))
+);
   } catch (error) {
 
     console.log(
@@ -1425,7 +1462,16 @@ useEffect(() => {
 const handleAddLesson = async (
   moduleId: string
 ) => {
- 
+ console.log("MODULE ID", moduleId);
+const currentModule =
+  modules.find(
+    m => m.id === moduleId
+  );
+
+console.log(
+  "MODULE TITLE",
+  currentModule?.title
+);
   const lesson =
     lessonForms[moduleId];
 
@@ -1835,20 +1881,20 @@ const handleAddQuiz = async (
     }
 
     setQuizForms((prev) => ({
-      ...prev,
-      [moduleId]: {
-        ...currentQuiz,
-        questions: [
-          ...currentQuiz.questions,
-          {
-            id: Date.now().toString(),
-            question: "",
-            options: ["", ""],
-            correctAnswer: "",
-          },
-        ],
+  ...prev,
+  [moduleId]: {
+    ...currentQuiz,
+    questions: [
+      ...(currentQuiz.questions || []),
+      {
+        id: Date.now().toString(),
+        question: "",
+        options: ["", ""],
+        correctAnswer: "",
       },
-    }))
+    ],
+  },
+}));
   }
 
   const updateQuizQuestion = (

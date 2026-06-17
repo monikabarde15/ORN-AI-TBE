@@ -1,6 +1,12 @@
 import { upload } from "../lib/upload";
 import { Router, type IRouter } from "express";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import {
+  eq,
+  desc,
+  and,
+  inArray,
+  asc,
+} from "drizzle-orm";
 import {
   db,
   coursesTable,
@@ -1082,15 +1088,18 @@ router.get(
       // ==================================================
 
       const sections =
-        await db
-          .select()
-          .from(sectionsTable)
-          .where(
-            eq(
-              sectionsTable.courseId,
-              id
-            )
-          );
+  await db
+    .select()
+    .from(sectionsTable)
+    .where(
+      eq(
+        sectionsTable.courseId,
+        id
+      )
+    )
+    .orderBy(
+      asc(sectionsTable.createdAt)
+    );
 
       // ==================================================
       // FINAL SECTIONS
@@ -1106,16 +1115,19 @@ router.get(
               // LESSONS
               // ============================================
 
-              const lessons =
-                await db
-                  .select()
-                  .from(subSectionsTable)
-                  .where(
-                    eq(
-                      subSectionsTable.sectionId,
-                      section.id
-                    )
-                  );
+             const lessons =
+  await db
+    .select()
+    .from(subSectionsTable)
+    .where(
+      eq(
+        subSectionsTable.sectionId,
+        section.id
+      )
+    )
+    .orderBy(
+      asc(subSectionsTable.createdAt)
+    );
 
               // ============================================
               // FINAL LESSONS
