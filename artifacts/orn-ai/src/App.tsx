@@ -144,7 +144,7 @@ function Router() {
         {/* </ProtectedRoute> */}
       </Route>
       <Route
-          path="/payment-success/:paymentId"
+          path="payment-success/:paymentId"
         >
           <PaymentSuccess />
         </Route>
