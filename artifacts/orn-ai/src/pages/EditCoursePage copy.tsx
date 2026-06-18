@@ -126,12 +126,8 @@ const mockApi = {
       JSON.stringify(data.learningOutcomes)
     )
     formData.append("price", data.price || "0")
-    formData.append(
-      "tag",
-      JSON.stringify(
-        [...new Set(data.tags || [])]
-      )
-    );
+    const allTags = [data.category, data.difficulty, ...(data.tags || [])]
+    formData.append("tag", JSON.stringify(allTags))
     formData.append("instructions", JSON.stringify(data.prerequisites))
     formData.append("category", data.category)
     formData.append(
@@ -236,11 +232,11 @@ formDataObj.append(
       "price",
       data.price || "0"
     );
-   formDataObj.append(
+    const allTags = [data.category, data.difficulty, ...(data.tags || [])]
+
+formDataObj.append(
   "tag",
-  JSON.stringify(
-    [...new Set(data.tags || [])]
-  )
+  JSON.stringify(allTags)
 );
     formDataObj.append(
       "whatYouWillLearn",
@@ -548,6 +544,8 @@ const editCourseId =
     string,
     "idle" | "uploading" | "success"
   >>({});
+  const [editingLessonPosition, setEditingLessonPosition] =
+  useState<string | null>(null);
   const [lessonUploading, setLessonUploading] =
   useState<Record<string, boolean>>({});
   const [modules, setModules] = useState<Module[]>([])
@@ -557,7 +555,8 @@ const editCourseId =
   cover: false,
   video: false,
 });
-
+const [editingQuizPosition, setEditingQuizPosition] =
+  useState<string | null>(null);
   // NEW STATE VARIABLES (For STEP 1)
   const [coverPreview, setCoverPreview] = useState(null)
   const [videoPreview, setVideoPreview] = useState(null)
@@ -712,26 +711,18 @@ console.log(
     description: "",
 
     lessons: (section.lessons || []).map(
-  (lesson: any) => ({
-    id: lesson.id,
-    title: lesson.title,
-    duration: lesson.timeDuration,
-    content: lesson.description,
+      (lesson: any) => ({
+        id: lesson.id,
+        title: lesson.title,
+        duration: lesson.timeDuration,
+        content: lesson.description,
 
-    videoUrl: lesson.videoUrl,
-    pdfUrl: lesson.pdfUrl,
+        videoUrl: lesson.videoUrl,
+        pdfUrl: lesson.pdfUrl,
 
-    quizzes: (lesson.quizzes || []).map(
-      (quiz: any) => ({
-        id: quiz.id,
-        question: quiz.question,
-        options: quiz.options || [],
-        correctAnswer: quiz.correctAnswer,
+        quizzes: lesson.quizzes || [],
       })
     ),
-  })
-),
-
 
     quizzes: (section.lessons || []).flatMap(
       (lesson: any) =>
@@ -1043,31 +1034,11 @@ const handleUpdateLesson = async (
       res.data
     );
 
-   
-   toast.success("Lesson Updated");
+    toast.success(
+      "Lesson Updated"
+    );
 
-await fetchCourse();
-
-setEditingLesson(null);
-
-setShowLessonForm((prev) => ({
-  ...prev,
-  [moduleId]: false,
-}));
-
-setLessonForms((prev) => ({
-  ...prev,
-  [moduleId]: {
-    id: "",
-    title: "",
-    duration: "",
-    content: "",
-    pdfUrl: "",
-    videoUrl: "",
-    videoFile: null,
-    documentFile: null,
-  },
-}));
+    await fetchCourse();
 
     setEditingLesson(null);
 
@@ -1210,20 +1181,19 @@ const handleDeleteQuiz = async (
     );
 
     setModules((prev) =>
-  prev.map((module) =>
-    module.id === moduleId
-      ? {
-          ...module,
-          lessons: module.lessons.map((lesson) => ({
-            ...lesson,
-            quizzes: (lesson.quizzes || []).filter(
-              (quiz: any) => quiz.id !== quizId
-            ),
-          })),
-        }
-      : module
-  )
-);
+      prev.map((m) =>
+        m.id === moduleId
+          ? {
+              ...m,
+              quizzes:
+                m.quizzes.filter(
+                  (q) =>
+                    q.id !== quizId
+                ),
+            }
+          : m
+      )
+    );
 
     toast.success(
       "Quiz Deleted"
@@ -1709,7 +1679,7 @@ setTimeout(() => {
       // This will publish the course
       await mockApi.publishCourse(courseId)
 
-      toast.success("Course updated Successfully!")
+      toast.success("Course Published Successfully!")
 
       setStep(4)  // Go to success page (or final step)
        setTimeout(() => {
@@ -1981,22 +1951,24 @@ const handleAddQuiz = async (
       ? {
           ...m,
           lessons: m.lessons.map((lesson, index) =>
-  index === m.lessons.length - 1
-    ? {
-        ...lesson,
-        quizzes: [
-          ...(lesson.quizzes || []),
-          {
-            id: res.quizId,
-            question: res.questions?.[0]?.question || "",
-            options: res.questions?.[0]?.options || [],
-            correctAnswer:
-              res.questions?.[0]?.correctAnswer || "",
-          },
-        ],
-      }
-    : lesson
-),
+            index === m.lessons.length - 1
+              ? {
+                  ...lesson,
+                  quizzes: [
+                    ...(lesson.quizzes || []),
+                    {
+                      id: res.quizId,
+                      question:
+                        res.questions?.[0]?.question || "",
+                      options:
+                        res.questions?.[0]?.options || [],
+                      correctAnswer:
+                        res.questions?.[0]?.correctAnswer || "",
+                    },
+                  ],
+                }
+              : lesson
+          ),
         }
       : m
   )
@@ -2020,11 +1992,6 @@ const handleAddQuiz = async (
     toast.success(
       "Quiz Added"
     );
-    await fetchCourse();
-    setShowQuizForm((prev) => ({
-      ...prev,
-      [moduleId]: false,
-    }));
 
   } catch (err) {
 
@@ -2709,6 +2676,46 @@ const handleAddQuiz = async (
                         alignItems: "center",
                       }}
                     >
+                    <button
+                      type="button"
+                      className="add-lesson-btn"
+                     onClick={() => {
+                            setEditingLesson(null);
+
+                            setEditingLessonPosition(`new-${module.id}`);
+
+                            setLessonForms((prev) => ({
+                              ...prev,
+                              [module.id]: {
+                                id: "",
+                                title: "",
+                                duration: "",
+                                content: "",
+                                pdfUrl: "",
+                                videoUrl: "",
+                                videoPreview: "",
+                                documentPreview: "",
+                                videoFile: null,
+                                documentFile: null,
+                                quizzes: [],
+                              },
+                            }));
+
+                            setShowLessonForm((prev) => ({
+                              ...prev,
+                              [module.id]: true,
+                            }));
+
+                            setShowQuizForm((prev) => ({
+                              ...prev,
+                              [module.id]: false,
+                            }));
+                          }}
+                    >
+                      <Plus size={16} /> Add Lesson
+                    </button>
+
+                   
                       <button
                         type="button"
                         onClick={(e) => {
@@ -2786,26 +2793,12 @@ const handleAddQuiz = async (
                               onClick={() => {
                                 setSelectedLessonId(lesson.id);
 
-                                setQuizForms((prev) => ({
-                                  ...prev,
-                                  [module.id]: {
-                                    id: "",
-                                    title: "",
-                                    questions: [
-                                      {
-                                        id: Date.now().toString(),
-                                        question: "",
-                                        options: ["", ""],
-                                        correctAnswer: "",
-                                      },
-                                    ],
-                                  },
-                                }));
-
                                 setShowQuizForm((prev) => ({
                                   ...prev,
                                   [module.id]: true,
                                 }));
+
+                                addQuestionToQuiz(module.id);
                               }}
                             >
                               <Plus size={16} />
@@ -2813,12 +2806,10 @@ const handleAddQuiz = async (
                             </button>
                             <button
                               type="button"
-                              onClick={() =>
-                                handleEditLesson(
-                                  module.id,
-                                  lesson.id
-                                )
-                              }
+                             onClick={() => {
+                                handleEditLesson(module.id, lesson.id);
+                                setEditingLessonPosition(lesson.id);
+                              }}
                             >
                               <Edit size={16} />
                             </button>
@@ -2836,6 +2827,326 @@ const handleAddQuiz = async (
                             </button>
                           </div>
                         </div>
+
+                         {/* ========== LESSON FORM ========== */}
+                         
+                          {editingLessonPosition === lesson.id &&
+                          showLessonForm[module.id] && (
+                          <div className="lesson-form">
+                            <input
+                              type="text"
+                              className="lesson-input"
+                              placeholder="Lesson Title (e.g., What is Amazon KDP?)"
+                              value={lessonForms[module.id]?.title || ""}
+                              onChange={(e) =>
+                              setLessonForms((prev) => ({
+                                ...prev,
+                                [module.id]: {
+                                  ...prev[module.id],
+                                  title: e.target.value,
+                                },
+                              }))
+                            }
+                            />
+
+                            <input
+                              type="text"
+                              className="lesson-input"
+                              placeholder="Duration (e.g., 10:30)"
+                              value={lessonForms[module.id]?.duration || ""}
+                              onChange={(e) =>
+                                setLessonForms((prev) => ({
+                                  ...prev,
+                                  [module.id]: {
+                                    ...prev[module.id],
+                                    duration: e.target.value,
+                                  },
+                                }))
+                              }
+                            />
+
+                            <textarea
+                              className="lesson-input"
+                              rows={3}
+                              placeholder="Lesson Description"
+                              value={lessonForms[module.id]?.content || ""}
+                              onChange={(e) =>
+                                setLessonForms((prev) => ({
+                                  ...prev,
+                                  [module.id]: {
+                                    ...prev[module.id],
+                                    content: e.target.value,
+                                  },
+                                }))
+                              }
+                            />
+
+                            {/* Media Row: Document & Video */}
+                            <div className="lesson-media-row">
+                              {/* Document Upload */}
+                              <div>
+                                <label style={{ fontSize: '12px', fontWeight: 500, marginBottom: '4px', display: 'block' }}>Document (PDF, Image)</label>
+                                <div
+                                  className="file-upload-area-small"
+                                  onClick={() => document.getElementById(`lesson-doc-${module.id}`)?.click()}
+                                >
+                                  <div className="upload-icon">📄</div>
+                                  {
+                                      lessonForms[module.id]?.documentFile && (
+                                        lessonUploading[module.id] ? (
+                                          <div
+                                            style={{
+                                              marginTop: "6px",
+                                              display: "flex",
+                                              alignItems: "center",
+                                            }}
+                                          >
+                                            <div style={spinnerStyle} />
+                                          </div>
+                                        ) : (
+                                          <div
+                                            style={{
+                                              marginTop: "6px",
+                                              color: "#22c55e",
+                                              fontSize: "14px",
+                                              fontWeight: 600,
+                                            }}
+                                          >
+                                            ✓
+                                          </div>
+                                        )
+                                      )
+                                    }
+                                  {
+                                    lessonForms[module.id]?.documentPreview && (
+                                      <div
+                                        style={{
+                                          marginTop: "10px",
+                                          width: "100%",
+                                        }}
+                                      >
+                                        {lessonForms[module.id]?.documentFile?.type?.startsWith(
+                                          "image/"
+                                        ) ? (
+                                          <img
+                                            src={
+                                              lessonForms[module.id]
+                                                ?.documentPreview
+                                            }
+                                            alt="Preview"
+                                            style={{
+                                              width: "100%",
+                                              height: "250px",
+                                              objectFit: "cover",
+                                              borderRadius: "8px",
+                                              border: "1px solid #ddd",
+                                            }}
+                                          />
+                                        ) : (
+                                          <iframe
+                                            src={
+                                              lessonForms[module.id]
+                                                ?.documentPreview
+                                            }
+                                            title="PDF Preview"
+                                            style={{
+                                              width: "100%",
+                                              height: "250px",
+                                              border: "1px solid #ddd",
+                                              borderRadius: "8px",
+                                              background: "#fff",
+                                            }}
+                                          />
+                                        )}
+                                      </div>
+                                    )
+                                  }
+                                  <div className="upload-text">PDF or Image</div>
+                                  <div className="upload-hint"> PDF Only (Max 500MB)</div>
+                                  <input
+                                    type="file"
+                                    accept=".pdf"
+                                    style={{ display: 'none' }}
+                                    id={`lesson-doc-${module.id}`}
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+
+                                        if (!file) return;
+
+                                        // Only PDF
+                                        if (file.type !== "application/pdf") {
+                                          toast.error("Only PDF files are allowed");
+                                          e.target.value = "";
+                                          return;
+                                        }
+
+                                        // Max 500MB
+                                        if (file.size > 500 * 1024 * 1024) {
+                                          toast.error("PDF size cannot exceed 500MB");
+                                          e.target.value = "";
+                                          return;
+                                        }
+
+                                        setLessonForms((prev) => ({
+                                          ...prev,
+                                          [module.id]: {
+                                            ...prev[module.id],
+                                            documentFile: file,
+                                            documentPreview: URL.createObjectURL(file),
+                                          },
+                                        }));
+                                      }}
+                                  />
+                                </div>
+                                
+                                  
+                                    
+                              </div>
+
+                              {/* Video Upload */}
+                              <div>
+                                <label style={{ fontSize: '12px', fontWeight: 500, marginBottom: '4px', display: 'block' }}>Video</label>
+                                <div
+                                  className="file-upload-area-small"
+                                  onClick={() => document.getElementById(`lesson-video-${module.id}`)?.click()}
+                                >
+                                
+                                  <div className="upload-icon">🎥</div>
+                                  <div className="upload-text">MP4, MOV</div>
+                                  {
+                                  lessonForms[module.id]?.videoFile && (
+                                    lessonUploading[module.id] ? (
+                                      <div
+                                        style={{
+                                          marginTop: "6px",
+                                          display: "flex",
+                                          alignItems: "center",
+                                        }}
+                                      >
+                                        <div style={spinnerStyle} />
+                                      </div>
+                                    ) : (
+                                      <div
+                                        style={{
+                                          marginTop: "6px",
+                                          color: "#22c55e",
+                                          fontSize: "14px",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        ✓
+                                      </div>
+                                    )
+                                  )
+                                }
+                                  {
+                                    lessonForms[module.id]?.videoPreview && (
+                                      <div
+                                        style={{
+                                          width: "100%",
+                                          marginTop: "10px",
+                                        }}
+                                      >
+                                        <video
+                                          controls
+                                          src={
+                                            lessonForms[module.id]
+                                              ?.videoPreview
+                                          }
+                                          style={{
+                                            width: "100%",
+                                            height: "250px",
+                                            objectFit: "cover",
+                                            borderRadius: "8px",
+                                          }}
+                                        />
+                                      </div>
+                                    )
+                                  }
+                                  <div className="upload-hint">Video Only (Max 500MB)</div>
+                                  
+                                  <input
+                                    type="file"
+                                    accept="video/*"
+                                    style={{ display: 'none' }}
+                                    id={`lesson-video-${module.id}`}
+                                  onChange={(e) => {
+                                      const file = e.target.files?.[0];
+
+                                      if (!file) return;
+
+                                      // Only Video
+                                      if (!file.type.startsWith("video/")) {
+                                        toast.error("Only video files are allowed");
+                                        e.target.value = "";
+                                        return;
+                                      }
+
+                                      // Max 500MB
+                                      if (file.size > 500 * 1024 * 1024) {
+                                        toast.error("Video size cannot exceed 500MB");
+                                        e.target.value = "";
+                                        return;
+                                      }
+
+                                      setLessonForms((prev) => ({
+                                        ...prev,
+                                        [module.id]: {
+                                          ...prev[module.id],
+                                          videoFile: file,
+                                          videoPreview: URL.createObjectURL(file),
+                                        },
+                                      }));
+                                    }}
+                                    />
+                                </div>
+                              
+                              
+
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn-draft"
+                              onClick={() => {
+                                setShowLessonForm((prev) => ({
+                                  ...prev,
+                                  [module.id]: false,
+                                }));
+
+                                setEditingLesson(null);
+                                setEditingLessonPosition(null);
+                              }}
+                            >
+                              Close
+                            </button>
+
+                            <button
+                              type="button"
+                              className="add-lesson-btn"
+                              disabled={lessonUploading[module.id]}
+                              onClick={() =>
+                                editingLesson?.moduleId === module.id
+                                  ? handleUpdateLesson(module.id)
+                                  : handleAddLesson(module.id)
+                              }
+                            >
+                              {lessonUploading[module.id] ? (
+                                <>
+                                  <div className="button-spinner" />
+                                  Adding...
+                                </>
+                              ) : (
+                                <>
+                                  <Check size={16} />
+                                  {editingLesson?.moduleId === module.id
+                                    ? "Update Lesson"
+                                    : "Add This Lesson"}
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
 
                         {/* QUIZ UNDER LESSON */}
                         {lesson.quizzes?.length > 0 && (
@@ -2872,12 +3183,16 @@ const handleAddQuiz = async (
                                   >
                                     <button
                                       type="button"
-                                      onClick={() =>
-                                        handleEditQuiz(
-                                          module.id,
-                                          quiz.id
-                                        )
-                                      }
+                                     onClick={() => {
+                                    handleEditQuiz(
+                                      module.id,
+                                      quiz.id
+                                    );
+
+                                    setEditingQuizPosition(
+                                      quiz.id
+                                    );
+                                  }}
                                     >
                                       <Edit size={16} />
                                     </button>
@@ -2904,6 +3219,324 @@ const handleAddQuiz = async (
 
                       </div>
                   )}
+
+                        {editingLessonPosition === `new-${module.id}` &&
+                          showLessonForm[module.id] && (
+                          <div className="lesson-form">
+                            <input
+                              type="text"
+                              className="lesson-input"
+                              placeholder="Lesson Title (e.g., What is Amazon KDP?)"
+                              value={lessonForms[module.id]?.title || ""}
+                              onChange={(e) =>
+                              setLessonForms((prev) => ({
+                                ...prev,
+                                [module.id]: {
+                                  ...prev[module.id],
+                                  title: e.target.value,
+                                },
+                              }))
+                            }
+                            />
+
+                            <input
+                              type="text"
+                              className="lesson-input"
+                              placeholder="Duration (e.g., 10:30)"
+                              value={lessonForms[module.id]?.duration || ""}
+                              onChange={(e) =>
+                                setLessonForms((prev) => ({
+                                  ...prev,
+                                  [module.id]: {
+                                    ...prev[module.id],
+                                    duration: e.target.value,
+                                  },
+                                }))
+                              }
+                            />
+
+                            <textarea
+                              className="lesson-input"
+                              rows={3}
+                              placeholder="Lesson Description"
+                              value={lessonForms[module.id]?.content || ""}
+                              onChange={(e) =>
+                                setLessonForms((prev) => ({
+                                  ...prev,
+                                  [module.id]: {
+                                    ...prev[module.id],
+                                    content: e.target.value,
+                                  },
+                                }))
+                              }
+                            />
+
+                            {/* Media Row: Document & Video */}
+                            <div className="lesson-media-row">
+                              {/* Document Upload */}
+                              <div>
+                                <label style={{ fontSize: '12px', fontWeight: 500, marginBottom: '4px', display: 'block' }}>Document (PDF, Image)</label>
+                                <div
+                                  className="file-upload-area-small"
+                                  onClick={() => document.getElementById(`lesson-doc-${module.id}`)?.click()}
+                                >
+                                  <div className="upload-icon">📄</div>
+                                  {
+                                      lessonForms[module.id]?.documentFile && (
+                                        lessonUploading[module.id] ? (
+                                          <div
+                                            style={{
+                                              marginTop: "6px",
+                                              display: "flex",
+                                              alignItems: "center",
+                                            }}
+                                          >
+                                            <div style={spinnerStyle} />
+                                          </div>
+                                        ) : (
+                                          <div
+                                            style={{
+                                              marginTop: "6px",
+                                              color: "#22c55e",
+                                              fontSize: "14px",
+                                              fontWeight: 600,
+                                            }}
+                                          >
+                                            ✓
+                                          </div>
+                                        )
+                                      )
+                                    }
+                                  {
+                                    lessonForms[module.id]?.documentPreview && (
+                                      <div
+                                        style={{
+                                          marginTop: "10px",
+                                          width: "100%",
+                                        }}
+                                      >
+                                        {lessonForms[module.id]?.documentFile?.type?.startsWith(
+                                          "image/"
+                                        ) ? (
+                                          <img
+                                            src={
+                                              lessonForms[module.id]
+                                                ?.documentPreview
+                                            }
+                                            alt="Preview"
+                                            style={{
+                                              width: "100%",
+                                              height: "250px",
+                                              objectFit: "cover",
+                                              borderRadius: "8px",
+                                              border: "1px solid #ddd",
+                                            }}
+                                          />
+                                        ) : (
+                                          <iframe
+                                            src={
+                                              lessonForms[module.id]
+                                                ?.documentPreview
+                                            }
+                                            title="PDF Preview"
+                                            style={{
+                                              width: "100%",
+                                              height: "250px",
+                                              border: "1px solid #ddd",
+                                              borderRadius: "8px",
+                                              background: "#fff",
+                                            }}
+                                          />
+                                        )}
+                                      </div>
+                                    )
+                                  }
+                                  <div className="upload-text">PDF or Image</div>
+                                  <div className="upload-hint"> PDF Only (Max 500MB)</div>
+                                  <input
+                                    type="file"
+                                    accept=".pdf"
+                                    style={{ display: 'none' }}
+                                    id={`lesson-doc-${module.id}`}
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+
+                                        if (!file) return;
+
+                                        // Only PDF
+                                        if (file.type !== "application/pdf") {
+                                          toast.error("Only PDF files are allowed");
+                                          e.target.value = "";
+                                          return;
+                                        }
+
+                                        // Max 500MB
+                                        if (file.size > 500 * 1024 * 1024) {
+                                          toast.error("PDF size cannot exceed 500MB");
+                                          e.target.value = "";
+                                          return;
+                                        }
+
+                                        setLessonForms((prev) => ({
+                                          ...prev,
+                                          [module.id]: {
+                                            ...prev[module.id],
+                                            documentFile: file,
+                                            documentPreview: URL.createObjectURL(file),
+                                          },
+                                        }));
+                                      }}
+                                  />
+                                </div>
+                                
+                                  
+                                    
+                              </div>
+
+                              {/* Video Upload */}
+                              <div>
+                                <label style={{ fontSize: '12px', fontWeight: 500, marginBottom: '4px', display: 'block' }}>Video</label>
+                                <div
+                                  className="file-upload-area-small"
+                                  onClick={() => document.getElementById(`lesson-video-${module.id}`)?.click()}
+                                >
+                                
+                                  <div className="upload-icon">🎥</div>
+                                  <div className="upload-text">MP4, MOV</div>
+                                  {
+                                  lessonForms[module.id]?.videoFile && (
+                                    lessonUploading[module.id] ? (
+                                      <div
+                                        style={{
+                                          marginTop: "6px",
+                                          display: "flex",
+                                          alignItems: "center",
+                                        }}
+                                      >
+                                        <div style={spinnerStyle} />
+                                      </div>
+                                    ) : (
+                                      <div
+                                        style={{
+                                          marginTop: "6px",
+                                          color: "#22c55e",
+                                          fontSize: "14px",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        ✓
+                                      </div>
+                                    )
+                                  )
+                                }
+                                  {
+                                    lessonForms[module.id]?.videoPreview && (
+                                      <div
+                                        style={{
+                                          width: "100%",
+                                          marginTop: "10px",
+                                        }}
+                                      >
+                                        <video
+                                          controls
+                                          src={
+                                            lessonForms[module.id]
+                                              ?.videoPreview
+                                          }
+                                          style={{
+                                            width: "100%",
+                                            height: "250px",
+                                            objectFit: "cover",
+                                            borderRadius: "8px",
+                                          }}
+                                        />
+                                      </div>
+                                    )
+                                  }
+                                  <div className="upload-hint">Video Only (Max 500MB)</div>
+                                  
+                                  <input
+                                    type="file"
+                                    accept="video/*"
+                                    style={{ display: 'none' }}
+                                    id={`lesson-video-${module.id}`}
+                                  onChange={(e) => {
+                                      const file = e.target.files?.[0];
+
+                                      if (!file) return;
+
+                                      // Only Video
+                                      if (!file.type.startsWith("video/")) {
+                                        toast.error("Only video files are allowed");
+                                        e.target.value = "";
+                                        return;
+                                      }
+
+                                      // Max 500MB
+                                      if (file.size > 500 * 1024 * 1024) {
+                                        toast.error("Video size cannot exceed 500MB");
+                                        e.target.value = "";
+                                        return;
+                                      }
+
+                                      setLessonForms((prev) => ({
+                                        ...prev,
+                                        [module.id]: {
+                                          ...prev[module.id],
+                                          videoFile: file,
+                                          videoPreview: URL.createObjectURL(file),
+                                        },
+                                      }));
+                                    }}
+                                    />
+                                </div>
+                              
+                              
+
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="add-lesson-btn"
+                              disabled={lessonUploading[module.id]}
+                              onClick={() =>
+                                editingLesson?.moduleId === module.id
+                                  ? handleUpdateLesson(module.id)
+                                  : handleAddLesson(module.id)
+                              }
+                            >
+                              {lessonUploading[module.id] ? (
+                                <>
+                                  <div className="button-spinner" />
+                                  Adding...
+                                </>
+                              ) : (
+                                <>
+                                  <Check size={16} />
+                                  {editingLesson?.moduleId === module.id
+                                    ? "Update Lesson"
+                                    : "Add This Lesson"}
+                                </>
+                              )}
+                            </button>
+                            <button
+    type="button"
+    className="btn-draft"
+    onClick={() => {
+      setShowLessonForm((prev) => ({
+        ...prev,
+        [module.id]: false,
+      }));
+
+      setEditingLesson(null);
+      setEditingLessonPosition(null);
+    }}
+  >
+    Close
+  </button>
+                          </div>
+                        )}
 
 
                   {/* ========== EXISTING QUIZZES LIST ========== */}
@@ -2955,330 +3588,9 @@ const handleAddQuiz = async (
                     </div>
                   )} */}
                   {/* Action Buttons - Add Lesson & Add Quiz */}
-                  <div className="module-actions">
-                    <button
-                      type="button"
-                      className="add-lesson-btn"
-                      onClick={() => {
-                        setShowLessonForm((prev) => ({
-                          ...prev,
-                          [module.id]: !prev[module.id],
-                        }));
+                  
 
-                        setShowQuizForm((prev) => ({
-                          ...prev,
-                          [module.id]: false,
-                        }));
-                      }}
-                    >
-                      <Plus size={16} /> Add Lesson
-                    </button>
-
-                   
-                  </div>
-
-                  {/* ========== LESSON FORM ========== */}
-                  {showLessonForm[module.id] && (
-                    <div className="lesson-form">
-                      <input
-                        type="text"
-                        className="lesson-input"
-                        placeholder="Lesson Title (e.g., What is Amazon KDP?)"
-                        value={lessonForms[module.id]?.title || ""}
-                        onChange={(e) =>
-                        setLessonForms((prev) => ({
-                          ...prev,
-                          [module.id]: {
-                            ...prev[module.id],
-                            title: e.target.value,
-                          },
-                        }))
-                      }
-                      />
-
-                      <input
-                        type="text"
-                        className="lesson-input"
-                        placeholder="Duration (e.g., 10:30)"
-                        value={lessonForms[module.id]?.duration || ""}
-                        onChange={(e) =>
-                          setLessonForms((prev) => ({
-                            ...prev,
-                            [module.id]: {
-                              ...prev[module.id],
-                              duration: e.target.value,
-                            },
-                          }))
-                        }
-                      />
-
-                      <textarea
-                        className="lesson-input"
-                        rows={3}
-                        placeholder="Lesson Description"
-                        value={lessonForms[module.id]?.content || ""}
-                        onChange={(e) =>
-                          setLessonForms((prev) => ({
-                            ...prev,
-                            [module.id]: {
-                              ...prev[module.id],
-                              content: e.target.value,
-                            },
-                          }))
-                        }
-                      />
-
-                      {/* Media Row: Document & Video */}
-                      <div className="lesson-media-row">
-                        {/* Document Upload */}
-                        <div>
-                          <label style={{ fontSize: '12px', fontWeight: 500, marginBottom: '4px', display: 'block' }}>Document (PDF, Image)</label>
-                          <div
-                            className="file-upload-area-small"
-                            onClick={() => document.getElementById(`lesson-doc-${module.id}`)?.click()}
-                          >
-                            <div className="upload-icon">📄</div>
-                            {
-                                lessonForms[module.id]?.documentFile && (
-                                  lessonUploading[module.id] ? (
-                                    <div
-                                      style={{
-                                        marginTop: "6px",
-                                        display: "flex",
-                                        alignItems: "center",
-                                      }}
-                                    >
-                                      <div style={spinnerStyle} />
-                                    </div>
-                                  ) : (
-                                    <div
-                                      style={{
-                                        marginTop: "6px",
-                                        color: "#22c55e",
-                                        fontSize: "14px",
-                                        fontWeight: 600,
-                                      }}
-                                    >
-                                      ✓
-                                    </div>
-                                  )
-                                )
-                              }
-                            {
-                              lessonForms[module.id]?.documentPreview && (
-                                <div
-                                  style={{
-                                    marginTop: "10px",
-                                    width: "100%",
-                                  }}
-                                >
-                                  {lessonForms[module.id]?.documentFile?.type?.startsWith(
-                                    "image/"
-                                  ) ? (
-                                    <img
-                                      src={
-                                        lessonForms[module.id]
-                                          ?.documentPreview
-                                      }
-                                      alt="Preview"
-                                      style={{
-                                        width: "100%",
-                                        height: "250px",
-                                        objectFit: "cover",
-                                        borderRadius: "8px",
-                                        border: "1px solid #ddd",
-                                      }}
-                                    />
-                                  ) : (
-                                    <iframe
-                                      src={
-                                        lessonForms[module.id]
-                                          ?.documentPreview
-                                      }
-                                      title="PDF Preview"
-                                      style={{
-                                        width: "100%",
-                                        height: "250px",
-                                        border: "1px solid #ddd",
-                                        borderRadius: "8px",
-                                        background: "#fff",
-                                      }}
-                                    />
-                                  )}
-                                </div>
-                              )
-                            }
-                            <div className="upload-text">PDF or Image</div>
-                            <div className="upload-hint"> PDF Only (Max 500MB)</div>
-                            <input
-                              type="file"
-                              accept=".pdf"
-                              style={{ display: 'none' }}
-                              id={`lesson-doc-${module.id}`}
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-
-                                  if (!file) return;
-
-                                  // Only PDF
-                                  if (file.type !== "application/pdf") {
-                                    toast.error("Only PDF files are allowed");
-                                    e.target.value = "";
-                                    return;
-                                  }
-
-                                  // Max 500MB
-                                  if (file.size > 500 * 1024 * 1024) {
-                                    toast.error("PDF size cannot exceed 500MB");
-                                    e.target.value = "";
-                                    return;
-                                  }
-
-                                  setLessonForms((prev) => ({
-                                    ...prev,
-                                    [module.id]: {
-                                      ...prev[module.id],
-                                      documentFile: file,
-                                      documentPreview: URL.createObjectURL(file),
-                                    },
-                                  }));
-                                }}
-                            />
-                          </div>
-                          
-                            
-                              
-                        </div>
-
-                        {/* Video Upload */}
-                        <div>
-                          <label style={{ fontSize: '12px', fontWeight: 500, marginBottom: '4px', display: 'block' }}>Video</label>
-                          <div
-                            className="file-upload-area-small"
-                            onClick={() => document.getElementById(`lesson-video-${module.id}`)?.click()}
-                          >
-                           
-                            <div className="upload-icon">🎥</div>
-                            <div className="upload-text">MP4, MOV</div>
-                            {
-                            lessonForms[module.id]?.videoFile && (
-                              lessonUploading[module.id] ? (
-                                <div
-                                  style={{
-                                    marginTop: "6px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                  }}
-                                >
-                                  <div style={spinnerStyle} />
-                                </div>
-                              ) : (
-                                <div
-                                  style={{
-                                    marginTop: "6px",
-                                    color: "#22c55e",
-                                    fontSize: "14px",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  ✓
-                                </div>
-                              )
-                            )
-                          }
-                            {
-                              lessonForms[module.id]?.videoPreview && (
-                                <div
-                                  style={{
-                                    width: "100%",
-                                    marginTop: "10px",
-                                  }}
-                                >
-                                  <video
-                                    controls
-                                    src={
-                                      lessonForms[module.id]
-                                        ?.videoPreview
-                                    }
-                                    style={{
-                                      width: "100%",
-                                      height: "250px",
-                                      objectFit: "cover",
-                                      borderRadius: "8px",
-                                    }}
-                                  />
-                                </div>
-                              )
-                            }
-                            <div className="upload-hint">Video Only (Max 500MB)</div>
-                            
-                            <input
-                              type="file"
-                              accept="video/*"
-                              style={{ display: 'none' }}
-                              id={`lesson-video-${module.id}`}
-                             onChange={(e) => {
-                                const file = e.target.files?.[0];
-
-                                if (!file) return;
-
-                                // Only Video
-                                if (!file.type.startsWith("video/")) {
-                                  toast.error("Only video files are allowed");
-                                  e.target.value = "";
-                                  return;
-                                }
-
-                                // Max 500MB
-                                if (file.size > 500 * 1024 * 1024) {
-                                  toast.error("Video size cannot exceed 500MB");
-                                  e.target.value = "";
-                                  return;
-                                }
-
-                                setLessonForms((prev) => ({
-                                  ...prev,
-                                  [module.id]: {
-                                    ...prev[module.id],
-                                    videoFile: file,
-                                    videoPreview: URL.createObjectURL(file),
-                                  },
-                                }));
-                              }}
-                              />
-                          </div>
-                         
-                        
-
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="add-lesson-btn"
-                        disabled={lessonUploading[module.id]}
-                        onClick={() =>
-                          editingLesson?.moduleId === module.id
-                            ? handleUpdateLesson(module.id)
-                            : handleAddLesson(module.id)
-                        }
-                      >
-                        {lessonUploading[module.id] ? (
-                          <>
-                            <div className="button-spinner" />
-                            Adding...
-                          </>
-                        ) : (
-                          <>
-                            <Check size={16} />
-                            {editingLesson?.moduleId === module.id
-                              ? "Update Lesson"
-                              : "Add This Lesson"}
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
+                 
 
                   {/* ========== QUIZ FORM ========== */}
                   {showQuizForm[module.id] && (
@@ -3502,7 +3814,7 @@ const handleAddQuiz = async (
               onClick={handleFinalPublish}  // Now this publishes
               disabled={loading}
             >
-              {loading ? "Updating..." : "Update →"}
+              {loading ? "Publishing..." : "Publish Course →"}
             </button>
           </div>
         </div>
