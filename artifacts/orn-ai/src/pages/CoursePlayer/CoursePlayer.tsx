@@ -4,6 +4,7 @@ import api from "../../../services/api";
 import { Shell } from "@/components/layout/Shell";
 import CourseSidebar from "./components/CourseSidebar";
 import ContentArea from "./components/ContentArea";
+import { useSidebar } from "./components/sidebar/useSidebar";
 
 export type ContentMode = "about" | "lesson" | "quiz" | "finalAssessment";
 
@@ -53,6 +54,16 @@ const CoursePlayer = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // For collapsable behaviour
+  const {sidebarCollapsed,setSidebarCollapsed,} = useSidebar();
+
+  useEffect(() => {
+    localStorage.setItem(
+      "course-sidebar-collapsed",
+      JSON.stringify(sidebarCollapsed)
+    );
+  }, [sidebarCollapsed]);
 
   // Fetch Course Data
   useEffect(() => {
@@ -227,6 +238,8 @@ const CoursePlayer = () => {
           setExpandedSections={setExpandedSections}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
           onLessonSelect={handleLessonSelect}
           onQuizSelect={handleQuizSelect}
           onAboutSelect={handleAboutSelect}

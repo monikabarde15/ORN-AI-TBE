@@ -5,10 +5,12 @@ interface LessonItemProps {
   isActive: boolean;
   isCompleted?: boolean;
   onClick: () => void;
+  lessonIndex?: number;
 }
 
 const LessonItem = ({
   lesson,
+  lessonIndex,
   isActive,
   isCompleted = false,
   onClick,
@@ -70,20 +72,61 @@ const LessonItem = ({
 
       {/* Title */}
       <div className="flex-1 min-w-0">
+        <div className="mb-0.5">
+          <span
+            className="
+        text-[10px]
+        uppercase
+        tracking-wider
+        text-gray-500
+        font-medium
+      "
+          >
+            {isQuiz
+              ? "QUIZ"
+              : isPdf
+                ? "PDF"
+                : `LESSON ${String(
+                  lessonIndex || 0
+                ).padStart(2, "0")}`}
+          </span>
+        </div>
+
         <p
           className={`
-            text-xs lg:text-sm font-medium truncate
-            ${isActive ? "text-white" : "text-gray-300"}
-            ${isCompleted && !isActive ? "text-green-400" : ""}
-          `}
+      text-xs
+      lg:text-sm
+      font-medium
+      truncate
+
+      ${isActive
+              ? "text-white"
+              : "text-gray-300"
+            }
+
+      ${isCompleted &&
+              !isActive
+              ? "text-green-400"
+              : ""
+            }
+    `}
         >
           {lesson.title}
         </p>
-        {!isQuiz && lesson.duration && (
-          <p className="text-[10px] lg:text-xs text-gray-500 mt-0.5">
-            {lesson.duration}
-          </p>
-        )}
+
+        {!isQuiz &&
+          lesson.duration && (
+            <p
+              className="
+          text-[10px]
+          lg:text-xs
+          text-gray-500
+          mt-0.5
+        "
+            >
+              {lesson.duration}
+            </p>
+          )}
       </div>
     </button>
   );

@@ -3,6 +3,7 @@ import LessonItem from "./LessonItem";
 
 interface ChapterAccordionProps {
   section: any;
+  chapterIndex: number;
   currentLecture: any;
   expandedSections: string[];
   setExpandedSections: React.Dispatch<React.SetStateAction<string[]>>;
@@ -12,6 +13,7 @@ interface ChapterAccordionProps {
 
 const ChapterAccordion = ({
   section,
+   chapterIndex,
   currentLecture,
   expandedSections,
   setExpandedSections,
@@ -48,7 +50,7 @@ const ChapterAccordion = ({
   const chapterNum = chapterMatch ? chapterMatch[1] : "";
 
   return (
-    <div className="border-b border-[#2A2A2A]">
+    <div id={`section-${section.id}`} className="border-b border-[#2A2A2A]">
       {/* Chapter Header */}
       <button
         onClick={toggleSection}
@@ -60,7 +62,30 @@ const ChapterAccordion = ({
         "
       >
         <div className="flex-1 min-w-0 pr-4">
-          <h3 className="text-white font-semibold text-sm lg:text-[15px] leading-tight truncate">
+          <div className="mb-1">
+            <span
+              className="
+      text-[10px]
+      uppercase
+      tracking-[0.15em]
+      text-blue-400
+      font-semibold
+    "
+            >
+              MODULE {String(chapterIndex).padStart(2, "0")}
+            </span>
+          </div>
+
+          <h3
+            className="
+    text-white
+    font-semibold
+    text-sm
+    lg:text-[15px]
+    leading-tight
+    line-clamp-2
+  "
+          >
             {section.title}
           </h3>
           <p className="mt-0.5 text-xs lg:text-[13px] font-medium text-gray-400">
@@ -79,7 +104,7 @@ const ChapterAccordion = ({
       {/* Lessons List */}
       {isExpanded && (
         <div className="bg-[#0D0D0D] pb-1">
-          {section.lessons?.map((lesson: any) => {
+          {section.lessons?.map((lesson: any, lessonIndex: number) => {
             const hasQuiz = lesson.quizzes?.length > 0;
 
             return (
@@ -87,6 +112,7 @@ const ChapterAccordion = ({
                 {/* Main Lesson */}
                 <LessonItem
                   lesson={lesson}
+                  lessonIndex={lessonIndex + 1}
                   isActive={currentLecture?.id === lesson.id}
                   isCompleted={lesson.completed || false}
                   onClick={() => onLessonSelect(lesson)}
