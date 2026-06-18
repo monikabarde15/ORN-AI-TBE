@@ -79,18 +79,19 @@ const ContentArea = ({
   };
 
   return (
-    <main 
+    <main
       className="
-        flex-1 
-        h-screen 
-        overflow-y-auto 
-        bg-[#F7F8FA]
-        scrollbar-hide
-        [scrollbar-width:none]
-        [-ms-overflow-style:none]
-        [&::-webkit-scrollbar]:hidden
-        [&::-webkit-scrollbar]:w-0
-      "
+    flex-1
+    min-w-0
+    min-h-0
+    overflow-y-auto
+    bg-[#F7F8FA]
+    scrollbar-hide
+    [scrollbar-width:none]
+    [-ms-overflow-style:none]
+    [&::-webkit-scrollbar]:hidden
+    [&::-webkit-scrollbar]:w-0
+  "
     >
       {renderContent()}
     </main>
