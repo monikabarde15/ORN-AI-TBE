@@ -119,12 +119,13 @@ const mockApi = {
       JSON.stringify(data.learningOutcomes)
     )
     formData.append("price", data.price || "0")
-const allTags = [data.category, data.difficulty, ...(data.tags || [])]
-
 formData.append(
   "tag",
-  JSON.stringify(allTags)
-);    formData.append("category", data.category)
+  JSON.stringify(
+    [...new Set(data.tags || [])]
+  )
+);
+    formData.append("category", data.category)
     formData.append(
       "subtitle",
       data.subtitle

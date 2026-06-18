@@ -38,7 +38,7 @@ router.post(
         currency: "INR",
 
         callback_url:
-          `${process.env.FRONTEND_URL}/payment-success/${paymentId}`,
+          `${process.env.FRONTEND_URL}payment-success/${paymentId}`,
 
         callback_method: "get",
 
