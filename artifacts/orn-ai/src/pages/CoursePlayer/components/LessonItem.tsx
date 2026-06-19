@@ -51,19 +51,36 @@ const LessonItem = ({
   };
 
   // Render type icon
-  const renderTypeIcon = () => {
-    if (isQuiz) {
-      return <HelpCircle size={16} className="text-purple-400 shrink-0" />;
-    }
-    if (isPdf) {
-      return <FileText size={16} className="text-blue-400 shrink-0" />;
-    }
-    if (isVideo) {
-      return <PlayCircle size={16} className="text-red-500 shrink-0" />;
-    }
-    return <FileText size={16} className="text-gray-400 shrink-0" />;
-  };
+  // const renderTypeIcon = () => {
+  //   if (isQuiz) {
+  //     return <HelpCircle size={16} className="text-purple-400 shrink-0" />;
+  //   }
+  //   if (isPdf) {
+  //     return <FileText size={16} className="text-blue-400 shrink-0" />;
+  //   }
+  //   if (isVideo) {
+  //     return <PlayCircle size={16} className="text-red-500 shrink-0" />;
+  //   }
+  //   return <FileText size={16} className="text-gray-400 shrink-0" />;
+  // };
+const hasVideo = !!lesson.videoUrl;
+const hasPdf = !!lesson.pdfUrl;
 
+const renderTypeIcon = () => {
+  if (isQuiz) {
+    return <HelpCircle size={16} className="text-purple-400" />;
+  }
+
+  if (hasVideo) {
+    return <PlayCircle size={16} className="text-red-500" />;
+  }
+
+  if (hasPdf) {
+    return <FileText size={16} className="text-blue-400" />;
+  }
+
+  return <FileText size={16} className="text-gray-400" />;
+};
   return (
     <button
      ref={lessonRef}
@@ -89,23 +106,19 @@ const LessonItem = ({
       {/* Title */}
       <div className="flex-1 min-w-0">
         <div className="mb-0.5">
-          <span
-            className="
-        text-[10px]
-        uppercase
-        tracking-wider
-        text-gray-500
-        font-medium
-      "
-          >
-            {isQuiz
-              ? "QUIZ"
-              : isPdf
-                ? "PDF"
-                : `LESSON ${String(
-                  lessonIndex || 0
-                ).padStart(2, "0")}`}
-          </span>
+         <span
+  className="
+    text-[10px]
+    uppercase
+    tracking-wider
+    text-gray-500
+    font-medium
+  "
+>
+  {`LESSON ${String(
+    lessonIndex || 0
+  ).padStart(2, "0")}`}
+</span>
         </div>
 
         <p

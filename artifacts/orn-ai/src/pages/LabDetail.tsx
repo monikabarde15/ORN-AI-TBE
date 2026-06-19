@@ -3989,6 +3989,13 @@ syllabusText:"",
 const SkillQuestPage = () => {
   const { id } = useParams();
 console.log("URL Param:", id);
+console.log("URL ID =", id);
+
+const lab = cyberLabs.find(
+  item => item.id === Number(id)
+);
+
+console.log("LAB =", lab);
 console.log(window.location.pathname);
   const data = cyberLabs.find((item) => item.id === Number(id)) || cyberLabs[0];
 console.log('bannerImage=',data);
