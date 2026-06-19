@@ -36,19 +36,36 @@ const LessonItem = ({
   };
 
   // Render type icon
-  const renderTypeIcon = () => {
-    if (isQuiz) {
-      return <HelpCircle size={16} className="text-purple-400 shrink-0" />;
-    }
-    if (isPdf) {
-      return <FileText size={16} className="text-blue-400 shrink-0" />;
-    }
-    if (isVideo) {
-      return <PlayCircle size={16} className="text-red-500 shrink-0" />;
-    }
-    return <FileText size={16} className="text-gray-400 shrink-0" />;
-  };
+  // const renderTypeIcon = () => {
+  //   if (isQuiz) {
+  //     return <HelpCircle size={16} className="text-purple-400 shrink-0" />;
+  //   }
+  //   if (isPdf) {
+  //     return <FileText size={16} className="text-blue-400 shrink-0" />;
+  //   }
+  //   if (isVideo) {
+  //     return <PlayCircle size={16} className="text-red-500 shrink-0" />;
+  //   }
+  //   return <FileText size={16} className="text-gray-400 shrink-0" />;
+  // };
+const hasVideo = !!lesson.videoUrl;
+const hasPdf = !!lesson.pdfUrl;
 
+const renderTypeIcon = () => {
+  if (isQuiz) {
+    return <HelpCircle size={16} className="text-purple-400" />;
+  }
+
+  if (hasVideo) {
+    return <PlayCircle size={16} className="text-red-500" />;
+  }
+
+  if (hasPdf) {
+    return <FileText size={16} className="text-blue-400" />;
+  }
+
+  return <FileText size={16} className="text-gray-400" />;
+};
   return (
     <button
       onClick={onClick}
