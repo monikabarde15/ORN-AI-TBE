@@ -51,7 +51,6 @@ const CoursePlayer = () => {
   const [currentLecture, setCurrentLecture] = useState<Lesson | null>(null);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [contentMode, setContentMode] = useState<ContentMode>("about");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 const [categoryName, setCategoryName] = useState("");
@@ -204,6 +203,82 @@ const fetchCategory = async (categoryId: string) => {
     setContentMode("finalAssessment");
   }, []);
 
+  const videoLessons = sections
+    .flatMap((section) => section.lessons)
+    .filter((lesson) => lesson.videoUrl);
+
+  const currentLessonIndex =
+    videoLessons.findIndex(
+      (lesson) =>
+        lesson.id === currentLecture?.id
+    );
+
+  const handleNextLesson =
+    useCallback(() => {
+      const nextLesson =
+        videoLessons[
+        currentLessonIndex + 1
+        ];
+
+      if (nextLesson) {
+
+        const parentSection =
+          sections.find((section) =>
+            section.lessons.some(
+              (lesson) =>
+                lesson.id === nextLesson.id
+            )
+          );
+
+        if (parentSection) {
+          setExpandedSections([
+            parentSection.id
+          ]);
+        }
+
+        handleLessonSelect(
+          nextLesson
+        );
+      }
+    }, [
+      videoLessons,
+      currentLessonIndex,
+      handleLessonSelect,
+    ]);
+
+  const handlePreviousLesson =
+    useCallback(() => {
+      const previousLesson =
+        videoLessons[
+        currentLessonIndex - 1
+        ];
+
+      if (previousLesson) {
+
+        const parentSection =
+          sections.find((section) =>
+            section.lessons.some(
+              (lesson) =>
+                lesson.id === previousLesson.id
+            )
+          );
+
+        if (parentSection) {
+          setExpandedSections([
+            parentSection.id
+          ]);
+        }
+
+        handleLessonSelect(
+          previousLesson
+        );
+      }
+    }, [
+      videoLessons,
+      currentLessonIndex,
+      handleLessonSelect,
+    ]);
+
   // Loading State
   if (loading) {
     return (
@@ -251,8 +326,6 @@ const fetchCategory = async (categoryId: string) => {
           currentLecture={currentLecture}
           expandedSections={expandedSections}
           setExpandedSections={setExpandedSections}
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
           sidebarCollapsed={sidebarCollapsed}
           setSidebarCollapsed={setSidebarCollapsed}
           onLessonSelect={handleLessonSelect}
@@ -268,7 +341,22 @@ const fetchCategory = async (categoryId: string) => {
           lecture={currentLecture}
           relatedCourses={relatedCourses}
           onQuizCompleted={handleQuizCompleted}
+<<<<<<< HEAD
           categoryName={categoryName}
+=======
+
+          sections={sections}
+          currentLecture={currentLecture}
+
+          expandedSections={expandedSections}
+          setExpandedSections={setExpandedSections}
+
+          onLessonSelect={handleLessonSelect}
+          onQuizSelect={handleQuizSelect}
+          onFinalAssessmentSelect={handleFinalAssessment}
+          onPreviousLesson={handlePreviousLesson}
+          onNextLesson={handleNextLesson}
+>>>>>>> 21994ff1d3d984ba37d86cf566b842e1e25f3eec
         />
       </div>
     </Shell>

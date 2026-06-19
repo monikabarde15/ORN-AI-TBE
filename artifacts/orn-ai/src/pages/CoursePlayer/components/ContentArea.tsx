@@ -3,6 +3,7 @@ import PdfViewerContent from "./PdfViewerContent";
 import QuizPlayer from "./QuizPlayer";
 import VideoPlayerContent from "./VideoPlayerContent";
 import FinalAssessment from "./FinalAssessment";
+import MobileCourseContent from "./sidebar/MobileCourseContent";
 
 interface ContentAreaProps {
   mode: "about" | "lesson" | "quiz" | "finalAssessment";
@@ -12,6 +13,17 @@ interface ContentAreaProps {
   categoryName: string;
 
   onQuizCompleted: () => void;
+
+  sections: any[];
+  currentLecture: any;
+
+  expandedSections: string[];
+  setExpandedSections: React.Dispatch<React.SetStateAction<string[]>>;
+  onLessonSelect: (lesson: any) => void;
+  onQuizSelect: (lesson: any) => void;
+  onFinalAssessmentSelect: () => void;
+  onPreviousLesson: () => void;
+  onNextLesson: () => void;
 }
 
 const ContentArea = ({
@@ -20,6 +32,19 @@ const ContentArea = ({
   lecture,
   relatedCourses,
   onQuizCompleted,
+
+  sections,
+  currentLecture,
+
+  expandedSections,
+  setExpandedSections,
+
+  onLessonSelect,
+  onQuizSelect,
+
+  onFinalAssessmentSelect,
+  onPreviousLesson,
+  onNextLesson,
 }: ContentAreaProps) => {
   const renderContent = () => {
     switch (mode) {
@@ -37,6 +62,12 @@ const ContentArea = ({
             <VideoPlayerContent
               course={course}
               lecture={lecture}
+              onPreviousLesson={
+                onPreviousLesson
+              }
+              onNextLesson={
+                onNextLesson
+              }
             />
           );
         }
@@ -95,7 +126,18 @@ const ContentArea = ({
     [&::-webkit-scrollbar]:w-0
   "
     >
-      {renderContent()}
+      <div className="lg:hidden">
+        <MobileCourseContent
+          sections={sections}
+          currentLecture={currentLecture}
+          expandedSections={expandedSections}
+          setExpandedSections={setExpandedSections}
+          onLessonSelect={onLessonSelect}
+          onQuizSelect={onQuizSelect}
+          onFinalAssessmentSelect={onFinalAssessmentSelect}
+          />
+      </div>
+          {renderContent()}
     </main>
   );
 };

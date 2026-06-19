@@ -1,4 +1,5 @@
 import { Check, Circle, FileText, PlayCircle, HelpCircle } from "lucide-react";
+import {useEffect,useRef,} from "react";
 
 interface LessonItemProps {
   lesson: any;
@@ -18,6 +19,20 @@ const LessonItem = ({
   const isQuiz = lesson.type === "quiz" || lesson.title?.toLowerCase().includes("quiz");
   const isVideo = lesson.videoUrl;
   const isPdf = lesson.pdfUrl;
+
+  // Auto Scroll Sidebar To Active Lesson
+  const lessonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (
+      isActive &&
+      lessonRef.current
+    ) {
+      lessonRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [isActive]);
 
   // Render status icon (checkbox)
   const renderStatusIcon = () => {
@@ -68,6 +83,7 @@ const renderTypeIcon = () => {
 };
   return (
     <button
+     ref={lessonRef}
       onClick={onClick}
       className={`
         w-full text-left px-3 py-2 lg:px-4 lg:py-2.5

@@ -5,10 +5,13 @@ import { useVideoPlayer } from "./useVideoPlayer";
 interface VideoPlayerProps {
     videoUrl: string;
     lessonId: string;
+
+    onPreviousLesson?: () => void;
+    onNextLesson?: () => void;
 }
 
 const VideoPlayer = ({
-    videoUrl, lessonId
+    videoUrl, lessonId,onPreviousLesson,onNextLesson,
 }: VideoPlayerProps) => {
     const {
         videoRef,
@@ -159,6 +162,9 @@ const VideoPlayer = ({
                     onPlaybackRateChange={
                         changePlaybackRate
                     }
+
+                    onPreviousLesson={onPreviousLesson}
+                    onNextLesson={onNextLesson}
                 />
             </div>
         </div>
