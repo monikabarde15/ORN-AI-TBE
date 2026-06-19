@@ -29,6 +29,8 @@ onMuteToggle: () => void;
 onFullscreen: () => void;
 onVolumeChange: (value: number) => void;
 onPlaybackRateChange: (rate: number) => void;
+onPreviousLesson?: () => void;
+onNextLesson?: () => void;
 }
 
 export interface VideoProgressProps {

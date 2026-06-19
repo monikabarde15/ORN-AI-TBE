@@ -29,7 +29,7 @@ const AboutTab = ({
           </p>
 
           <h1 className="text-4xl font-bold text-gray-900">
-            {course?.courseName}
+            {course?.title}
           </h1>
 
           {course?.subtitle && (
@@ -47,8 +47,7 @@ const AboutTab = ({
         </h2>
 
         <p className="leading-8 text-gray-600">
-          {course?.courseDescription ||
-            "Course description is not available."}
+          {course?.description}
         </p>
       </div>
 

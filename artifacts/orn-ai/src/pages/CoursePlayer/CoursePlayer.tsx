@@ -51,7 +51,6 @@ const CoursePlayer = () => {
   const [currentLecture, setCurrentLecture] = useState<Lesson | null>(null);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [contentMode, setContentMode] = useState<ContentMode>("about");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -189,6 +188,82 @@ const CoursePlayer = () => {
     setContentMode("finalAssessment");
   }, []);
 
+  const videoLessons = sections
+    .flatMap((section) => section.lessons)
+    .filter((lesson) => lesson.videoUrl);
+
+  const currentLessonIndex =
+    videoLessons.findIndex(
+      (lesson) =>
+        lesson.id === currentLecture?.id
+    );
+
+  const handleNextLesson =
+    useCallback(() => {
+      const nextLesson =
+        videoLessons[
+        currentLessonIndex + 1
+        ];
+
+      if (nextLesson) {
+
+        const parentSection =
+          sections.find((section) =>
+            section.lessons.some(
+              (lesson) =>
+                lesson.id === nextLesson.id
+            )
+          );
+
+        if (parentSection) {
+          setExpandedSections([
+            parentSection.id
+          ]);
+        }
+
+        handleLessonSelect(
+          nextLesson
+        );
+      }
+    }, [
+      videoLessons,
+      currentLessonIndex,
+      handleLessonSelect,
+    ]);
+
+  const handlePreviousLesson =
+    useCallback(() => {
+      const previousLesson =
+        videoLessons[
+        currentLessonIndex - 1
+        ];
+
+      if (previousLesson) {
+
+        const parentSection =
+          sections.find((section) =>
+            section.lessons.some(
+              (lesson) =>
+                lesson.id === previousLesson.id
+            )
+          );
+
+        if (parentSection) {
+          setExpandedSections([
+            parentSection.id
+          ]);
+        }
+
+        handleLessonSelect(
+          previousLesson
+        );
+      }
+    }, [
+      videoLessons,
+      currentLessonIndex,
+      handleLessonSelect,
+    ]);
+
   // Loading State
   if (loading) {
     return (
@@ -236,8 +311,6 @@ const CoursePlayer = () => {
           currentLecture={currentLecture}
           expandedSections={expandedSections}
           setExpandedSections={setExpandedSections}
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
           sidebarCollapsed={sidebarCollapsed}
           setSidebarCollapsed={setSidebarCollapsed}
           onLessonSelect={handleLessonSelect}
@@ -253,6 +326,18 @@ const CoursePlayer = () => {
           lecture={currentLecture}
           relatedCourses={relatedCourses}
           onQuizCompleted={handleQuizCompleted}
+
+          sections={sections}
+          currentLecture={currentLecture}
+
+          expandedSections={expandedSections}
+          setExpandedSections={setExpandedSections}
+
+          onLessonSelect={handleLessonSelect}
+          onQuizSelect={handleQuizSelect}
+          onFinalAssessmentSelect={handleFinalAssessment}
+          onPreviousLesson={handlePreviousLesson}
+          onNextLesson={handleNextLesson}
         />
       </div>
     </Shell>

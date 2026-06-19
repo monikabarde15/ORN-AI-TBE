@@ -13,11 +13,15 @@ import VideoPlayer from "./player/VideoPlayer";
 interface VideoPlayerContentProps {
   course: any;
   lecture: any;
+  onPreviousLesson?: () => void;
+  onNextLesson?: () => void;
 }
 
 const VideoPlayerContent = ({
   course,
   lecture,
+  onPreviousLesson,
+  onNextLesson,
 }: VideoPlayerContentProps) => {
   const [openFaq, setOpenFaq] =
     useState<number | null>(null);
@@ -29,7 +33,14 @@ const VideoPlayerContent = ({
     <VideoPlayer
       videoUrl={lecture?.videoUrl}
       lessonId={lecture?.id || lecture?.title}
+      onPreviousLesson={
+        onPreviousLesson
+      }
+      onNextLesson={
+        onNextLesson
+      }
     />
+    
 
     {/* Content Below Video */}
 
@@ -41,7 +52,7 @@ const VideoPlayerContent = ({
         <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 md:p-6">
           <div className="flex items-center gap-2 mb-1 sm:mb-2">
             <span className="text-[10px] sm:text-xs md:text-sm font-medium text-red-600 uppercase tracking-wide">
-              Lesson
+              Chapter
             </span>
           </div>
 

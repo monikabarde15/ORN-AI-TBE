@@ -298,6 +298,26 @@ export const useVideoPlayer = (lessonId: string) => {
         toggleFullscreen,
     ]);
 
+    // Auto Play Next Video
+
+    useEffect(() => {
+        if (!videoRef.current) return;
+
+        const video = videoRef.current;
+
+        setCurrentTime(0);
+        setDuration(0);
+
+        video.play()
+            .then(() => {
+                setIsPlaying(true);
+            })
+            .catch(() => {
+                setIsPlaying(false);
+            });
+
+    }, [lessonId]);
+
     // Restore Progress
     useEffect(() => {
         const savedTime =
