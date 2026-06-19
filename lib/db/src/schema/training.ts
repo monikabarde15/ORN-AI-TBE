@@ -181,7 +181,7 @@ export const mcqTable = pgTable("mcq_questions", {
   })
     .notNull()
     .defaultNow(),
-})
+});
 
 
 
@@ -196,4 +196,42 @@ export type InsertMcqRow =
   typeof mcqTable.$inferInsert
 
 
- 
+ /* =========================================================
+   COURSE CATEGORY TABLE
+========================================================= */
+
+export const courseCategoriesTable = pgTable("course_categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+
+  name: text("name").notNull(),
+
+  description: text("description"),
+
+  image: text("image"),
+
+  status: text("status")
+    .notNull()
+    .default("Active"),
+
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
+
+  updatedAt: timestamp("updated_at", {
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
+});
+
+/* =========================================================
+   TYPES
+========================================================= */
+
+export type CourseCategoryRow =
+  typeof courseCategoriesTable.$inferSelect;
+
+export type InsertCourseCategoryRow =
+  typeof courseCategoriesTable.$inferInsert;

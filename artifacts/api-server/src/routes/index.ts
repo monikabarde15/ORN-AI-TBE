@@ -14,7 +14,7 @@ import blogRouter from "./blog";
 import payment from "./payment";
 import liveSessions from "./live-sessions";
 import learningPaths from "./learning-paths";
-
+import courseCategoryRoutes from "./course-category";
 
 
 const router: IRouter = Router();
@@ -34,5 +34,6 @@ router.use(blogRouter);
 router.use(payment);
 router.use(liveSessions);
 router.use(learningPaths);
+router.use(courseCategoryRoutes);
 
 export default router;
