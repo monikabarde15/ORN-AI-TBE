@@ -341,9 +341,6 @@ const fetchCategory = async (categoryId: string) => {
           lecture={currentLecture}
           relatedCourses={relatedCourses}
           onQuizCompleted={handleQuizCompleted}
-<<<<<<< HEAD
-          categoryName={categoryName}
-=======
 
           sections={sections}
           currentLecture={currentLecture}
@@ -356,7 +353,6 @@ const fetchCategory = async (categoryId: string) => {
           onFinalAssessmentSelect={handleFinalAssessment}
           onPreviousLesson={handlePreviousLesson}
           onNextLesson={handleNextLesson}
->>>>>>> 21994ff1d3d984ba37d86cf566b842e1e25f3eec
         />
       </div>
     </Shell>
