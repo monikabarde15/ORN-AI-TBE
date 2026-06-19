@@ -90,23 +90,19 @@ const renderTypeIcon = () => {
       {/* Title */}
       <div className="flex-1 min-w-0">
         <div className="mb-0.5">
-          <span
-            className="
-        text-[10px]
-        uppercase
-        tracking-wider
-        text-gray-500
-        font-medium
-      "
-          >
-            {isQuiz
-              ? "QUIZ"
-              : isPdf
-                ? "PDF"
-                : `LESSON ${String(
-                  lessonIndex || 0
-                ).padStart(2, "0")}`}
-          </span>
+         <span
+  className="
+    text-[10px]
+    uppercase
+    tracking-wider
+    text-gray-500
+    font-medium
+  "
+>
+  {`LESSON ${String(
+    lessonIndex || 0
+  ).padStart(2, "0")}`}
+</span>
         </div>
 
         <p
