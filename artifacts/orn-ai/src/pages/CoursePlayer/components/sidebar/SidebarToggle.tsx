@@ -17,9 +17,9 @@ const SidebarToggle = ({
       onClick={onToggle}
       className="
         absolute
-        top-6
-        -right-3
-        z-30
+        top-16
+        -right-1
+        z-100
 
         flex
         items-center
