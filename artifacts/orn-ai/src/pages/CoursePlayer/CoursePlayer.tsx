@@ -54,7 +54,18 @@ const CoursePlayer = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+const [categoryName, setCategoryName] = useState("");
+const fetchCategory = async (categoryId: string) => {
+  try {
+    const res = await api.get(`/course-category/${categoryId}`);
 
+    if (res.data?.success) {
+      setCategoryName(res.data.data.name);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
   // For collapsable behaviour
   const {sidebarCollapsed,setSidebarCollapsed,} = useSidebar();
 
@@ -85,6 +96,10 @@ const CoursePlayer = () => {
       }
 
       setCourse(courseData);
+
+      if (courseData.categoryId) {
+        fetchCategory(courseData.categoryId);
+      }
       fetchRelatedCourses(courseData.id);
 
       // Format sections with proper state
@@ -253,6 +268,7 @@ const CoursePlayer = () => {
           lecture={currentLecture}
           relatedCourses={relatedCourses}
           onQuizCompleted={handleQuizCompleted}
+          categoryName={categoryName}
         />
       </div>
     </Shell>

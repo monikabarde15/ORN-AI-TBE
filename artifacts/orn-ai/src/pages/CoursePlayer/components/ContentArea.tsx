@@ -9,6 +9,8 @@ interface ContentAreaProps {
   course: any;
   lecture: any;
   relatedCourses: any[];
+  categoryName: string;
+
   onQuizCompleted: () => void;
 }
 
