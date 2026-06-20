@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+
 import api from "../../../../services/api";
 
 const RelatedCourses = ({
@@ -7,12 +9,21 @@ const RelatedCourses = ({
 }: {
   currentCourseId: string;
 }) => {
+    const { user } = useAuth();
+ const isStudent =
+    user?.role === "candidate";
   const [courses, setCourses] =
     useState<any[]>([]);
 
   const [loading, setLoading] =
     useState(true);
-
+const getCourseId = (course: any) =>
+  String(
+    course.courseId ||
+    course.id ||
+    course._id ||
+    ""
+  ).trim();
   useEffect(() => {
     fetchRelatedCourses();
   }, [currentCourseId]);
@@ -21,41 +32,88 @@ const RelatedCourses = ({
   try {
     setLoading(true);
 
-    const res = await api.get(
-      "/api/courses"
-    );
+    let allCourses: any[] = [];
 
-    const allCourses =
-      Array.isArray(res.data)
+    if (user?.role === "candidate") {
+      const res = await api.get("/api/student/my-learning");
+
+      allCourses =
+        res.data?.data?.flatMap(
+          (item: any) => item.courses || []
+        ) || [];
+    } else {
+      const res = await api.get("/api/courses");
+
+      allCourses = Array.isArray(res.data)
         ? res.data
         : res.data?.data || [];
+    }
 
-    const filteredCourses =
-      allCourses.filter(
-        (item: any) =>
-          item._id !== currentCourseId &&
-          item.id !== currentCourseId
-      );
+    const coursesWithCategory = await Promise.all(
+      allCourses.map(async (course: any) => {
+        const normalizedId = getCourseId(course);
+
+        let categoryName = "";
+
+        try {
+          if (
+            course.category &&
+            course.category !== "" &&
+            course.category !== null
+          ) {
+            const categoryRes = await api.get(
+              `/api/course-category/${course.category}`
+            );
+
+            categoryName =
+              categoryRes.data?.data?.name || "";
+          }
+        } catch (err) {
+          console.warn(
+            `Category fetch failed for ${normalizedId}`
+          );
+        }
+
+        return {
+          ...course,
+          courseId: normalizedId,
+          categoryName,
+        };
+      })
+    );
+   
+
+   const uniqueCourses = Array.from(
+  new Map(
+    coursesWithCategory.map((course) => [
+      String(course.courseId).trim(),
+      course,
+    ])
+  ).values()
+);
+
+const filteredCourses = uniqueCourses.filter(
+  (course: any) =>
+    String(course.courseId).trim() !==
+    String(currentCourseId).trim()
+);
 
     console.log(
-      "currentCourseId",
+      "Current Course:",
       currentCourseId
     );
 
-    console.log(
-      "allCourses",
-      allCourses
-    );
-
-    console.log(
-      "filteredCourses",
-      filteredCourses
+    console.table(
+      filteredCourses.map((c) => ({
+        title: c.title,
+        courseId: c.courseId,
+      }))
     );
 
     setCourses(filteredCourses);
   } catch (error) {
     console.error(
-      "Related Courses Error",
+      "Related Courses Error:",
       error
     );
   } finally {
@@ -96,7 +154,7 @@ if (courses.length === 0) {
         {courses.map(
           (course: any) => (
             <div
-              key={course._id}
+              key={course.courseId}
               className="
                 overflow-hidden
                 rounded-2xl
@@ -124,21 +182,22 @@ if (courses.length === 0) {
               </div>
 
               <div className="p-4">
-                <span
-                  className="
-                    inline-flex
-                    rounded-full
-                    bg-red-50
-                    px-3
-                    py-1
-                    text-xs
-                    font-medium
-                    text-red-600
-                  "
-                >
-                  Category{" "}
-                  {course.category}
-                </span>
+                {course?.categoryName?.trim() && (
+                    <span
+                      className="
+                        inline-flex
+                        rounded-full
+                        bg-red-50
+                        px-3
+                        py-1
+                        text-xs
+                        font-medium
+                        text-red-600
+                      "
+                    >
+                      {course.categoryName}
+                    </span>
+                  )}
 
                 <h3
                   className="
@@ -157,7 +216,7 @@ if (courses.length === 0) {
                 </p>
 
                 <Link
-                  href={`/course/details/${course._id}`}
+                  href={`/course/details/${course.courseId}`}
                 >
                   <button
                     className="

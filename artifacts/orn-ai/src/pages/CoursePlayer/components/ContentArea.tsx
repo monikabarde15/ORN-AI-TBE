@@ -32,7 +32,7 @@ const ContentArea = ({
   lecture,
   relatedCourses,
   onQuizCompleted,
-
+  categoryName,
   sections,
   currentLecture,
 
@@ -53,6 +53,7 @@ const ContentArea = ({
           <AboutTab
             course={course}
             relatedCourses={relatedCourses}
+             categoryName={categoryName}
           />
         );
 

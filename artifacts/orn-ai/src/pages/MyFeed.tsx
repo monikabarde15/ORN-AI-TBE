@@ -18,22 +18,48 @@ import {
 
 import api from "../../services/api";
 
-const getCourses = async () => {
-  const res = await api.get("api/courses");
+const getMyLearning = async () => {
+  const res = await api.get("/api/student/my-learning");
   return res.data;
 };
-
 export default function MyFeed() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
 
-  const {
-    data: courses = [],
-    isLoading,
-  } = useQuery({
-    queryKey: ["courses"],
-    queryFn: getCourses,
-  });
+ const {
+  data,
+  isLoading,
+} = useQuery({
+  queryKey: ["my-learning"],
+  queryFn: getMyLearning,
+});
+
+const courses = useMemo(() => {
+  const allCourses =
+    data?.data?.flatMap(
+      (item: any) => item.courses || []
+    ) || [];
+
+  const uniqueCourses = allCourses.filter(
+    (course: any, index: number, self: any[]) =>
+      index ===
+      self.findIndex(
+        (c) =>
+          String(
+            c.courseId ||
+            c.id ||
+            c._id
+          ).trim() ===
+          String(
+            course.courseId ||
+            course.id ||
+            course._id
+          ).trim()
+      )
+  );
+
+  return uniqueCourses;
+}, [data]);
 
   const filteredCourses = useMemo(() => {
     return courses.filter((course: any) =>
@@ -42,6 +68,7 @@ export default function MyFeed() {
         .includes(search.toLowerCase())
     );
   }, [courses, search]);
+   console.log("course=", filteredCourses);
 
   return (
     <Shell>
@@ -98,7 +125,7 @@ export default function MyFeed() {
 
                 {filteredCourses.map((course: any) => (
                   <Card
-                    key={course._id}
+                    key={course.id}
                     className="group overflow-hidden rounded-2xl border hover:shadow-xl transition-all duration-300"
                   >
 
@@ -108,7 +135,7 @@ export default function MyFeed() {
                       className="overflow-hidden cursor-pointer"
                       onClick={() =>
                         navigate(
-                          `/course/details/${course._id}`
+                          `/course/details/${course.id}`
                         )
                       }
                     >
@@ -164,7 +191,7 @@ export default function MyFeed() {
                         className="w-full mt-5"
                         onClick={() =>
                           navigate(
-                            `/course/details/${course._id}`
+                            `/course/details/${course.id}`
                           )
                         }
                       >

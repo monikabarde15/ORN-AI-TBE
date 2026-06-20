@@ -54,17 +54,7 @@ const CoursePlayer = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 const [categoryName, setCategoryName] = useState("");
-const fetchCategory = async (categoryId: string) => {
-  try {
-    const res = await api.get(`/course-category/${categoryId}`);
 
-    if (res.data?.success) {
-      setCategoryName(res.data.data.name);
-    }
-  } catch (error) {
-    console.error(error);
-  }
-};
   // For collapsable behaviour
   const {sidebarCollapsed,setSidebarCollapsed,} = useSidebar();
 
@@ -86,6 +76,7 @@ const fetchCategory = async (categoryId: string) => {
     try {
       setLoading(true);
       setError(null);
+      setCategoryName("");
 
       const res = await api.get(`/api/courses/${courseId}`);
       const courseData = res.data?.data;
@@ -95,9 +86,13 @@ const fetchCategory = async (categoryId: string) => {
       }
 
       setCourse(courseData);
-
-      if (courseData.categoryId) {
-        fetchCategory(courseData.categoryId);
+console.log("courseData =>", courseData);
+console.log("category =>", courseData.category);
+// console.log("categoryId =>", courseData.categoryId);
+     if (courseData.category) {
+        fetchCategory(courseData.category);
+      } else {
+        setCategoryName("");
       }
       fetchRelatedCourses(courseData.id);
 
@@ -142,15 +137,41 @@ const fetchCategory = async (categoryId: string) => {
   };
 
   const fetchRelatedCourses = async (currentCourseId: string) => {
-    try {
-      const res = await api.get("/api/courses");
-      const courses = res.data || [];
-      const filtered = courses.filter((c: any) => c._id !== currentCourseId);
-      setRelatedCourses(filtered.slice(0, 3));
-    } catch (err) {
-      console.error("Related courses error:", err);
-    }
-  };
+  try {
+    const res = await api.get("/api/courses");
+    const courses = res.data || [];
+
+    const coursesWithCategory = await Promise.all(
+      courses.map(async (course: any) => {
+        try {
+          if (course.category) {
+            const catRes = await api.get(
+              `/api/course-category/${course.category}`
+            );
+
+            return {
+              ...course,
+              categoryName:
+                catRes.data?.data?.name || "",
+            };
+          }
+
+          return course;
+        } catch {
+          return course;
+        }
+      })
+    );
+
+    const filtered = coursesWithCategory.filter(
+      (c: any) => c.id !== currentCourseId
+    );
+
+    setRelatedCourses(filtered.slice(0, 3));
+  } catch (err) {
+    console.error("Related courses error:", err);
+  }
+};
 
   // Handlers
   const handleLessonSelect = useCallback((lesson: Lesson) => {
@@ -278,7 +299,19 @@ const fetchCategory = async (categoryId: string) => {
       currentLessonIndex,
       handleLessonSelect,
     ]);
+const fetchCategory = async (categoryId: string) => {
+  console.log("courseData", course);
+  try {
+    const res = await api.get(`/api/course-category/${categoryId}`);
 
+    if (res.data?.success) {
+      setCategoryName(res.data.data.name);
+    }
+    console.log("Category API:", res.data);
+  } catch (error) {
+    console.error(error);
+  }
+};
   // Loading State
   if (loading) {
     return (
@@ -340,6 +373,7 @@ const fetchCategory = async (categoryId: string) => {
           course={course}
           lecture={currentLecture}
           relatedCourses={relatedCourses}
+           categoryName={categoryName}
           onQuizCompleted={handleQuizCompleted}
 
           sections={sections}

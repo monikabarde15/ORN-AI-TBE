@@ -1,14 +1,17 @@
 interface CourseTagsProps {
   course: any;
+  categoryName: string;
 }
 
 const CourseTags = ({
   course,
+  categoryName,
 }: CourseTagsProps) => {
+  // console.log('course==',course);
   const tags = [
     {
       label: "Category",
-      value: course?.category,
+       value: categoryName || null,
       className:
         "bg-blue-50 text-blue-700 border-blue-100",
     },
