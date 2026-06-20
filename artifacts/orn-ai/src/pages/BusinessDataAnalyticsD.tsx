@@ -9,7 +9,7 @@ import HeroBanner from "./components/Banner";
 
 export const cyberLabs = [
   {
-    id: 1,
+    id: 601,
     subtitle: "Data Analytics Maven",
     name: "Data Analytics with Python, Tableau, Excel, and Power BI",
     image:
@@ -41,7 +41,7 @@ export const cyberLabs = [
   },
 
   {
-    id: 2,
+    id: 602,
     subtitle: "Data Analytics Masterclass",
     name: "Essential Tools for Data Science: SQL, SAS & Power BI",
     image:
@@ -68,93 +68,6 @@ export const cyberLabs = [
       "Module 5: Incident Response Playbooks"
     ]
   },
-
-  // {
-  //   id: 3,
-  //   subtitle: "CYBER DEFENDER",
-  //   name: "Information Security and Ethical Hacking Course",
-  //   image:
-  //     "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/66584925cdee6b58f49bed23_information%20security-p-500.png",
-  //   shortDesc:
-  //     "The Cyber Defender program is meticulously crafted to arm you with robust skills for protecting and securing digital environments. You will learn advanced ethical hacking techniques, network security, malware analysis, and more. Equip yourself to stay ahead of cyber threats and safeguard systems effectively.",
-
-  //   longDesc:
-  //     "Train in offensive & defensive security, ethical hacking labs, exploitation techniques, and malware analysis basics.",
-
-  //   features: [
-  //     "VAPT Practical Labs",
-  //     "Web App Hacking",
-  //     "Network Attack Simulations",
-  //     "Exploit Development Basics",
-  //     "Malware & Payload Analysis"
-  //   ],
-
-  //   syllabus: [
-  //     "Module 1: Basics of Cyber Security",
-  //     "Module 2: Footprinting & Scanning",
-  //     "Module 3: Network Attacks",
-  //     "Module 4: Web Application Hacking",
-  //     "Module 5: Exploitation & Priv Escalation"
-  //   ]
-  // },
-
-  // {
-  //   id: 4,
-  //   subtitle: "CYBER FORENSICS",
-  //   name: "Cyber Forensics",
-  //   image:
-  //     "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/66584939f4815c7515fe822d_Cyber%20forensic-p-500.png",
-  //   shortDesc:
-  //     "The Cyber Forensics program is intricately designed to provide you with extensive skills in digital investigation and security. Learn to conduct thorough digital forensic investigations, manage digital evidence, and apply advanced security techniques to protect and analyze digital information effectively.",
-
-  //   longDesc:
-  //     "Learn digital crime investigation, forensic imaging, evidence reconstruction, and incident investigation techniques.",
-
-  //   features: [
-  //     "Disk & Memory Forensics",
-  //     "Log Investigation Labs",
-  //     "Malware Behavioral Analysis",
-  //     "Evidence Imaging & Chain of Custody",
-  //     "Forensic Report Writing"
-  //   ],
-
-  //   syllabus: [
-  //     "Module 1: Introduction to Cyber Forensics",
-  //     "Module 2: Evidence Handling & Imaging",
-  //     "Module 3: File System Analysis",
-  //     "Module 4: Network Forensics",
-  //     "Module 5: Malware & Threat Analysis"
-  //   ]
-  // },
-
-  // {
-  //   id: 5,
-  //   subtitle: "BUG BOUNTY",
-  //   name: "Bug Bounty",
-  //   image:
-  //     "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/6658494cab129396f38d3925_BIG%20BUNTY-p-500.png",
-  //   shortDesc:
-  //     "The Bug Bounty program is designed to provide you with comprehensive skills in identifying, analyzing, and exploiting software vulnerabilities. Learn to use advanced tools and techniques to uncover and address security flaws, contributing to software integrity and resilience against attacks.",
-
-  //   longDesc:
-  //     "Learn end-to-end bug bounty hunting, reconnaissance, web vulnerabilities, exploitation & reporting.",
-
-  //   features: [
-  //     "Web Vulnerability Labs",
-  //     "BurpSuite Hands-on",
-  //     "Real Bug Bounty Techniques",
-  //     "Payload Crafting",
-  //     "Report Writing & Submission"
-  //   ],
-
-  //   syllabus: [
-  //     "Module 1: Recon & Enumeration",
-  //     "Module 2: OWASP Top 10 Deep Dive",
-  //     "Module 3: Exploitation Techniques",
-  //     "Module 4: Bug Reporting & POCs",
-  //     "Module 5: Live Bug Hunting Strategy"
-  //   ]
-  // }
 ];
 
 const BusinessDataAnalyticsD = () => {

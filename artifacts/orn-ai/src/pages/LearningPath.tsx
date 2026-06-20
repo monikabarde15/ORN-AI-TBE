@@ -200,65 +200,75 @@ const toggleCourse = (course: any) => {
     (subtotal + gst).toFixed(2)
   );
 
-  const generatePaymentLink =
-  async () => {
-    try {
-      if (!learningPathId) {
-        toast.error(
-          "Create Learning Path First"
-        );
-        return;
-      }
+const generatePaymentLink = async () => {
+  try {
+    if (!learningPathId) {
+      toast.error("Create Learning Path First");
+      return;
+    }
 
-      const res =
-        await api.post(
-          "/api/payment/generate-link",
-          {
-            learningPathId,
-            courseIds:
-              selectedCourses.map(
-              (c: any) =>
-                c.id || c._id
-            ),
-            amount: total,
-          }
-        );
+    // Free Learning Path
+    if (total <= 0) {
+      const directUrl = `${window.location.origin}/register`;
 
-      // Frontend Payment Page URL
-      const paymentPageUrl =
-        `${window.location.origin}/payment/${res.data.paymentId}`;
+      setPaymentLink(directUrl);
 
-      setPaymentLink(
-        paymentPageUrl
-      );
-
-      // Save URL in Learning Path
-     await api.put(
+      await api.put(
         `/api/learning-paths/${learningPathId}`,
         {
-          paymentLink:
-            paymentPageUrl,
-
-          courseIds:
-            selectedCourses.map(
-              (c: any) =>
-                c.id || c._id
-            ),
+          paymentLink: directUrl,
+          courseIds: selectedCourses.map(
+            (c: any) => c.id || c._id
+          ),
         }
       );
 
-      toast.success(
-        "Payment Link Generated"
-      );
-
-    } catch (error) {
-      console.error(error);
-
-      toast.error(
-        "Failed to generate payment link"
-      );
+      toast.success("Direct Link Generated");
+      return;
     }
-  };
+
+    // Paid Learning Path
+    const res = await api.post(
+      "/api/payment/generate-link",
+      {
+        learningPathId,
+        courseIds: selectedCourses.map(
+          (c: any) => c.id || c._id
+        ),
+        amount: total,
+        callback_url:
+          `${window.location.origin}/payment-success`,
+      }
+    );
+
+    const paymentPageUrl =
+      `${window.location.origin}/payment/${res.data.paymentId}`;
+
+    setPaymentLink(paymentPageUrl);
+
+    await api.put(
+      `/api/learning-paths/${learningPathId}`,
+      {
+        paymentLink: paymentPageUrl,
+        courseIds: selectedCourses.map(
+          (c: any) => c.id || c._id
+        ),
+      }
+    );
+
+    toast.success("Payment Link Generated");
+  } catch (error: any) {
+    console.error(
+      "GENERATE PAYMENT LINK ERROR =>",
+      error?.response?.data || error
+    );
+
+    toast.error(
+      error?.response?.data?.error ||
+      "Failed to generate payment link"
+    );
+  }
+};
   const createLearningPath = async () => {
     try {
       if (!title) {

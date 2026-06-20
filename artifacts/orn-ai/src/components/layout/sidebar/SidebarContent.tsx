@@ -133,7 +133,16 @@ export default function SidebarContent({
           <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             LMS & Learning Ecosystem
           </div>
-
+          <Link
+            href="/recruiter/categories"
+            onClick={onNavigate}
+            className={linkClass(
+              location === "/recruiter/categories"
+            )}
+          >
+            <UserPlus className="size-4" />
+            Course Categories
+          </Link>
           <Link
             href="/recruiter/courses"
             onClick={onNavigate}
@@ -158,14 +167,7 @@ export default function SidebarContent({
             Learning Paths
           </Link>
 
-          <Link
-            href="#"
-            onClick={onNavigate}
-            className="flex items-center gap-3 px-3 py-2 text-sm rounded-md text-muted-foreground hover:bg-muted"
-          >
-            <UserPlus className="size-4" />
-            Course Categories
-          </Link>
+          
 
           <Link
             href="/recruiter/live-session"

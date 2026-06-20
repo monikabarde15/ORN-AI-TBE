@@ -4,10 +4,12 @@ import RelatedCourses from "./RelatedCourses";
 interface AboutTabProps {
   course: any;
   relatedCourses: any[];
+  categoryName: string;
 }
 
 const AboutTab = ({
   course,
+  categoryName,
 }: AboutTabProps) => {
   return (
     <div className="space-y-6">
@@ -95,7 +97,10 @@ const AboutTab = ({
       </div>
 
       {/* Tags */}
-      <CourseTags course={course} />
+      <CourseTags
+        course={course}
+        categoryName={categoryName}
+      />
 
       {/* Instructor */}
       {course?.instructor && (

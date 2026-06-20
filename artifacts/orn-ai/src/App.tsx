@@ -21,6 +21,8 @@ import VideoPlayer from "@/pages/VideoPlayer";
 import CoursePlayer from "./pages/CoursePlayer/CoursePlayer";
 import LabDetail from "./pages/LabDetail";
 import CourseManagementPage from "@/pages/CoursesListPage";
+import CourseCategoryManagement from "@/pages/CourseCategoryManagement";
+
 import MyFeed from "@/pages/MyFeed";
 
 
@@ -183,6 +185,11 @@ function Router() {
        <Route path="/recruiter/courses">
         <ProtectedRoute roles={["recruiter", "admin"]}>
           <CourseManagementPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/recruiter/categories">
+        <ProtectedRoute roles={["recruiter", "admin"]}>
+          <CourseCategoryManagement />
         </ProtectedRoute>
       </Route>
       <Route path="/recruiter">

@@ -1,10 +1,10 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useRoute } from "wouter";
 
 import HeroBanner from "./components/Banner";
 import { Shell } from "@/components/layout/Shell";
 
-export const cyberLabs = [
+export const cyberLabsnew = [
   {
     id: 1,
     slug: "certified-network-defender",
@@ -3984,20 +3984,229 @@ syllabusText:"",
       { title: "ORN-AI Enterprise Customized solutions for team training.", highlight: false }
     ]
   },
+    {
+    id: 601,
+    slug: "data-analytics-maven",
+    title: "Data Analytics with Python, Tableau, Excel, and Power BI",
+    subtitle: "Become a complete Data Analytics professional with industry-leading tools.",
+    bannerImage:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/6658498f240c87ba2ff9c35e_Data%20Analytics%20Maven%20course%20wireframe-p-500.png",
+
+    overview: `The Data Analytics Maven program is structured to provide you with an exhaustive understanding of data analysis using market-leading tools like Python, Tableau, Excel, SQL, and Power BI. Covering fundamental programming, advanced data manipulation, and sophisticated visualization, this course equips you with the essential tools to analyze and interpret complex datasets effectively.`,
+
+    targetAudience: [
+      "Courses Included in This Skill Quest",
+      "Note: Detailed syllabus available post-enrollment."
+    ],
+
+    targetAudienceTex:
+      "Ideal for Data Analysts, Business Analysts, Aspiring Data Scientists, MIS Executives, and professionals seeking expertise in modern analytics tools.",
+
+    stats: [
+      { icon: "💡", label: "Expert Sessions", value: "60" },
+      { icon: "📝", label: "Quizzes & Assessments", value: "75" },
+      { icon: "🌐", label: "Language", value: "English" },
+      { icon: "⏱️", label: "Premium Content", value: "40 Hours" },
+      { icon: "💬", label: "Subtitles", value: "English" },
+      { icon: "🏆", label: "Certificate Included", value: "Yes" }
+    ],
+
+    learningOutcomes: [
+      "Master Python for data analysis and automation.",
+      "Learn SQL for data extraction and manipulation.",
+      "Build professional dashboards using Tableau and Power BI.",
+      "Analyze large datasets using Excel and advanced analytics techniques.",
+      "Develop business intelligence and reporting skills."
+    ],
+
+    skilsText: "This Skill Quest sharpens your expertise in:",
+    careerText: "Equips you for roles such as:",
+
+    skills: [
+      "Python Programming",
+      "Data Analytics",
+      "SQL",
+      "Excel Analytics",
+      "Power BI",
+      "Tableau",
+      "Business Intelligence"
+    ],
+
+    careerRoles: [
+      "Data Analyst",
+      "Business Analyst",
+      "BI Developer",
+      "Reporting Analyst",
+      "Data Visualization Specialist"
+    ],
+
+    requirements: [
+      "Basic computer knowledge.",
+      "Interest in data and analytics.",
+      "No prior analytics experience required."
+    ],
+
+    infoCards: [
+      {
+        icon: "📊",
+        title: "Skill Quest Certification Benefits",
+        text: "Earn a recognized certificate validating your expertise in Data Analytics and Business Intelligence tools."
+      },
+      {
+        icon: "👨‍🏫",
+        title: "Instructors",
+        text: "Learn from experienced analytics professionals with industry expertise."
+      },
+      {
+        icon: "📈",
+        title: "Accelerate Your Career",
+        text: "Gain job-ready analytics skills demanded across industries."
+      }
+    ],
+
+    certificateImage:
+      "https://cdn.prod.website-files.com/66446d71a3755a2d4e53fe14/666fbffc03a209c0ded9bc07_Cyber%20Security%20Certificate-p-1080.png",
+
+    syllabusText: "",
+
+    syllabus: [
+      "Python for Data Analytics",
+      "Advanced Excel",
+      "SQL Fundamentals & Advanced Queries",
+      "Data Cleaning & Transformation",
+      "Power BI Dashboard Development",
+      "Tableau Data Visualization",
+      "Business Intelligence Projects"
+    ],
+
+    vedio: "",
+
+    pricing: [
+      { title: "Access Only This Skill Quest", highlight: false },
+      { title: "Skill Quest + ORN-AI Career LaunchPad", highlight: true },
+      { title: "ORN-AI Enterprise", highlight: false }
+    ]
+  },
+
+  {
+    id: 602,
+    slug: "data-analytics-masterclass",
+    title: "Essential Tools for Data Science: SQL, SAS & Power BI",
+    subtitle: "Build strong foundations in Data Science and Analytics tools.",
+    bannerImage:
+      "https://cdn.prod.website-files.com/664b240b7fabdc2000ff433a/667aaa6c2d88bca1ffccf7dc_Data%20Analytics-p-500.png",
+
+    overview: `The Data Analytics Masterclass is designed to equip you with the critical skills needed in SQL, SAS, and Power BI. This comprehensive course provides hands-on exposure to data science concepts, database management, statistical analysis, and business intelligence reporting.`,
+
+    targetAudience: [
+      "Courses Included in This Skill Quest",
+      "Note: Detailed syllabus available post-enrollment."
+    ],
+
+    targetAudienceTex:
+      "Ideal for aspiring Data Scientists, Data Analysts, BI Developers, MIS Professionals, and anyone looking to enter the analytics domain.",
+
+    stats: [
+      { icon: "💡", label: "Expert Sessions", value: "50" },
+      { icon: "📝", label: "Quizzes & Assessments", value: "60" },
+      { icon: "🌐", label: "Language", value: "English" },
+      { icon: "⏱️", label: "Premium Content", value: "35 Hours" },
+      { icon: "💬", label: "Subtitles", value: "English" },
+      { icon: "🏆", label: "Certificate Included", value: "Yes" }
+    ],
+
+    learningOutcomes: [
+      "Understand SQL database concepts and query writing.",
+      "Perform statistical analysis using SAS.",
+      "Create professional dashboards in Power BI.",
+      "Manage and transform business data effectively.",
+      "Develop practical business intelligence solutions."
+    ],
+
+    skilsText: "This Skill Quest sharpens your expertise in:",
+    careerText: "Equips you for roles such as:",
+
+    skills: [
+      "SQL",
+      "SAS Programming",
+      "Power BI",
+      "Data Management",
+      "Business Intelligence",
+      "Data Visualization"
+    ],
+
+    careerRoles: [
+      "Data Analyst",
+      "Business Intelligence Analyst",
+      "MIS Executive",
+      "Power BI Developer",
+      "Junior Data Scientist"
+    ],
+
+    requirements: [
+      "Basic computer knowledge.",
+      "Interest in analytics and reporting.",
+      "No prior experience required."
+    ],
+
+    infoCards: [
+      {
+        icon: "📊",
+        title: "Skill Quest Certification Benefits",
+        text: "Validate your data analytics and reporting skills with an industry-recognized certificate."
+      },
+      {
+        icon: "👨‍🏫",
+        title: "Instructors",
+        text: "Learn from professionals working in Data Analytics and Business Intelligence."
+      },
+      {
+        icon: "📈",
+        title: "Accelerate Your Career",
+        text: "Develop practical skills that help you secure analytics and BI roles."
+      }
+    ],
+
+    certificateImage:
+      "https://cdn.prod.website-files.com/66446d71a3755a2d4e53fe14/666fbffc03a209c0ded9bc07_Cyber%20Security%20Certificate-p-1080.png",
+
+    syllabusText: "",
+
+    syllabus: [
+      "SQL Fundamentals",
+      "Advanced SQL Queries",
+      "Introduction to SAS",
+      "Statistical Analysis with SAS",
+      "Power BI Fundamentals",
+      "Power BI Dashboards & Reports",
+      "Real-world Analytics Projects"
+    ],
+
+    vedio: "",
+
+    pricing: [
+      { title: "Access Only This Skill Quest", highlight: false },
+      { title: "Skill Quest + ORN-AI Career LaunchPad", highlight: true },
+      { title: "ORN-AI Enterprise", highlight: false }
+    ]
+  },
 ];
 
 const SkillQuestPage = () => {
-  const { id } = useParams();
-console.log("URL Param:", id);
+  const [, params] = useRoute("/lab/:id");
+
+const id = params?.id;
+
+console.log("ID =", id);
 console.log("URL ID =", id);
 
-const lab = cyberLabs.find(
+const lab = cyberLabsnew.find(
   item => item.id === Number(id)
 );
 
 console.log("LAB =", lab);
 console.log(window.location.pathname);
-  const data = cyberLabs.find((item) => item.id === Number(id)) || cyberLabs[0];
+  const data = cyberLabsnew.find((item) => item.id === Number(id)) || cyberLabsnew[0];
 console.log('bannerImage=',data);
   return (
      <Shell>

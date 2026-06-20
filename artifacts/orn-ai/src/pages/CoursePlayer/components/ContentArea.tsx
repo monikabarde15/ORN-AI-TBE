@@ -10,6 +10,8 @@ interface ContentAreaProps {
   course: any;
   lecture: any;
   relatedCourses: any[];
+  categoryName: string;
+
   onQuizCompleted: () => void;
 
   sections: any[];
@@ -30,7 +32,7 @@ const ContentArea = ({
   lecture,
   relatedCourses,
   onQuizCompleted,
-
+  categoryName,
   sections,
   currentLecture,
 
@@ -51,6 +53,7 @@ const ContentArea = ({
           <AboutTab
             course={course}
             relatedCourses={relatedCourses}
+             categoryName={categoryName}
           />
         );
 

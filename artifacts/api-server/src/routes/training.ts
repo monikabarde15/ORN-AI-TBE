@@ -16,6 +16,9 @@ import {
   trainingAssignmentsTable,
   activityTable,
   mcqTable,
+  paymentLinksTable,
+  learningPathsTable,
+  liveSessionsTable,
   type CandidateRow,
 } from "@workspace/db";
 import {
@@ -1860,6 +1863,214 @@ router.delete(
 
       res.status(500).json({
         success: false,
+      });
+    }
+  }
+);
+
+router.get(
+  "/student/my-learning",
+  requireAuth,
+  async (req, res) => {
+    try {
+      const user = req.user;
+
+      // =========================
+      // PAID PAYMENTS
+      // =========================
+
+      const payments = await db
+        .select()
+        .from(paymentLinksTable)
+        .where(
+          eq(
+            paymentLinksTable.studentEmail,
+            user.email
+          )
+        );
+
+      const paidPayments =
+        payments.filter(
+          (p) => p.status === "paid"
+        );
+
+      const purchasedCourseIds = [
+        ...new Set(
+          paidPayments.flatMap(
+            (p) => p.courseIds || []
+          )
+        ),
+      ];
+
+      // =========================
+      // COURSES
+      // =========================
+
+      const allCourses = await db
+        .select()
+        .from(coursesTable);
+
+      const courses =
+        allCourses.filter((course) =>
+          purchasedCourseIds.includes(
+            course.id
+          )
+        );
+
+      // =========================
+      // LEARNING PATHS
+      // =========================
+
+      const learningPaths =
+        await db
+          .select()
+          .from(
+            learningPathsTable
+          );
+
+      const userLearningPaths =
+        learningPaths.filter((lp) =>
+          lp.courseIds?.some(
+            (id) =>
+              purchasedCourseIds.includes(
+                id
+              )
+          )
+        );
+
+      // =========================
+      // LIVE SESSIONS
+      // =========================
+
+      const sessions =
+        await db
+          .select()
+          .from(
+            liveSessionsTable
+          )
+          .where(
+            eq(
+              liveSessionsTable.studentEmail,
+              user.email
+            )
+          );
+
+      // =========================
+      // FINAL RESPONSE
+      // =========================
+
+      const data = await Promise.all(
+          userLearningPaths.map(
+            async (lp) => {
+
+              const lpCourses = await Promise.all(
+                courses
+                  .filter((course) =>
+                    lp.courseIds?.includes(course.id)
+                  )
+                  .map(async (course) => {
+
+                    const sections = await db
+                      .select()
+                      .from(sectionsTable)
+                      .where(
+                        eq(
+                          sectionsTable.courseId,
+                          course.id
+                        )
+                      );
+
+                    const sectionIds = sections.map(
+                      (s) => s.id
+                    );
+
+                    let lessons: any[] = [];
+
+                    if (sectionIds.length > 0) {
+                      lessons = await db
+                        .select()
+                        .from(subSectionsTable)
+                        .where(
+                          inArray(
+                            subSectionsTable.sectionId,
+                            sectionIds
+                          )
+                        );
+                    }
+
+                    const quizzes = await db
+                      .select()
+                      .from(mcqTable)
+                      .where(
+                        eq(
+                          mcqTable.courseId,
+                          course.id
+                        )
+                      );
+
+                    return {
+                      ...course,
+                      lessonCount: lessons.length,
+                      quizCount: quizzes.length,
+                      videoCount: lessons.filter(
+                        (lesson) => lesson.videoUrl
+                      ).length,
+                    };
+                  })
+              );
+
+              const lpSessions = sessions.filter(
+                (session) =>
+                  lp.courseIds?.includes(
+                    session.courseId
+                  )
+              );
+
+              return {
+                learningPath: {
+                  id: lp.id,
+                  title: lp.title,
+                  description: lp.description,
+                  thumbnail: lp.thumbnail,
+                  introVideo: lp.introVideo,
+                  paymentLink: lp.paymentLink,
+                },
+
+                courses: lpCourses,
+                sessions: lpSessions,
+
+                payments: paidPayments.filter(
+                  (payment) =>
+                    payment.courseIds?.some(
+                      (id) =>
+                        lp.courseIds?.includes(id)
+                    )
+                ),
+              };
+            }
+          )
+        );
+
+      return res.json({
+        success: true,
+        student: {
+          name:
+            paidPayments[0]
+              ?.studentName,
+          email:
+            user.email,
+        },
+        data,
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Failed to load student data",
       });
     }
   }

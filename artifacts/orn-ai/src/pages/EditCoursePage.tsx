@@ -1426,76 +1426,39 @@ useEffect(() => {
   }
 };
 
+const fetchCategories = async () => {
+  try {
+    const res = await api.get(
+      "/api/course-category/list"
+    );
 
-  // const fetchCategories =
-  //   async () => {
-  //     try {
-  //       const res = await api.get(
-  //         "/api/v1/category/showAllCategories"
-  //       )
+    console.log(
+      "Category API Response",
+      res.data
+    );
 
-  //       console.log(
-  //         "Categories:",
-  //         res.data
-  //       )
+    const categoryList =
+      res.data?.data || [];
 
-  //       setCategories(
-  //         res.data?.data || []
-  //       )
-  //     } catch (error) {
-  //       console.log(
-  //         "Category Error",
-  //         error
-  //       )
-  //     }
-  //   }
-  const fetchCategories = async () => {
-  const dummyCategories = [
-    {
-      _id: "1",
-      name: "Web Development",
-    },
-    {
-      _id: "2",
-      name: "Data Science",
-    },
-    {
-      _id: "3",
-      name: "Artificial Intelligence",
-    },
-    {
-      _id: "4",
-      name: "UI/UX Design",
-    },
-    {
-      _id: "5",
-      name: "Digital Marketing",
-    },
-    {
-      _id: "6",
-      name: "Mobile Development",
-    },
-    {
-      _id: "7",
-      name: "Cyber Security",
-    },
-    {
-      _id: "8",
-      name: "Cloud Computing",
-    },
-  ];
+    setCategories(
+      categoryList.map((item: any) => ({
+        _id: item.id,
+        name: item.name,
+      }))
+    );
+  } catch (error) {
+    console.log(error);
 
-  setCategories(dummyCategories);
+    toast.error(
+      "Failed to load categories"
+    );
+  }
 };
+
 useEffect(() => {
-  setCategories([
-    { _id: "1", name: "Web Development" },
-    { _id: "2", name: "Data Science" },
-    { _id: "3", name: "Artificial Intelligence" },
-    { _id: "4", name: "UI/UX Design" },
-    { _id: "5", name: "Digital Marketing" },
-  ]);
+  fetchCategories();
 }, []);
+
   /* =======================================================
      ADD MODULE
   ======================================================= */
@@ -2655,6 +2618,7 @@ const handleAddQuiz = async (
 
           
           {/* Add Module Button at Bottom */}
+          {!editingModuleId && (
           <div className="add-module-bottom">
             <div className="add-module-section" style={{ marginBottom: '0' }}>
               <input
@@ -2677,6 +2641,7 @@ const handleAddQuiz = async (
               </button>
             </div>
           </div>
+          )}
 {/* Modules List */}
           {modules.length === 0 ? (
             <div className="empty-modules">
@@ -2687,7 +2652,45 @@ const handleAddQuiz = async (
             </div>
           ) : (
             modules.map((module, moduleIndex) => (
-              <div key={module.id} className="module-card">
+              
+               <React.Fragment key={module.id}>
+                {editingModuleId === module.id && (
+                  <div className="add-module-bottom">
+                    <div
+                      className="add-module-section"
+                      style={{ marginBottom: "0" }}
+                    >
+                      <input
+                        type="text"
+                        className="add-module-input"
+                        value={moduleTitle}
+                        onChange={(e) =>
+                          setModuleTitle(e.target.value)
+                        }
+                      />
+
+                      <button
+                        type="button"
+                        className="add-module-btn"
+                        onClick={handleSaveModule}
+                      >
+                        Update Module
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-draft"
+                        onClick={() => {
+                          setEditingModuleId(null);
+                          setModuleTitle("");
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              <div className="module-card">                
                 {/* Collapsible Header */}
                 <div
                   className="module-header"
@@ -3391,6 +3394,7 @@ const handleAddQuiz = async (
                   
                 </div>
               </div>
+               </React.Fragment>
             ))
           )}
 

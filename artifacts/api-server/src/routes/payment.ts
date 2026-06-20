@@ -19,34 +19,67 @@ router.post(
   requireRole("recruiter", "admin"),
   async (req, res): Promise<void> => {
     try {
-      const { courseIds, amount } = req.body;
+      const {
+        courseIds,
+        amount,
+        callback_url,
+      } = req.body;
 
-      if (!Array.isArray(courseIds) || courseIds.length === 0) {
-        res.status(400).json({ error: "courseIds required" });
+      if (
+        !Array.isArray(courseIds) ||
+        courseIds.length === 0
+      ) {
+        res.status(400).json({
+          error: "courseIds required",
+        });
         return;
       }
 
-      if (!amount || amount <= 0) {
-        res.status(400).json({ error: "amount required" });
+      if (!amount || Number(amount) <= 0) {
+        res.status(400).json({
+          error: "amount required",
+        });
         return;
       }
 
       const paymentId = crypto.randomUUID();
 
-    const link = await razorpay.paymentLink.create({
-        amount: Math.round(amount * 100),
-        currency: "INR",
+      const frontendUrl =
+        process.env.FRONTEND_URL?.replace(/\/$/, "") ||
+        "http://localhost:5173";
 
-        callback_url:
-          `${process.env.FRONTEND_URL}payment-success/${paymentId}`,
+      const callbackUrl =
+        callback_url ||
+        `${frontendUrl}/payment-success/${paymentId}`;
 
-        callback_method: "get",
+      console.log(
+        "FRONTEND_URL =>",
+        frontendUrl
+      );
 
-        notes: {
-          paymentId,
-          courseIds: courseIds.join(","),
-        },
-      });
+      console.log(
+        "CALLBACK_URL =>",
+        callbackUrl
+      );
+
+      const link =
+        await razorpay.paymentLink.create({
+          amount: Math.round(
+            Number(amount) * 100
+          ),
+
+          currency: "INR",
+
+          callback_url: callbackUrl,
+
+          callback_method: "get",
+
+          notes: {
+            paymentId,
+            courseIds:
+              courseIds.join(","),
+          },
+        });
 
       const [row] = await db
         .insert(paymentLinksTable)
@@ -54,33 +87,52 @@ router.post(
           paymentId,
           courseIds,
           amount: amount.toString(),
-          paymentLink: link.short_url,
+          paymentLink:
+            link.short_url,
           status: "pending",
           expiresAt: new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000
+            Date.now() +
+              7 *
+                24 *
+                60 *
+                60 *
+                1000
           ),
         })
         .returning();
 
       res.status(201).json({
         success: true,
-        paymentId: row.paymentId,
-        paymentLink: row.paymentLink,
+        paymentId:
+          row.paymentId,
+        paymentLink:
+          row.paymentLink,
       });
     } catch (error: any) {
-      console.error(error);
+      console.error(
+        "RAZORPAY ERROR =>",
+        error
+      );
+
+      console.error(
+        "RAZORPAY ERROR JSON =>",
+        JSON.stringify(
+          error,
+          null,
+          2
+        )
+      );
 
       res.status(500).json({
         error:
-          error?.error?.description ||
+          error?.error
+            ?.description ||
           error?.message ||
           "Failed to generate payment link",
       });
     }
   }
 );
-
-
 /* =========================================
 CREATE ORDER
 ========================================= */
