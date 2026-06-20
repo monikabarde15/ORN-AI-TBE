@@ -1,3 +1,4 @@
+// artifacts\orn-ai\src\pages\learning-path\CourseCard.tsx
 import {
   CheckCircle2,
   Plus,

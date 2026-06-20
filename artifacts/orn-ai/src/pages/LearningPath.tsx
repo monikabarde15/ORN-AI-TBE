@@ -1,3 +1,4 @@
+// artifacts\orn-ai\src\pages\LearningPath.tsx
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import api from "../../services/api";
@@ -40,21 +41,14 @@ const [videoName, setVideoName] =
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
 const [learningPathId, setLearningPathId] =
   useState("");
-  const [editingId, setEditingId] =
-  useState<string | null>(null);
+  const [editingId, setEditingId] =useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-
-  const [thumbnail, setThumbnail] =
-    useState<File | null>(null);
-
-  const [introVideo, setIntroVideo] =
-    useState<File | null>(null);
-
-  const [paymentLink, setPaymentLink] =
-    useState("");
+  const [thumbnail, setThumbnail] =useState<File | null>(null);
+  const [introVideo, setIntroVideo] =useState<File | null>(null);
+  const [paymentLink, setPaymentLink] =useState("");
 
   useEffect(() => {
     loadCourses();

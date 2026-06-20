@@ -1,3 +1,4 @@
+// artifacts\orn-ai\src\pages\learning-path\CourseGrid.tsx
 import CourseCard from "./CourseCard";
 
 interface Props {

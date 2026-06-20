@@ -38,14 +38,14 @@ interface Session {
 export default function LiveSessionsDashboard() {
   const [loading, setLoading] =
     useState(true);
-const [currentPage, setCurrentPage] =
-  useState(1);
-const [viewModal, setViewModal] =
-  useState(false);
+  const [currentPage, setCurrentPage] =
+    useState(1);
+  const [viewModal, setViewModal] =
+    useState(false);
 
-const [selectedSession, setSelectedSession] =
-  useState<Session | null>(null);
-const itemsPerPage = 8;
+  const [selectedSession, setSelectedSession] =
+    useState<Session | null>(null);
+  const itemsPerPage = 8;
   const [sessions, setSessions] =
     useState<Session[]>([]);
 
@@ -128,18 +128,18 @@ const itemsPerPage = 8;
             )
       );
     }, [sessions, search]);
-const totalPages = Math.ceil(
-  filteredSessions.length /
+  const totalPages = Math.ceil(
+    filteredSessions.length /
     itemsPerPage
-);
-
-const paginatedSessions =
-  filteredSessions.slice(
-    (currentPage - 1) *
-      itemsPerPage,
-    currentPage *
-      itemsPerPage
   );
+
+  const paginatedSessions =
+    filteredSessions.slice(
+      (currentPage - 1) *
+      itemsPerPage,
+      currentPage *
+      itemsPerPage
+    );
   const upcomingSessions =
     sessions.filter(
       (s) =>
@@ -311,28 +311,28 @@ const paginatedSessions =
                     />
 
                     <div className="p-3">
-<div className="mb-3">
+                      <div className="mb-3">
 
-  <h2 className="truncate text-sm font-semibold">
-    {
-      session.learningPath
-        ?.title
-    }
-  </h2>
+                        <h2 className="truncate text-sm font-semibold">
+                          {
+                            session.learningPath
+                              ?.title
+                          }
+                        </h2>
 
-  <p className="
+                        <p className="
     mt-1
     line-clamp-2
     text-xs
     text-slate-500
   ">
-    {
-      session.learningPath
-        ?.description
-    }
-  </p>
+                          {
+                            session.learningPath
+                              ?.description
+                          }
+                        </p>
 
-</div>
+                      </div>
                       {/* Learning Path */}
                       <div className="rounded-xl bg-slate-50 p-3">
 
@@ -368,7 +368,7 @@ const paginatedSessions =
 
                       </div>
 
-                     
+
                       {/* Buttons */}
                       <div className="mt-3 flex gap-2">
 
@@ -441,206 +441,205 @@ const paginatedSessions =
           )}
           <div className="mt-6 flex justify-center gap-2">
 
-              <button
-                disabled={currentPage === 1}
-                onClick={() =>
-                  setCurrentPage(
-                    (p) => p - 1
-                  )
-                }
-                className="
+            <button
+              disabled={currentPage === 1}
+              onClick={() =>
+                setCurrentPage(
+                  (p) => p - 1
+                )
+              }
+              className="
                   rounded-lg
                   border
                   px-3
                   py-2
                   text-sm
                 "
-              >
-                Prev
-              </button>
+            >
+              Prev
+            </button>
 
-              {Array.from(
-                { length: totalPages },
-                (_, i) => (
-                  <button
-                    key={i}
-                    onClick={() =>
-                      setCurrentPage(i + 1)
-                    }
-                    className={`
+            {Array.from(
+              { length: totalPages },
+              (_, i) => (
+                <button
+                  key={i}
+                  onClick={() =>
+                    setCurrentPage(i + 1)
+                  }
+                  className={`
                       h-8
                       w-8
                       rounded-lg
                       text-sm
-                      ${
-                        currentPage === i + 1
-                          ? "bg-blue-600 text-white"
-                          : "border"
-                      }
+                      ${currentPage === i + 1
+                      ? "bg-blue-600 text-white"
+                      : "border"
+                    }
                     `}
-                  >
-                    {i + 1}
-                  </button>
-                )
-              )}
+                >
+                  {i + 1}
+                </button>
+              )
+            )}
 
-              <button
-                disabled={
-                  currentPage === totalPages
-                }
-                onClick={() =>
-                  setCurrentPage(
-                    (p) => p + 1
-                  )
-                }
-                className="
+            <button
+              disabled={
+                currentPage === totalPages
+              }
+              onClick={() =>
+                setCurrentPage(
+                  (p) => p + 1
+                )
+              }
+              className="
                   rounded-lg
                   border
                   px-3
                   py-2
                   text-sm
                 "
-              >
-                Next
-              </button>
+            >
+              Next
+            </button>
 
-            </div>
-{viewModal &&
- selectedSession && (
-  
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          </div>
+          {viewModal &&
+            selectedSession && (
 
-    <div className="w-full max-w-2xl rounded-3xl bg-white p-6">
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
 
-      <div className="mb-5 flex items-center justify-between">
+                <div className="w-full max-w-2xl rounded-3xl bg-white p-6">
 
-        <h2 className="text-xl font-bold">
-          Session Details
-        </h2>
+                  <div className="mb-5 flex items-center justify-between">
 
-        <button
-          onClick={() =>
-            setViewModal(false)
-          }
-          className="text-xl"
-        >
-          ✕
-        </button>
+                    <h2 className="text-xl font-bold">
+                      Session Details
+                    </h2>
 
-      </div>
+                    <button
+                      onClick={() =>
+                        setViewModal(false)
+                      }
+                      className="text-xl"
+                    >
+                      ✕
+                    </button>
 
-      <img
-        src={
-          selectedSession
-            .learningPath?.image ||
-          "https://placehold.co/600x300"
-        }
-        className="
+                  </div>
+
+                  <img
+                    src={
+                      selectedSession
+                        .learningPath?.image ||
+                      "https://placehold.co/600x300"
+                    }
+                    className="
           h-48
           w-full
           rounded-2xl
           object-cover
         "
-      />
+                  />
 
-      <h3 className="mt-4 text-xl font-bold">
-        {
-          selectedSession
-            .learningPath?.title
-        }
-      </h3>
+                  <h3 className="mt-4 text-xl font-bold">
+                    {
+                      selectedSession
+                        .learningPath?.title
+                    }
+                  </h3>
 
-      <p className="mt-2 text-sm text-slate-500">
-        {
-          selectedSession
-            .learningPath
-            ?.description
-        }
-      </p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    {
+                      selectedSession
+                        .learningPath
+                        ?.description
+                    }
+                  </p>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  <div className="mt-6 grid gap-4 md:grid-cols-2">
 
-        <div className="rounded-xl bg-slate-50 p-4">
+                    <div className="rounded-xl bg-slate-50 p-4">
 
-          <h4 className="font-semibold">
-            Session Info
-          </h4>
+                      <h4 className="font-semibold">
+                        Session Info
+                      </h4>
 
-          <p className="mt-2">
-            <b>Title:</b>{" "}
-            {
-              selectedSession.sessionTitle
-            }
-          </p>
+                      <p className="mt-2">
+                        <b>Title:</b>{" "}
+                        {
+                          selectedSession.sessionTitle
+                        }
+                      </p>
 
-          <p>
-            <b>Trainer:</b>{" "}
-            {
-              selectedSession.trainerName
-            }
-          </p>
+                      <p>
+                        <b>Trainer:</b>{" "}
+                        {
+                          selectedSession.trainerName
+                        }
+                      </p>
 
-          <p>
-            <b>Date:</b>{" "}
-            {
-              selectedSession.sessionDate
-            }
-          </p>
+                      <p>
+                        <b>Date:</b>{" "}
+                        {
+                          selectedSession.sessionDate
+                        }
+                      </p>
 
-          <p>
-            <b>Time:</b>{" "}
-            {
-              selectedSession.startTime
-            }
-            {" - "}
-            {
-              selectedSession.endTime
-            }
-          </p>
+                      <p>
+                        <b>Time:</b>{" "}
+                        {
+                          selectedSession.startTime
+                        }
+                        {" - "}
+                        {
+                          selectedSession.endTime
+                        }
+                      </p>
 
-          <p className="mt-2">
-            {
-              selectedSession.description
-            }
-          </p>
+                      <p className="mt-2">
+                        {
+                          selectedSession.description
+                        }
+                      </p>
 
-        </div>
+                    </div>
 
-        <div className="rounded-xl bg-slate-50 p-4">
+                    <div className="rounded-xl bg-slate-50 p-4">
 
-          <h4 className="font-semibold">
-            Student Details
-          </h4>
+                      <h4 className="font-semibold">
+                        Student Details
+                      </h4>
 
-          <p className="mt-2">
-            {
-              selectedSession.studentName ||
-              "-"
-            }
-          </p>
+                      <p className="mt-2">
+                        {
+                          selectedSession.studentName ||
+                          "-"
+                        }
+                      </p>
 
-          <p>
-            {
-              selectedSession.studentEmail ||
-              "-"
-            }
-          </p>
+                      <p>
+                        {
+                          selectedSession.studentEmail ||
+                          "-"
+                        }
+                      </p>
 
-          <p>
-            {
-              selectedSession.studentPhone ||
-              "-"
-            }
-          </p>
+                      <p>
+                        {
+                          selectedSession.studentPhone ||
+                          "-"
+                        }
+                      </p>
 
-        </div>
+                    </div>
 
-      </div>
+                  </div>
 
-    </div>
+                </div>
 
-  </div>
-)}
+              </div>
+            )}
         </div>
 
       </div>

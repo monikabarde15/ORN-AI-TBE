@@ -54,6 +54,9 @@ import BlogDetail from "@/pages/BlogDetail";
 
 
 import { Loader2 } from "lucide-react";
+import LearningPathManage from "./pages/LearningPathManage";
+import LearningPathCourses from "./pages/LearningPathCourses";
+import LearningPathSessions from "./pages/LearningPathSessions";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -128,6 +131,13 @@ function Router() {
           <LearningPathList  />
         </ProtectedRoute>
       </Route>
+      <Route path="/recruiter/learning-path-manage/:id">
+        <ProtectedRoute roles={["recruiter", "admin"]}>
+          <LearningPathManage />
+        </ProtectedRoute>
+      </Route>
+      
+
        <Route path="/recruiter/live-session">
         {/* <ProtectedRoute roles={["candidate"]}> */}
           <LiveSessionCourses  />
