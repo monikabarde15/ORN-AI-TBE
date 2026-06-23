@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Shell } from "@/components/layout/Shell";
 import { Search, Pencil, Trash, Plus, X } from "lucide-react";
 import api from "../../services/api";
+import { useAuth } from "@/hooks/use-auth";
+
 import { toast, Toaster } from "react-hot-toast"
 interface Category {
   id: string;
@@ -15,6 +17,36 @@ interface Category {
 }
 
 export default function CourseCategoryManagement() {
+      const { user } = useAuth();
+  
+    const [permissions, setPermissions] = useState([]);
+  
+  useEffect(() => {
+    if (!user?.id) return;
+  
+    api
+      .get(`/api/user-permissions/${user.id}`)
+      .then((res) => {
+        setPermissions(res.data.permissions || []);
+      });
+  }, [user?.id]);
+  
+  const hasPermission = (
+    moduleName: string,
+    action = "canView"
+  ) => {
+    if (user?.role === "admin") return true;
+  
+    return permissions.some(
+      (p: any) =>
+        p.moduleName === moduleName &&
+        p[action]
+    );
+  };
+  
+    
+    console.log(user);
+  
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -184,23 +216,23 @@ export default function CourseCategoryManagement() {
               />
             </div>
 
-            <button
-              onClick={() => {
-                setEditingId(null);
-
-                setFormData({
-                  name: "",
-                  description: "",
-                  status: "Active",
-                });
-
-                setShowModal(true);
-              }}
-              className="bg-blue-600 text-white px-5 rounded-xl flex items-center gap-2"
-            >
-              <Plus size={18} />
-              Add Category
-            </button>
+            {hasPermission("Course Categories", "canAdd") && (
+              <button
+                onClick={() => {
+                  setEditingId(null);
+                  setFormData({
+                    name: "",
+                    description: "",
+                    status: "Active",
+                  });
+                  setShowModal(true);
+                }}
+                className="bg-blue-600 text-white px-5 rounded-xl flex items-center gap-2"
+              >
+                <Plus size={18} />
+                Add Category
+              </button>
+            )}
           </div>
 
           {/* Table */}
@@ -245,32 +277,33 @@ export default function CourseCategoryManagement() {
 
                       <td className="p-4">
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              setEditingId(item.id);
+                          {hasPermission("Course Categories", "canEdit") && (
+                              <button
+                                onClick={() => {
+                                  setEditingId(item.id);
 
-                              setFormData({
-                                name: item.name,
-                                description:
-                                  item.description,
-                                status: item.status,
-                              });
+                                  setFormData({
+                                    name: item.name,
+                                    description: item.description,
+                                    status: item.status,
+                                  });
 
-                              setShowModal(true);
-                            }}
-                            className="p-2 bg-blue-100 rounded"
-                          >
-                            <Pencil size={16} />
-                          </button>
+                                  setShowModal(true);
+                                }}
+                                className="p-2 bg-blue-100 rounded"
+                              >
+                                <Pencil size={16} />
+                              </button>
+                            )}
 
-                          <button
-                            onClick={() =>
-                              deleteCategory(item.id)
-                            }
-                            className="p-2 bg-red-100 rounded"
-                          >
-                            <Trash size={16} />
-                          </button>
+                          {hasPermission("Course Categories", "canDelete") && (
+                            <button
+                              onClick={() => deleteCategory(item.id)}
+                              className="p-2 bg-red-100 rounded"
+                            >
+                              <Trash size={16} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

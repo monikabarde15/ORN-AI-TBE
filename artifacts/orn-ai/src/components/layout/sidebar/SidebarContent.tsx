@@ -1,6 +1,11 @@
 // components/layout/sidebar/SidebarContent.tsx
 
 import { Link } from "wouter";
+import api from "../../../../services/api";
+import React, {
+  useEffect,
+  useState,
+} from "react";
 import {
   Search,
   UserPlus,
@@ -16,12 +21,52 @@ interface SidebarContentProps {
   location: string;
   onNavigate?: () => void;
 }
-
+interface Permission {
+  moduleName: string;
+  canView: boolean;
+  canAdd: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+}
 export default function SidebarContent({
   user,
   location,
   onNavigate,
 }: SidebarContentProps) {
+  const [permissions, setPermissions] =
+  useState<Permission[]>([]);
+
+   useEffect(() => {
+  if (user?.id) {
+    loadPermissions();
+  }
+}, [user?.id]);
+
+    const loadPermissions = async () => {
+      try {
+        const { data } = await api.get(
+          `/api/user-permissions/${user.id}`
+        );
+
+        setPermissions(data.permissions || []);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    const hasPermission = (
+      moduleName: string,
+      action = "canView"
+    ) => {
+      if (user?.role === "admin") {
+        return true;
+      }
+
+      return permissions.some(
+        (permission) =>
+          permission.moduleName === moduleName &&
+          permission[action as keyof Permission]
+      );
+    };
   if (!user) return null;
 
   const linkClass = (active: boolean) =>
@@ -102,7 +147,7 @@ export default function SidebarContent({
           <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Recruitment
           </div>
-
+       {hasPermission("Talent Search") && (
           <Link
             href="/recruiter"
             onClick={onNavigate}
@@ -111,7 +156,8 @@ export default function SidebarContent({
             <Search className="size-4" />
             Talent Search
           </Link>
-
+        )}
+         {hasPermission("Blogs") && (
           <Link
             href="/admin/blog/add"
             onClick={onNavigate}
@@ -120,7 +166,9 @@ export default function SidebarContent({
             <GraduationCap className="size-4" />
             Blogs
           </Link>
+        )}
 
+         {hasPermission("Add Candidate") && (
           <Link
             href="/recruiter/add"
             onClick={onNavigate}
@@ -129,93 +177,145 @@ export default function SidebarContent({
             <UserPlus className="size-4" />
             Add Candidate
           </Link>
+        )}
 
-          <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            LMS & Learning Ecosystem
-          </div>
-          <Link
-            href="/recruiter/categories"
-            onClick={onNavigate}
-            className={linkClass(
-              location === "/recruiter/categories"
-            )}
-          >
-            <UserPlus className="size-4" />
-            Course Categories
-          </Link>
-          <Link
-            href="/recruiter/courses"
-            onClick={onNavigate}
-            className={linkClass(
-              location === "/recruiter/courses" ||
-                location === "/recruiter/course/add"
-            )}
-          >
-            <UserPlus className="size-4" />
-            Course Management
-          </Link>
+          {(
+  hasPermission("Course Categories") ||
+  hasPermission("Course Management") ||
+  hasPermission("Learning Paths") ||
+  hasPermission("Live Training Sessions")
+) && (
+  <>
+    <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      LMS & Learning Ecosystem
+    </div>
 
-          <Link
-            href="/recruiter/learning-path-list"
-            onClick={onNavigate}
-            className={linkClass(
-              location === "/recruiter/learning-path-list" ||
-                location === "/recruiter/learning-path"
-            )}
-          >
-            <UserPlus className="size-4" />
-            Learning Paths
-          </Link>
+    {hasPermission("Course Categories") && (
+      <Link
+        href="/recruiter/categories"
+        onClick={onNavigate}
+        className={linkClass(
+          location === "/recruiter/categories"
+        )}
+      >
+        <UserPlus className="size-4" />
+        Course Categories
+      </Link>
+    )}
 
-          
+    {hasPermission("Course Management") && (
+      <Link
+        href="/recruiter/courses"
+        onClick={onNavigate}
+        className={linkClass(
+          location === "/recruiter/courses" ||
+          location === "/recruiter/course/add"
+        )}
+      >
+        <UserPlus className="size-4" />
+        Course Management
+      </Link>
+    )}
 
-          <Link
-            href="/recruiter/live-session"
-            onClick={onNavigate}
-            className={linkClass(location === "/recruiter/live-session")}
-          >
-            <UserPlus className="size-4" />
-            Live Training Sessions
-          </Link>
+    {hasPermission("Learning Paths") && (
+      <Link
+        href="/recruiter/learning-path-list"
+        onClick={onNavigate}
+        className={linkClass(
+          location === "/recruiter/learning-path-list" ||
+          location === "/recruiter/learning-path"
+        )}
+      >
+        <UserPlus className="size-4" />
+        Learning Paths
+      </Link>
+    )}
 
-          <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Career Transformation
-          </div>
+    {hasPermission("Live Training Sessions") && (
+      <Link
+        href="/recruiter/live-session"
+        onClick={onNavigate}
+        className={linkClass(
+          location === "/recruiter/live-session"
+        )}
+      >
+        <UserPlus className="size-4" />
+        Live Training Sessions
+      </Link>
+    )}
+  </>
+)}
 
-          <Link
-            href="/training"
-            onClick={onNavigate}
-            className={linkClass(
-              location.startsWith("/training") ||
-                /^\/candidate\/[^/]+\/training$/.test(location)
-            )}
-          >
-            <GraduationCap className="size-4" />
-            Training Pipeline
-          </Link>
+         {/* Career Transformation */}
+          {hasPermission("Training Pipeline") && (
+            <>
+              <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Career Transformation
+              </div>
 
-          <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Platform
-          </div>
+              <Link
+                href="/training"
+                onClick={onNavigate}
+                className={linkClass(
+                  location.startsWith("/training") ||
+                  /^\/candidate\/[^/]+\/training$/.test(location)
+                )}
+              >
+                <GraduationCap className="size-4" />
+                Training Pipeline
+              </Link>
+            </>
+          )}
 
-          <Link
-            href="/admin"
-            onClick={onNavigate}
-            className={linkClass(location === "/admin")}
-          >
-            <BarChart3 className="size-4" />
-            Overview
-          </Link>
+          {/* Platform Section */}
+          {(
+            hasPermission("Overview") ||
+            hasPermission("Data Sources") ||
+            hasPermission("Settings")
+          ) && (
+            <>
+              <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Platform
+              </div>
 
-          <div className="flex items-center gap-3 px-3 py-2 text-sm rounded-md text-muted-foreground/50 cursor-not-allowed">
-            <Database className="size-4" />
-            Data Sources
-          </div>
+              {hasPermission("Overview") && (
+                <Link
+                  href="/admin"
+                  onClick={onNavigate}
+                  className={linkClass(location === "/admin")}
+                >
+                  <BarChart3 className="size-4" />
+                  Overview
+                </Link>
+              )}
 
-          <div className="flex items-center gap-3 px-3 py-2 text-sm rounded-md text-muted-foreground/50 cursor-not-allowed">
-            <Settings2 className="size-4" />
-            Settings
-          </div>
+              {hasPermission("Data Sources") && (
+                <Link
+                  href="/admin/data-sources"
+                  onClick={onNavigate}
+                  className={linkClass(
+                    location === "/admin/data-sources"
+                  )}
+                >
+                  <Database className="size-4" />
+                  Data Sources
+                </Link>
+              )}
+
+              {hasPermission("Settings") && (
+                <Link
+                  href="/admin/settings"
+                  onClick={onNavigate}
+                  className={linkClass(
+                    location === "/admin/settings"
+                  )}
+                >
+                  <Settings2 className="size-4" />
+                  Settings
+                </Link>
+              )}
+            </>
+          )}
         </>
       )}
     </div>

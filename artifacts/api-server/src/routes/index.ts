@@ -15,6 +15,7 @@ import payment from "./payment";
 import liveSessions from "./live-sessions";
 import learningPaths from "./learning-paths";
 import courseCategoryRoutes from "./course-category";
+import userPermissionsRoutes from "./user-permissions";
 
 
 const router: IRouter = Router();
@@ -35,5 +36,7 @@ router.use(payment);
 router.use(liveSessions);
 router.use(learningPaths);
 router.use(courseCategoryRoutes);
+router.use(userPermissionsRoutes);
+
 
 export default router;

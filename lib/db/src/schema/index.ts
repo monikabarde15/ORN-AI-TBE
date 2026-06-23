@@ -8,3 +8,4 @@ export * from "./blogs";
 export * from "./paymentLinks";
 export * from "./liveSessionsTable";
 export * from "./learningpathTable";
+export * from "./userPermissionsTable";

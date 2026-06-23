@@ -1,5 +1,7 @@
 // artifacts\orn-ai\src\pages\LearningPathList.tsx
 import React, { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
+
 import {
   Search, ShoppingCart, Trash2, CreditCard,
   Layers, PlayCircle, ClipboardList
@@ -27,6 +29,35 @@ interface LearningPath {
   createdAt?: string;
 }
 export default function LearningPathList() {
+   const { user } = useAuth();
+  
+    const [permissions, setPermissions] = useState([]);
+  
+  useEffect(() => {
+    if (!user?.id) return;
+  
+    api
+      .get(`/api/user-permissions/${user.id}`)
+      .then((res) => {
+        setPermissions(res.data.permissions || []);
+      });
+  }, [user?.id]);
+  
+  const hasPermission = (
+    moduleName: string,
+    action = "canView"
+  ) => {
+    if (user?.role === "admin") return true;
+  
+    return permissions.some(
+      (p: any) =>
+        p.moduleName === moduleName &&
+        p[action]
+    );
+  };
+  
+    
+    console.log(user);
   const [editingId, setEditingId] = useState<string | null>(null);
   // const [sessionTitle, setSessionTitle] =useState("");
   const [search, setSearch] = useState("");
@@ -173,23 +204,14 @@ const toggleLearningPathStatus = async (
           <div className="rounded-2xl bg-blue-100 px-4 py-2 font-semibold text-blue-700">
             {paths.length} Paths
           </div>
-          <a
-            href="/recruiter/learning-path"
-            className="
-            inline-flex
-            items-center
-            gap-2
-            rounded-lg
-            bg-blue-600
-            px-3
-            py-2
-            text-sm
-            font-medium
-            text-white
-          "
-          >
-            📚 Learning Paths
-          </a>
+         {hasPermission("Learning Paths", "canAdd") && (
+            <a
+              href="/recruiter/learning-path"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white"
+            >
+              📚 Learning Paths
+            </a>
+          )}
 
         </div>
 
@@ -301,25 +323,23 @@ const toggleLearningPathStatus = async (
 
                     <div className="flex gap-2">
 
-                      <button
-                        onClick={() =>
-                          editLearningPath(path)
-                        }
-                        className="rounded-xl bg-amber-500 px-4 py-2 text-white"
-                      >
-                        Edit
-                      </button>
+                      {hasPermission("Learning Paths", "canEdit") && (
+                        <button
+                          onClick={() => editLearningPath(path)}
+                          className="rounded-xl bg-amber-500 px-4 py-2 text-white"
+                        >
+                          Edit
+                        </button>
+                      )}
 
-                      <button
-                        onClick={() =>
-                          deleteLearningPath(
-                            path.id
-                          )
-                        }
-                        className="rounded-xl bg-red-600 px-4 py-2 text-white"
-                      >
-                        Delete
-                      </button>
+                      {hasPermission("Learning Paths", "canDelete") && (
+                        <button
+                          onClick={() => deleteLearningPath(path.id)}
+                          className="rounded-xl bg-red-600 px-4 py-2 text-white"
+                        >
+                          Delete
+                        </button>
+                      )}
 
                     </div>
 

@@ -3,11 +3,16 @@ interface SessionsTabProps {
     setShowSessionForm: (
         value: boolean
     ) => void;
+    hasPermission: (
+        moduleName: string,
+        action?: string
+    ) => boolean;
 }
 
 export default function SessionsTab({
     sessions,
     setShowSessionForm,
+     hasPermission,
 }: SessionsTabProps) {
     return (
         <div className="space-y-6">
@@ -23,14 +28,19 @@ export default function SessionsTab({
                     </p>
                 </div>
 
-                <button
-                    onClick={() =>
-                        setShowSessionForm(true)
-                    }
-                    className="rounded-xl bg-blue-600 px-5 py-3 text-white"
-                >
-                    Add Live Session
-                </button>
+                {hasPermission(
+                    "Live Training Sessions",
+                    "canAdd"
+                ) && (
+                    <button
+                        onClick={() =>
+                            setShowSessionForm(true)
+                        }
+                        className="rounded-xl bg-blue-600 px-5 py-3 text-white"
+                    >
+                        Add Live Session
+                    </button>
+                )}
             </div>
 
             {sessions.length === 0 ? (

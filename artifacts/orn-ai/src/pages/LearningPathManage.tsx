@@ -11,9 +11,39 @@ import CoursesTab from "./learning-path-manage/CoursesTab";
 import SessionsTab from "./learning-path-manage/SessionsTab";
 import SessionForm from "./learning-path-manage/SessionForm";
 import LearningPathSidebar from "./learning-path-manage/LearningPathSidebar";
+import { useAuth } from "@/hooks/use-auth";
 
 
 export default function LearningPathManage() {
+       const { user } = useAuth();
+    
+      const [permissions, setPermissions] = useState([]);
+    
+    useEffect(() => {
+      if (!user?.id) return;
+    
+      api
+        .get(`/api/user-permissions/${user.id}`)
+        .then((res) => {
+          setPermissions(res.data.permissions || []);
+        });
+    }, [user?.id]);
+    
+    const hasPermission = (
+      moduleName: string,
+      action = "canView"
+    ) => {
+      if (user?.role === "admin") return true;
+    
+      return permissions.some(
+        (p: any) =>
+          p.moduleName === moduleName &&
+          p[action]
+      );
+    };
+    
+      
+      console.log(user);
     const [activeTab, setActiveTab] = useState("courses");
     const [loading, setLoading] = useState(false);
     const [courses, setCourses] = useState<any[]>([]);
@@ -614,6 +644,7 @@ export default function LearningPathManage() {
                                         setShowSessionForm={
                                             setShowSessionForm
                                         }
+                                        hasPermission={hasPermission}
                                     />
                                 ) : (
                                     <SessionForm
