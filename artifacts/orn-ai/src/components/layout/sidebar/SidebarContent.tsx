@@ -167,6 +167,7 @@ export default function SidebarContent({
             Blogs
           </Link>
         )}
+        
 
          {hasPermission("Add Candidate") && (
           <Link
@@ -302,18 +303,31 @@ export default function SidebarContent({
                 </Link>
               )}
 
-              {hasPermission("Settings") && (
-                <Link
-                  href="/admin/settings"
-                  onClick={onNavigate}
-                  className={linkClass(
-                    location === "/admin/settings"
-                  )}
-                >
-                  <Settings2 className="size-4" />
-                  Settings
-                </Link>
-              )}
+             {hasPermission("Settings") && (
+              <Link
+                href="/admin/settings"
+                onClick={onNavigate}
+                className={linkClass(
+                  location === "/admin/settings"
+                )}
+              >
+                <Settings2 className="size-4" />
+                Settings
+              </Link>
+            )}
+
+            {hasPermission("Permissions") && (
+              <Link
+                href="/admin/permissons"
+                onClick={onNavigate}
+                className={linkClass(
+                  location === "/admin/permissons"
+                )}
+              >
+                <GraduationCap className="size-4" />
+                Permissons
+              </Link>
+            )}
             </>
           )}
         </>
