@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAuth } from "@/hooks/use-auth";
 
 import {
   Plus,
@@ -55,6 +56,35 @@ interface Blog {
 }
 
 export default function BlogManagementNew() {
+    const { user } = useAuth();
+
+  const [permissions, setPermissions] = useState([]);
+
+useEffect(() => {
+  if (!user?.id) return;
+
+  api
+    .get(`/api/user-permissions/${user.id}`)
+    .then((res) => {
+      setPermissions(res.data.permissions || []);
+    });
+}, [user?.id]);
+
+const hasPermission = (
+  moduleName: string,
+  action = "canView"
+) => {
+  if (user?.role === "admin") return true;
+
+  return permissions.some(
+    (p: any) =>
+      p.moduleName === moduleName &&
+      p[action]
+  );
+};
+
+  
+  console.log(user);
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -219,10 +249,12 @@ export default function BlogManagementNew() {
                 />
               </div>
 
-              <Button onClick={handleAdd}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Blog
-              </Button>
+              {hasPermission("Blogs", "canAdd") && (
+                <Button onClick={handleAdd}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Blog
+                </Button>
+              )}
             </div>
           </CardHeader>
 
@@ -266,25 +298,25 @@ export default function BlogManagementNew() {
 
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              handleEdit(blog)
-                            }
-                          >
-                            <Pencil size={14} />
-                          </Button>
+                         {hasPermission("Blogs", "canEdit") && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEdit(blog)}
+                              >
+                                <Pencil size={14} />
+                              </Button>
+                            )}
 
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() =>
-                              handleDelete(blog.id)
-                            }
-                          >
-                            <Trash2 size={14} />
-                          </Button>
+                          {hasPermission("Blogs", "canDelete") && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDelete(blog.id)}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

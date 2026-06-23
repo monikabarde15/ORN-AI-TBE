@@ -53,6 +53,7 @@ import Support from "@/pages/Support";
 import RefoundPolicy from "@/pages/RefoundPolicy";
 
 import BlogDetail from "@/pages/BlogDetail";
+import UserPermissions from "@/pages/UserPermissions";
 
 
 import { Loader2 } from "lucide-react";
@@ -139,7 +140,11 @@ function Router() {
         </ProtectedRoute>
       </Route>
       
-
+      <Route path="/admin/permissons">
+        <ProtectedRoute roles={["admin"]}>
+          <UserPermissions  />
+        </ProtectedRoute>
+      </Route>
        <Route path="/recruiter/live-session">
         {/* <ProtectedRoute roles={["candidate"]}> */}
           <LiveSessionCourses  />

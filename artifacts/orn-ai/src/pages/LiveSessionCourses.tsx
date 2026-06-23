@@ -8,6 +8,7 @@ import {
 import { toast } from "sonner";
 import api from "../../services/api";
 import { Shell } from "@/components/layout/Shell";
+import { useAuth } from "@/hooks/use-auth";
 
 interface Session {
   id: string;
@@ -36,6 +37,35 @@ interface Session {
 }
 
 export default function LiveSessionsDashboard() {
+   const { user } = useAuth();
+  
+    const [permissions, setPermissions] = useState([]);
+  
+  useEffect(() => {
+    if (!user?.id) return;
+  
+    api
+      .get(`/api/user-permissions/${user.id}`)
+      .then((res) => {
+        setPermissions(res.data.permissions || []);
+      });
+  }, [user?.id]);
+  
+  const hasPermission = (
+    moduleName: string,
+    action = "canView"
+  ) => {
+    if (user?.role === "admin") return true;
+  
+    return permissions.some(
+      (p: any) =>
+        p.moduleName === moduleName &&
+        p[action]
+    );
+  };
+  
+    
+    console.log(user);
   const [loading, setLoading] =
     useState(true);
   const [currentPage, setCurrentPage] =
@@ -413,6 +443,10 @@ export default function LiveSessionsDashboard() {
                           Copy
                         </button>
 
+                       {hasPermission(
+                        "Live Training Sessions",
+                        "canDelete"
+                      ) && (
                         <button
                           onClick={() =>
                             deleteSession(session.id)
@@ -428,6 +462,7 @@ export default function LiveSessionsDashboard() {
                         >
                           Delete
                         </button>
+                      )}
 
                       </div>
 

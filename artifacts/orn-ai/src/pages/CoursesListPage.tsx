@@ -2,6 +2,7 @@
 
 "use client";
 import { Shell } from "@/components/layout/Shell";
+import { useAuth } from "@/hooks/use-auth";
 
 import React, { useEffect, useState } from "react";
 import { useLocation } from "wouter";
@@ -38,6 +39,35 @@ interface Course {
 }
 
 export default function CoursesListPage() {
+  const { user } = useAuth();
+  
+    const [permissions, setPermissions] = useState([]);
+  
+  useEffect(() => {
+    if (!user?.id) return;
+  
+    api
+      .get(`/api/user-permissions/${user.id}`)
+      .then((res) => {
+        setPermissions(res.data.permissions || []);
+      });
+  }, [user?.id]);
+  
+  const hasPermission = (
+    moduleName: string,
+    action = "canView"
+  ) => {
+    if (user?.role === "admin") return true;
+  
+    return permissions.some(
+      (p: any) =>
+        p.moduleName === moduleName &&
+        p[action]
+    );
+  };
+  
+    
+    console.log(user);
 const [, navigate] = useLocation();
   const [courses, setCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
@@ -283,10 +313,15 @@ const [, navigate] = useLocation();
             <option value="Draft">Draft</option>
           </select>
 
-          <button className="add-course-btn" onClick={() => navigate("/recruiter/course/add")}>
-            <Plus size={16} />
-            Add Course
-          </button>
+          {hasPermission("Course Management", "canAdd") && (
+            <button
+              className="add-course-btn"
+              onClick={() => navigate("/recruiter/course/add")}
+            >
+              <Plus size={16} />
+              Add Course
+            </button>
+          )}
         </div>
       </div>
 
@@ -344,28 +379,36 @@ const [, navigate] = useLocation();
                       </td>
                       <td>
                         <div className="action-buttons">
-                          <button
-                            className="action-btn view"
-                            onClick={() => navigate(`/course/details/${course._id}`)}
-                            title="View Course"
-                          >
-                            <Eye size={18} />
-                          </button>
-                          <button
-                            className="action-btn edit"
-                            onClick={() => navigate(`/recruiter/course/edit/${course._id}`)}
-                            title="Edit Course"
-                          >
-                            <Edit size={18} />
-                          </button>
-                          <button
-                            className="action-btn delete"
-                            onClick={() => handleDeleteClick(course._id)}
-                            disabled={deletingId === course._id}
-                            title="Delete Course"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                         {hasPermission("Course Management", "canView") && (
+                            <button
+                              className="action-btn view"
+                              onClick={() =>
+                                navigate(`/course/details/${course._id}`)
+                              }
+                              title="View Course"
+                            >
+                              <Eye size={18} />
+                            </button>
+                          )}
+                          {hasPermission("Course Management", "canEdit") && (
+                            <button
+                              className="action-btn edit"
+                              onClick={() =>
+                                navigate(`/recruiter/course/edit/${course._id}`)
+                              }
+                            >
+                              <Edit size={18} />
+                            </button>
+                          )}
+                          {hasPermission("Course Management", "canDelete") && (
+                            <button
+                              className="action-btn delete"
+                              onClick={() => handleDeleteClick(course._id)}
+                              disabled={deletingId === course._id}
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
