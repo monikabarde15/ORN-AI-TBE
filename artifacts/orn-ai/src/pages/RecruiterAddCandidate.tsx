@@ -1,3 +1,4 @@
+// artifacts\orn-ai\src\pages\RecruiterAddCandidate.tsx
 import { useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { Shell } from "@/components/layout/Shell";

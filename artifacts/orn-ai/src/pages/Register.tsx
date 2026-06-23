@@ -1,3 +1,4 @@
+// artifacts\orn-ai\src\pages\Register.tsx
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
@@ -8,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -50,16 +50,7 @@ const VISA_VALUES = [
   "requires_sponsorship",
   "student_visa",
 ] as const;
-const ENGLISH_VALUES = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 
-const ENGLISH_DESCRIPTIONS: Record<(typeof ENGLISH_VALUES)[number], string> = {
-  A1: "Beginner — basic phrases",
-  A2: "Elementary — everyday topics",
-  B1: "Intermediate — workplace conversations",
-  B2: "Upper-intermediate — fluent in technical settings",
-  C1: "Advanced — near-native, complex discussions",
-  C2: "Proficient — fully native-equivalent",
-};
 
 const VISA_LABELS: Record<(typeof VISA_VALUES)[number], string> = {
   eu_citizen: "EU Citizen",
@@ -72,23 +63,31 @@ const VISA_LABELS: Record<(typeof VISA_VALUES)[number], string> = {
 // ----- Schema -----
 const formSchema = z.object({
   // Step 1
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  firstName: z.string().min(1, "First name is required"),
+  middleName: z.string().optional(),
+  lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(5, "Phone number is required"),
-  linkedinUrl: z
-    .string()
-    .url("Please enter a valid LinkedIn URL")
-    .or(z.literal("")),
+  linkedinUrl: z.string().url("Please enter a valid LinkedIn URL").or(z.literal("")),
+
   // Step 2
+  currentLocation: z.string().min(1, "Please select current location"),
   country: z.string().min(1, "Please select a country"),
   visaStatus: z.enum(VISA_VALUES),
   euWorkEligible: z.boolean(),
+
   // Step 3
-  targetRole: z.string().min(1, "Please select a target role"),
-  yearsExperience: z.number().min(0).max(50),
-  skills: z.array(z.string().min(1)).max(20, "Maximum 20 skills"),
-  // Step 4
-  englishLevel: z.enum(ENGLISH_VALUES),
+  currentRole: z.string().min(1),
+  preferredRole: z.string().min(1),
+  yearsOfExperience: z.string().min(1),
+  skills: z.array(z.string()).min(1),
+  languagesKnown: z.array(z.string()).min(1),
+  careerPreference: z.string().min(1),
+  preferredCountries: z.array(z.string()),
+  preferredWorkMode: z.string().min(1),
+  expectedSalary: z.string().min(1),
+  availability: z.string().min(1),
+
   // Step 5 (account credentials)
   password: z.string().min(8, "Password must be at least 8 characters"),
   gdprConsent: z.literal(true, {
@@ -100,11 +99,11 @@ type FormValues = z.infer<typeof formSchema>;
 
 // ----- Steps -----
 const STEPS = [
-  { id: 1, title: "Personal Details", icon: User, fields: ["fullName", "email", "phone", "linkedinUrl"] as const },
-  { id: 2, title: "Location & Eligibility", icon: Globe2, fields: ["country", "visaStatus", "euWorkEligible"] as const },
-  { id: 3, title: "Skills & Target Role", icon: Wrench, fields: ["targetRole", "yearsExperience", "skills"] as const },
-  { id: 4, title: "Language Readiness", icon: Languages, fields: ["englishLevel"] as const },
-  { id: 5, title: "Upload CV", icon: FileUp, fields: ["password", "gdprConsent"] as const },
+  { id: 1, title: "Personal Details", icon: User, fields: ["firstName", "middleName", "lastName", "email", "phone", "linkedinUrl"] as const },
+  { id: 2, title: "Location & Eligibility", icon: Globe2, fields: ["currentLocation", "country", "visaStatus", "euWorkEligible"] as const },
+  { id: 3, title: "Professional Profile & Career Preferences", icon: Wrench, fields: ["currentRole", "preferredRole", "yearsOfExperience", "skills", "languagesKnown", "careerPreference", "preferredWorkMode", "expectedSalary", "availability"] as const },
+  // { id: 4, title: "Language Readiness", icon: Languages, fields: ["englishLevel"] as const },
+  { id: 4, title: "AI CV Evaluation & Account Setup", icon: FileUp, fields: ["password", "gdprConsent"] as const },
 ] as const;
 
 export default function Register() {
@@ -132,33 +131,42 @@ export default function Register() {
     resolver: zodResolver(formSchema),
     mode: "onChange",
     defaultValues: {
-      fullName: "",
+      firstName: "",
+      middleName: "",
+      lastName: "",
       email: "",
       phone: "",
       linkedinUrl: "",
+      currentLocation: "",
       country: "",
       visaStatus: "eu_citizen",
       euWorkEligible: true,
-      targetRole: "",
-      yearsExperience: 3,
+      currentRole: "",
+      preferredRole: "",
+      yearsOfExperience: "",
       skills: [],
-      englishLevel: "B2",
+      languagesKnown: [],
+      careerPreference: "",
+      preferredCountries: [],
+      preferredWorkMode: "",
+      expectedSalary: "",
+      availability: "",
       password: "",
       gdprConsent: false as unknown as true,
     },
   });
 
-console.log("regions data =>", regions);
+  console.log("regions data =>", regions);
 
-const phase1 = Array.isArray((regions as any)?.phase1)
-  ? (regions as any).phase1
-  : [];
+  const phase1 = Array.isArray((regions as any)?.phase1)
+    ? (regions as any).phase1
+    : [];
 
-const phase2 = Array.isArray((regions as any)?.phase2)
-  ? (regions as any).phase2
-  : [];
+  const phase2 = Array.isArray((regions as any)?.phase2)
+    ? (regions as any).phase2
+    : [];
 
-const allCountries = [...phase1, ...phase2];
+  const allCountries = [...phase1, ...phase2];
 
   // ----- Skills helpers -----
   const addSkill = () => {
@@ -192,7 +200,7 @@ const allCountries = [...phase1, ...phase2];
       const valid = await form.trigger(fields as unknown as (keyof FormValues)[]);
       if (!valid) return;
     }
-    if (step < 5) setStep(step + 1);
+    if (step < 4) setStep(step + 1);
   };
 
   const goBack = () => {
@@ -224,25 +232,35 @@ const allCountries = [...phase1, ...phase2];
     }
     const values = form.getValues();
     setAuthPending(true);
+
+    const fullName = [values.firstName, values.middleName, values.lastName,]
+      .filter(Boolean)
+      .join(" ");
+
     try {
       const session = await auth.register({
         email: values.email,
         password: values.password,
-        fullName: values.fullName,
+        fullName,
         role: "candidate",
         gdprConsent: true,
         candidateProfile: {
-          fullName: values.fullName,
+          fullName,
           email: values.email,
           phone: values.phone,
           country: values.country,
-          targetRole: values.targetRole,
-          yearsExperience: values.yearsExperience,
           visaStatus: values.visaStatus,
-          englishLevel: values.englishLevel,
           euWorkEligible: values.euWorkEligible,
           linkedinUrl: values.linkedinUrl,
           skills: values.skills,
+          currentRole: values.currentRole,
+          preferredRole: values.preferredRole,
+          yearsOfExperience: values.yearsOfExperience,
+          languagesKnown: values.languagesKnown,
+          careerPreference: values.careerPreference,
+          preferredWorkMode: values.preferredWorkMode,
+          expectedSalary: values.expectedSalary,
+          availability: values.availability,
         },
       });
       // Backend creates a candidate row from the embedded profile or via the
@@ -301,7 +319,7 @@ const allCountries = [...phase1, ...phase2];
                 <PartyPopper className="size-10" />
               </motion.div>
               <h1 className="text-3xl font-bold tracking-tight mb-3">
-                Welcome to ORN-AI, {values.fullName.split(" ")[0]}.
+                Welcome to ORN-AI, {values.firstName.split(" ")[0]}.
               </h1>
               <p className="text-muted-foreground text-lg max-w-md mx-auto">
                 Your profile has been registered, scored, and added to the recruiter-ready talent pool.
@@ -356,13 +374,13 @@ const allCountries = [...phase1, ...phase2];
                   <div className="flex items-center gap-2">
                     <Wrench className="size-4 text-muted-foreground" />
                     <span>
-                      {values.targetRole} · {values.yearsExperience} yrs
+                      {values.preferredRole} · {values.yearsOfExperience} yrs
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  {/* <div className="flex items-center gap-2">
                     <Languages className="size-4 text-muted-foreground" />
                     <span>English {values.englishLevel}</span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
@@ -395,10 +413,16 @@ const allCountries = [...phase1, ...phase2];
   // ===========================================================
   const currentStep = STEPS[step - 1];
   const progress = (step / STEPS.length) * 100;
+  const currentLocation = form.watch("currentLocation");
 
+  const isPhase1Country =
+    phase1.some(
+      (c: { code: string }) =>
+        c.code === currentLocation
+    );
   return (
     <Shell>
-      <div className="container mx-auto px-4 py-12 max-w-3xl">
+      <div className="container mx-auto px-4 py-12 max-w-7xl">
         {/* Header */}
         <div className="mb-10 text-center">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">
@@ -431,7 +455,7 @@ const allCountries = [...phase1, ...phase2];
           </div>
 
           {/* Step pills */}
-          <div className="hidden md:grid grid-cols-5 gap-2 mt-5">
+          <div className="hidden md:grid grid-cols-4 gap-3 mt-5 w-full">
             {STEPS.map((s) => {
               const Icon = s.icon;
               const isActive = s.id === step;
@@ -442,22 +466,20 @@ const allCountries = [...phase1, ...phase2];
                   type="button"
                   onClick={() => isDone && setStep(s.id)}
                   disabled={!isDone && !isActive}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border transition-all text-left ${
-                    isActive
-                      ? "bg-primary/10 border-primary/30 text-primary"
-                      : isDone
-                        ? "bg-background border-border text-foreground hover:border-primary/30 cursor-pointer"
-                        : "bg-muted/30 border-transparent text-muted-foreground"
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border transition-all text-left ${isActive
+                    ? "bg-primary/10 border-primary/30 text-primary"
+                    : isDone
+                      ? "bg-background border-border text-foreground hover:border-primary/30 cursor-pointer"
+                      : "bg-muted/30 border-transparent text-muted-foreground"
+                    }`}
                 >
                   <span
-                    className={`size-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : isDone
-                          ? "bg-primary/20 text-primary"
-                          : "bg-muted text-muted-foreground"
-                    }`}
+                    className={`size-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${isActive
+                      ? "bg-primary text-primary-foreground"
+                      : isDone
+                        ? "bg-primary/20 text-primary"
+                        : "bg-muted text-muted-foreground"
+                      }`}
                   >
                     {isDone ? <CheckCircle2 className="size-3.5" /> : s.id}
                   </span>
@@ -503,14 +525,52 @@ const allCountries = [...phase1, ...phase2];
                           Tell us how to reach you. We never share contact details without your consent.
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          {/* First Name */}
                           <FormField
                             control={form.control}
-                            name="fullName"
+                            name="firstName"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Full Name *</FormLabel>
+                                <FormLabel>First Name *</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="Anna Kowalski" {...field} />
+                                  <Input
+                                    placeholder="Anna"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="middleName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Middle Name</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Maria"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="lastName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Last Name *</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Kowalski"
+                                    {...field}
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -568,6 +628,90 @@ const allCountries = [...phase1, ...phase2];
                         <p className="text-sm text-muted-foreground -mt-2">
                           Helps recruiters match you with roles you're legally allowed to take.
                         </p>
+
+                        {/* CURRENT LOCATION */}
+                        <FormField
+                          control={form.control}
+                          name="currentLocation"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Current Location *
+                              </FormLabel>
+
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select current location" />
+                                  </SelectTrigger>
+                                </FormControl>
+
+                                <SelectContent
+                                  className="max-h-[320px]"
+                                  position="popper"
+                                >
+                                  {regions?.phase1.length ? (
+                                    <>
+                                      <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                        Phase 1 — Active
+                                      </div>
+
+                                      {regions.phase1.map((c) => (
+                                        <SelectItem
+                                          key={c.code}
+                                          value={c.code}
+                                        >
+                                          <span className="font-mono text-xs text-muted-foreground mr-2">
+                                            {c.flag}
+                                          </span>
+
+                                          {c.name}
+                                        </SelectItem>
+                                      ))}
+
+                                      {regions.phase2.length >
+                                        0 && (
+                                          <div className="px-2 py-1.5 mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-t">
+                                            Phase 2 — Coming Soon
+                                          </div>
+                                        )}
+
+                                      {regions.phase2.map((c) => (
+                                        <SelectItem
+                                          key={c.code}
+                                          value={c.code}
+                                        >
+                                          <span className="font-mono text-xs text-muted-foreground mr-2">
+                                            {c.flag}
+                                          </span>
+
+                                          {c.name}
+                                        </SelectItem>
+                                      ))}
+                                    </>
+                                  ) : (
+                                    allCountries.map(
+                                      (c: any) => (
+                                        <SelectItem
+                                          key={c.code}
+                                          value={c.code}
+                                        >
+                                          {c.name}
+                                        </SelectItem>
+                                      )
+                                    )
+                                  )}
+                                </SelectContent>
+                              </Select>
+
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {/* COUNTRY OF RESIDENCE */}
                         <FormField
                           control={form.control}
                           name="country"
@@ -580,7 +724,10 @@ const allCountries = [...phase1, ...phase2];
                                     <SelectValue placeholder="Select a country" />
                                   </SelectTrigger>
                                 </FormControl>
-                                <SelectContent>
+                                <SelectContent
+                                  className="max-h-[320px]"
+                                  position="popper"
+                                >
                                   {regions?.phase1.length ? (
                                     <>
                                       <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -630,16 +777,14 @@ const allCountries = [...phase1, ...phase2];
                                       type="button"
                                       key={val}
                                       onClick={() => field.onChange(val)}
-                                      className={`flex items-center gap-3 px-4 py-3 rounded-lg border text-left transition-all ${
-                                        isSelected
-                                          ? "border-primary bg-primary/5 shadow-sm"
-                                          : "border-border bg-background hover:border-primary/30"
-                                      }`}
+                                      className={`flex items-center gap-3 px-4 py-3 rounded-lg border text-left transition-all ${isSelected
+                                        ? "border-primary bg-primary/5 shadow-sm"
+                                        : "border-border bg-background hover:border-primary/30"
+                                        }`}
                                     >
                                       <div
-                                        className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                          isSelected ? "border-primary" : "border-muted-foreground/30"
-                                        }`}
+                                        className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? "border-primary" : "border-muted-foreground/30"
+                                          }`}
                                       >
                                         {isSelected && <div className="size-2 rounded-full bg-primary" />}
                                       </div>
@@ -653,85 +798,149 @@ const allCountries = [...phase1, ...phase2];
                           )}
                         />
 
-                        <FormField
-                          control={form.control}
-                          name="euWorkEligible"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-muted/20">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-base">EU Work Eligible</FormLabel>
-                                <FormDescription>
-                                  Are you currently allowed to work anywhere in the EU without sponsorship?
-                                </FormDescription>
-                              </div>
-                              <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
+
+                        {currentLocation && (
+                          <FormField
+                            control={form.control}
+                            name="euWorkEligible"
+                            render={({ field }) => (
+                              <FormItem
+                                className="
+          flex
+          flex-row
+          items-center
+          justify-between
+          rounded-lg
+          border
+          p-4
+          bg-muted/20
+        "
+                              >
+                                <div className="space-y-0.5">
+
+                                  <FormLabel className="text-base">
+                                    {isPhase1Country
+                                      ? "EU Work Eligible"
+                                      : "UK Work Eligible"}
+                                  </FormLabel>
+
+                                  <FormDescription>
+                                    {isPhase1Country
+                                      ? "Are you currently allowed to work anywhere in the EU without sponsorship?"
+                                      : "Are you currently allowed to work anywhere in the UK without sponsorship?"}
+                                  </FormDescription>
+
+                                </div>
+
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={
+                                      field.onChange
+                                    }
+                                  />
+                                </FormControl>
+
+                              </FormItem>
+                            )}
+                          />
+                        )}
                       </div>
                     )}
 
-                    {/* ===== STEP 3: SKILLS & TARGET ROLE ===== */}
+
+                    {/* ===== Step 3:Professional Profile & Career Preferences  ===== */}
                     {step === 3 && (
                       <div className="space-y-6">
+
                         <p className="text-sm text-muted-foreground -mt-2">
-                          What you do, how long you've done it, and your strongest skills.
+                          Tell us about your professional background and career preferences.
                         </p>
-                        <FormField
-                          control={form.control}
-                          name="targetRole"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Target Role *</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                          <FormField
+                            control={form.control}
+                            name="currentRole"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Current Role *</FormLabel>
                                 <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a role" />
-                                  </SelectTrigger>
+                                  <Input
+                                    placeholder="Frontend Developer"
+                                    {...field}
+                                  />
                                 </FormControl>
-                                <SelectContent>
-                                  {roles?.map((r) => (
-                                    <SelectItem key={r} value={r}>
-                                      {r}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="preferredRole"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Preferred Role *</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Senior Frontend Developer"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                        </div>
 
                         <FormField
                           control={form.control}
-                          name="yearsExperience"
-                          render={({ field: { value, onChange } }) => (
+                          name="yearsOfExperience"
+                          render={({ field }) => (
                             <FormItem>
-                              <div className="flex justify-between items-center pb-2">
-                                <FormLabel>Years of Experience *</FormLabel>
-                                <span className="font-mono text-sm font-semibold text-primary">
-                                  {value} {value === 1 ? "year" : "years"}
-                                </span>
-                              </div>
-                              <FormControl>
-                                <Slider
-                                  min={0}
-                                  max={20}
-                                  step={1}
-                                  value={[value]}
-                                  onValueChange={(vals) => onChange(vals[0])}
-                                  className="w-full"
-                                />
-                              </FormControl>
-                              <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
-                                <span>0</span>
-                                <span>5</span>
-                                <span>10</span>
-                                <span>15</span>
-                                <span>20+</span>
-                              </div>
+                              <FormLabel>
+                                Years Of Experience *
+                              </FormLabel>
+
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select experience" />
+                                  </SelectTrigger>
+                                </FormControl>
+
+                                <SelectContent>
+                                  <SelectItem value="0-1">
+                                    0-1 Years
+                                  </SelectItem>
+
+                                  <SelectItem value="1-3">
+                                    1-3 Years
+                                  </SelectItem>
+
+                                  <SelectItem value="3-5">
+                                    3-5 Years
+                                  </SelectItem>
+
+                                  <SelectItem value="5-8">
+                                    5-8 Years
+                                  </SelectItem>
+
+                                  <SelectItem value="8-10">
+                                    8-10 Years
+                                  </SelectItem>
+
+                                  <SelectItem value="10+">
+                                    10+ Years
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+
                               <FormMessage />
                             </FormItem>
                           )}
@@ -792,63 +1001,244 @@ const allCountries = [...phase1, ...phase2];
                             </FormItem>
                           )}
                         />
-                      </div>
-                    )}
 
-                    {/* ===== STEP 4: LANGUAGE READINESS ===== */}
-                    {step === 4 && (
-                      <div className="space-y-6">
-                        <p className="text-sm text-muted-foreground -mt-2">
-                          Self-assessed CEFR level. Used to filter roles requiring strong English.
-                        </p>
+                        {/* Add Languages Known */}
                         <FormField
                           control={form.control}
-                          name="englishLevel"
+                          name="languagesKnown"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>English Proficiency (CEFR) *</FormLabel>
-                              <div className="grid grid-cols-1 gap-2">
-                                {ENGLISH_VALUES.map((val) => {
-                                  const isSelected = field.value === val;
+                              <FormLabel>
+                                Languages Known *
+                              </FormLabel>
+
+                              <div className="flex flex-wrap gap-2">
+                                {[
+                                  "English",
+                                  "German",
+                                  "French",
+                                  "Spanish",
+                                  "Italian",
+                                  "Dutch",
+                                  "Polish",
+                                  "Romanian",
+                                ].map((lang) => {
+                                  const selected =
+                                    field.value.includes(lang);
+
                                   return (
-                                    <button
+                                    <Button
+                                      key={lang}
                                       type="button"
-                                      key={val}
-                                      onClick={() => field.onChange(val)}
-                                      className={`flex items-center gap-4 px-4 py-3.5 rounded-lg border text-left transition-all ${
-                                        isSelected
-                                          ? "border-primary bg-primary/5 shadow-sm"
-                                          : "border-border bg-background hover:border-primary/30"
-                                      }`}
+                                      variant={
+                                        selected
+                                          ? "default"
+                                          : "outline"
+                                      }
+                                      onClick={() => {
+                                        if (selected) {
+                                          field.onChange(
+                                            field.value.filter(
+                                              (
+                                                l: string
+                                              ) =>
+                                                l !== lang
+                                            )
+                                          );
+                                        } else {
+                                          field.onChange([
+                                            ...field.value,
+                                            lang,
+                                          ]);
+                                        }
+                                      }}
                                     >
-                                      <div
-                                        className={`size-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 ${
-                                          isSelected
-                                            ? "bg-primary text-primary-foreground"
-                                            : "bg-muted text-muted-foreground"
-                                        }`}
-                                      >
-                                        {val}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-sm">{ENGLISH_DESCRIPTIONS[val]}</div>
-                                      </div>
-                                      {isSelected && (
-                                        <CheckCircle2 className="size-5 text-primary shrink-0" />
-                                      )}
-                                    </button>
+                                      {lang}
+                                    </Button>
                                   );
                                 })}
                               </div>
+
                               <FormMessage />
                             </FormItem>
                           )}
                         />
+
+                        {/* Career Preference */}
+                        <FormField
+                          control={form.control}
+                          name="careerPreference"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Career & Employment Preference *
+                              </FormLabel>
+
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select preference" />
+                                  </SelectTrigger>
+                                </FormControl>
+
+                                <SelectContent>
+                                  <SelectItem value="Freelance">
+                                    Freelance
+                                  </SelectItem>
+
+                                  <SelectItem value="Permanent">
+                                    Permanent
+                                  </SelectItem>
+
+                                  <SelectItem value="Contract">
+                                    Contract
+                                  </SelectItem>
+
+                                  <SelectItem value="Fixed Term">
+                                    Fixed Term
+                                  </SelectItem>
+
+                                  <SelectItem value="Contract-to-Hire">
+                                    Contract-to-Hire
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Preferred Work Mode */}
+
+                        <FormField
+                          control={form.control}
+                          name="preferredWorkMode"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Preferred Work Mode *
+                              </FormLabel>
+
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select work mode" />
+                                  </SelectTrigger>
+                                </FormControl>
+
+                                <SelectContent>
+                                  <SelectItem value="Remote">
+                                    Remote
+                                  </SelectItem>
+
+                                  <SelectItem value="Hybrid">
+                                    Hybrid
+                                  </SelectItem>
+
+                                  <SelectItem value="Onsite">
+                                    Onsite
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+
+                        {/* Expected Salary */}
+
+                        <FormField
+                          control={form.control}
+                          name="expectedSalary"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Expected Salary / Rate Range *
+                              </FormLabel>
+
+                              <FormControl>
+                                <Input
+                                  placeholder="€40,000 - €50,000"
+                                  {...field}
+                                />
+                              </FormControl>
+
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Availability */}
+
+                        <FormField
+                          control={form.control}
+                          name="availability"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Availability *
+                              </FormLabel>
+
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select availability" />
+                                  </SelectTrigger>
+                                </FormControl>
+
+                                <SelectContent>
+                                  <SelectItem value="Immediate">
+                                    Immediate
+                                  </SelectItem>
+
+                                  <SelectItem value="1 Week">
+                                    1 Week
+                                  </SelectItem>
+
+                                  <SelectItem value="2 Weeks">
+                                    2 Weeks
+                                  </SelectItem>
+
+                                  <SelectItem value="3 Weeks">
+                                    3 Weeks
+                                  </SelectItem>
+
+                                  <SelectItem value="1 Month">
+                                    1 Month
+                                  </SelectItem>
+
+                                  <SelectItem value="2 Months">
+                                    2 Months
+                                  </SelectItem>
+
+                                  <SelectItem value="3 Months">
+                                    3 Months
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
                       </div>
                     )}
 
-                    {/* ===== STEP 5: UPLOAD CV ===== */}
-                    {step === 5 && (
+                    {/* ===== STEP 4: UPLOAD CV ===== */}
+                    {step === 4 && (
                       <div className="space-y-6">
                         <p className="text-sm text-muted-foreground -mt-2">
                           Upload your latest CV — our AI will use it to score your profile across 5 dimensions. Optional, but highly recommended.
@@ -868,11 +1258,10 @@ const allCountries = [...phase1, ...phase2];
                               }}
                               onDragLeave={() => setIsDragging(false)}
                               onDrop={handleDrop}
-                              className={`p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-all border-2 border-dashed rounded-xl ${
-                                isDragging
-                                  ? "border-primary bg-primary/5 scale-[1.01]"
-                                  : "border-border bg-muted/10 hover:bg-muted/30 hover:border-primary/40"
-                              }`}
+                              className={`p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-all border-2 border-dashed rounded-xl ${isDragging
+                                ? "border-primary bg-primary/5 scale-[1.01]"
+                                : "border-border bg-muted/10 hover:bg-muted/30 hover:border-primary/40"
+                                }`}
                             >
                               <input
                                 type="file"
@@ -1006,7 +1395,7 @@ const allCountries = [...phase1, ...phase2];
               <ArrowLeft className="size-4" /> Back
             </Button>
 
-            {step < 5 ? (
+            {step < 4 ? (
               <Button type="button" onClick={goNext} className="gap-2" size="lg">
                 Continue <ArrowRight className="size-4" />
               </Button>
