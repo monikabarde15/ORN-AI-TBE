@@ -4,6 +4,7 @@ import {
   text,
   timestamp,
   jsonb,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 export const learningPathsTable =
@@ -25,6 +26,9 @@ export const learningPathsTable =
     courseIds: jsonb("course_ids")
       .$type<string[]>()
       .default([]),
+       isEnabled: boolean("is_enabled")
+      .default(true)
+      .notNull(),
 
     createdAt: timestamp("created_at")
       .defaultNow(),

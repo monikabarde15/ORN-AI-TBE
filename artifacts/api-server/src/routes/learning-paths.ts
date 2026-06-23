@@ -439,5 +439,61 @@ router.delete(
     }
   }
 );
+/* =========================================
+TOGGLE LEARNING PATH STATUS
+========================================= */
 
+router.patch(
+  "/learning-paths/:id/toggle-status",
+  requireAuth,
+  requireRole("admin", "recruiter"),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isEnabled } = req.body;
+
+      const [learningPath] =
+        await db
+          .update(learningPathsTable)
+          .set({
+            isEnabled,
+          })
+          .where(
+            eq(
+              learningPathsTable.id,
+              id
+            )
+          )
+          .returning();
+
+      if (!learningPath) {
+        return res.status(404).json({
+          success: false,
+          error: "Learning Path not found",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: `Learning Path ${
+          isEnabled
+            ? "Enabled"
+            : "Disabled"
+        } Successfully`,
+        data: learningPath,
+      });
+    } catch (error) {
+      console.error(
+        "TOGGLE STATUS ERROR =>",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        error:
+          "Failed to update learning path status",
+      });
+    }
+  }
+);
 export default router;

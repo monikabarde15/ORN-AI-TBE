@@ -73,6 +73,13 @@ export default function LearningPathList() {
         setCourses(
           res.data?.data || []
         );
+        const statusMap: Record<string, boolean> = {};
+
+      (res.data.data || []).forEach((path: any) => {
+        statusMap[path.id] = path.isEnabled ?? true;
+      });
+
+      setEnabledPaths(statusMap);
       } catch (error) {
         console.error(error);
       } finally {
@@ -112,21 +119,39 @@ export default function LearningPathList() {
   };
 
   // Learning Path toggle
-  const toggleLearningPathStatus = (
-    pathId: string
-  ) => {
+const toggleLearningPathStatus = async (
+  pathId: string
+) => {
+  try {
+    const currentStatus =
+      enabledPaths[pathId];
+
+    await api.patch(
+      `/api/learning-paths/${pathId}/toggle-status`,
+      {
+        isEnabled: !currentStatus,
+      }
+    );
+
     setEnabledPaths((prev) => ({
       ...prev,
-      [pathId]: !prev[pathId],
+      [pathId]: !currentStatus,
     }));
 
     toast.success(
-      enabledPaths[pathId]
-        ? "Learning Path Disabled"
-        : "Learning Path Enabled"
+      !currentStatus
+        ? "Learning Path Enabled"
+        : "Learning Path Disabled"
     );
-  };
+  } catch (error: any) {
+    console.error(error);
 
+    toast.error(
+      error?.response?.data?.error ||
+      "Failed to update status"
+    );
+  }
+};
   
   return (
     <Shell>

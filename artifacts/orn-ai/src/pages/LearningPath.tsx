@@ -568,7 +568,7 @@ setLearningPathId(path.id);
     shadow-lg
   "
 >
-  Manage Courses
+  Add Courses
   ({selectedCourses.length})
 </button>
 
@@ -656,7 +656,7 @@ setLearningPathId(path.id);
 
         <div>
           <h2 className="text-2xl font-bold">
-            Manage Courses
+            Add Courses
           </h2>
 
           <p className="text-sm text-slate-500">
