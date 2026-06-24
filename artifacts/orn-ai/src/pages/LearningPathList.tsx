@@ -188,30 +188,35 @@ const toggleLearningPathStatus = async (
     <Shell>
       <div className="p-6">
 
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-10 flex items-start justify-between">
 
           <div>
-            <h1 className="text-4xl font-bold">
+            <h1 className="text-3xl font-bold tracking-tight">
               Learning Paths
             </h1>
 
-            <p className="text-slate-500">
+            <p className="mt-0 text-sm text-slate-500">
               Manage all learning paths
             </p>
           </div>
 
 
-          <div className="rounded-2xl bg-blue-100 px-4 py-2 font-semibold text-blue-700">
-            {paths.length} Paths
+          <div className="flex items-center gap-3">
+
+            <div className="inline-flex items-center rounded-xl bg-blue-100 px-4 py-2 text-md font-semibold text-slate-700">
+              {paths.length} Paths
+            </div>
+
+            {hasPermission("Learning Paths", "canAdd") && (
+              <a
+                href="/recruiter/learning-path"
+                className="inline-flex items-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-blue-700"
+              >
+                + Add Learning Path
+              </a>
+            )}
+
           </div>
-         {hasPermission("Learning Paths", "canAdd") && (
-            <a
-              href="/recruiter/learning-path"
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white"
-            >
-              📚 Learning Paths
-            </a>
-          )}
 
         </div>
 

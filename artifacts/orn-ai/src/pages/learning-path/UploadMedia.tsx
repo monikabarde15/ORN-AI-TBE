@@ -68,29 +68,21 @@ export default function UploadMedia({
   };
 
   return (
-    <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+    <div className="pt-0">
 
-      <div className="border-b bg-gradient-to-r from-violet-600 to-indigo-600 p-6 text-white">
-        <div className="flex items-center gap-3">
+      <div className="mb-6 border-t border-slate-200 pt-6">
 
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
-            <UploadCloud size={24} />
-          </div>
+        <h3 className="text-xl font-semibold text-slate-900">
+          Upload Media
+        </h3>
 
-          <div>
-            <h2 className="text-xl font-bold">
-              Media Upload
-            </h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Add thumbnail and introduction video for this learning path.
+        </p>
 
-            <p className="text-sm text-violet-100">
-              Upload thumbnail & intro video
-            </p>
-          </div>
-
-        </div>
       </div>
 
-      <div className="grid gap-5 p-6 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
 
         {/* Thumbnail */}
         <label className="group cursor-pointer">
@@ -166,7 +158,7 @@ export default function UploadMedia({
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100">
                   <Video
                     size={30}
-                    className="text-purple-600"
+                    className="text-blue-600"
                   />
                 </div>
 
@@ -178,7 +170,7 @@ export default function UploadMedia({
                   MP4, MOV, WEBM
                 </p>
 
-                <span className="mt-4 rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium text-white">
+                <span className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white">
                   Choose Video
                 </span>
               </>

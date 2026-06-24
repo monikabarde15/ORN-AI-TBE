@@ -2,6 +2,7 @@ import {
   BookOpen,
   Sparkles,
   FileText,
+  Eye,
 } from "lucide-react";
 
 interface Props {
@@ -18,72 +19,64 @@ export default function LearningPathForm({
   setDescription,
 }: Props) {
   return (
-    <div className="overflow-hidden rounded-[32px] bg-white shadow-sm border border-slate-200">
+    <div>
 
       {/* Header */}
-     {/* Header */}
-<div className="border-b bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 text-white">
+      <div className="mb-8 mt-6"
+      >
+        <div className="flex items-center justify-between">
 
-  <div className="flex items-start justify-between">
+          <div className="flex items-center gap-5">
 
-    <div className="flex items-center gap-4">
+            <div>
 
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
-        <BookOpen size={28} />
-      </div>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+                Learning Path Details
+              </h2>
 
-      <div>
-        <div className="mb-1 flex items-center gap-2 text-blue-100">
-          <Sparkles size={16} />
-          <span className="text-sm">
-            Learning Ecosystem
-          </span>
+              <p className="mt-2 text-sm text-slate-500">
+                Enter the basic information for your learning path.
+              </p>
+            </div>
+
+
+          </div>
+
+          {/* List Button */}
+          <a
+            href="/recruiter/learning-path-list"
+            className="
+  inline-flex
+  items-center
+  rounded-xl
+  border
+  border-slate-200
+  bg-blue-900
+  px-4
+  py-2
+  text-sm
+  font-medium
+  text-white
+  transition
+  hover:bg-blue-800
+"
+          >
+            👁 View List
+          </a>
+
         </div>
 
-        <h2 className="text-2xl font-bold">
-          Learning Path Details
-        </h2>
-
-        <p className="mt-1 text-blue-100">
-          Create a structured learning roadmap
-        </p>
       </div>
 
-    </div>
-
-    {/* List Button */}
-    <a
-      href="/recruiter/learning-path-list"
-      className="
-        rounded-xl
-        bg-white
-        px-4
-        py-2
-        text-sm
-        font-semibold
-        text-blue-600
-        shadow
-        transition
-        hover:bg-blue-50
-      "
-    >
-      📚 View List
-    </a>
-
-  </div>
-
-</div>
-
       {/* Form */}
-      <div className="p-8">
+      <div className="pt-0">
 
         <div className="space-y-6">
 
           <div>
 
-            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <BookOpen size={16} />
-              Learning Path Title
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Name of the learning path
             </label>
 
             <input
@@ -95,12 +88,12 @@ export default function LearningPathForm({
               placeholder="Full Stack Developer Roadmap"
               className="
                 w-full
-                rounded-2xl
+                rounded-xl
                 border
                 border-slate-200
-                bg-slate-50
+                bg-white
                 px-5
-                py-4
+                py-3
                 text-sm
                 outline-none
                 transition-all
@@ -115,9 +108,8 @@ export default function LearningPathForm({
 
           <div>
 
-            <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <FileText size={16} />
-              Description
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Explain what learners will achieve.
             </label>
 
             <textarea
@@ -132,10 +124,10 @@ export default function LearningPathForm({
               className="
                 w-full
                 resize-none
-                rounded-2xl
+                rounded-xl
                 border
                 border-slate-200
-                bg-slate-50
+                bg-white
                 px-5
                 py-4
                 text-sm

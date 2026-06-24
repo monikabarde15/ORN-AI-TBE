@@ -37,23 +37,23 @@ export default function PaymentSummary({
     };
 
   return (
-    <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-hidden  border border-slate-200 bg-white">
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-5 text-white">
+      <div className="border-b border-slate-200 px-5 py-4">
 
         <div className="flex items-center gap-3">
 
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-900">
             <Wallet size={24} />
           </div>
 
           <div>
-            <p className="text-sm text-green-100">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
               Billing
             </p>
 
-            <h2 className="text-xl font-bold">
+            <h2 className="text-lg font-semibold text-slate-900">
               Payment Summary
             </h2>
           </div>
@@ -88,13 +88,13 @@ export default function PaymentSummary({
 
         </div>
 
-        <div className="mt-5 rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white">
+        <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-5">
 
-          <p className="text-blue-100">
+          <p className="text-sm text-slate-500">
             Total Payable
           </p>
 
-          <h2 className="mt-2 text-4xl font-bold">
+          <h2 className="mt-2 text-3xl font-bold text-blue-900">
             ₹{total}
           </h2>
 
@@ -108,7 +108,7 @@ export default function PaymentSummary({
               Payment Link
             </label>
 
-            <div className="rounded-2xl border bg-slate-50 p-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
 
               <input
                 value={
@@ -136,8 +136,10 @@ export default function PaymentSummary({
                   items-center
                   justify-center
                   gap-2
-                  rounded-2xl
-                  bg-blue-600
+                  rounded-xl
+                bg-blue-900
+                hover:bg-blue-800 
+                  transition
                   py-3
                   text-white
                 "
@@ -160,7 +162,7 @@ export default function PaymentSummary({
                   items-center
                   justify-center
                   gap-2
-                  rounded-2xl
+                  rounded-xl
                   border
                   py-3
                 "

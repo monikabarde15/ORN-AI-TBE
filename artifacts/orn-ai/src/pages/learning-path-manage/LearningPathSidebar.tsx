@@ -49,22 +49,22 @@ export default function LearningPathSidebar({
                 onClick={saveLearningPath}
                 disabled={saving}
                 className="
-                    flex
-                    w-full
-                    items-center
-                    justify-center
-                    gap-3
-                    rounded-[24px]
-                    bg-gradient-to-r
-                    from-blue-600
-                    to-indigo-600
-                    py-4
-                    text-lg
-                    font-semibold
-                    text-white
-                    disabled:cursor-not-allowed
-                    disabled:opacity-70
-                "
+    w-full
+    rounded-xl
+    bg-blue-900
+    py-3.5
+    text-base
+    font-semibold
+    text-white
+    disabled:opacity-70
+    disabled:cursor-not-allowed
+    flex
+    items-center
+    justify-center
+    gap-3
+    transition
+  hover:bg-blue-800
+  "
             >
                 {saving ? (
                     <>
