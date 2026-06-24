@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   ShieldCheck,
   CheckSquare,
   Ban,
+  UserPlus
 } from "lucide-react";
-
+import AddUserModal from "@/components/ui/AddUserModal";
 interface Props {
   totalUsers: number;
   onSelectAll: () => void;
   onClearAll: () => void;
+  // onAddUser: () => void;
 }
 
 export default function PermissionHeader({
@@ -16,7 +18,10 @@ export default function PermissionHeader({
   onSelectAll,
   onClearAll,
 }: Props) {
+
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
   return (
+    <>
     <div className="mb-6">
 
       <div className="flex items-center justify-between">
@@ -38,7 +43,7 @@ export default function PermissionHeader({
               "
             >
               <ShieldCheck
-                className="text-indigo-600"
+                className="text-blue-900"
                 size={24}
               />
             </div>
@@ -61,6 +66,30 @@ export default function PermissionHeader({
         {/* Right */}
         <div className="flex items-center gap-3">
 
+
+          {/* ADD USER BUTTON */}
+
+          <button
+            onClick={() => setShowAddUserModal(true)}
+            className="
+    flex
+    items-center
+    gap-2
+    px-4
+    py-3
+    rounded-xl
+    bg-blue-900
+    text-white
+    hover:bg-blue-800
+    transition
+    shadow-sm
+  "
+          >
+            <UserPlus size={18} />
+            Add User
+          </button>
+
+
           <div
             className="
             hidden
@@ -78,7 +107,7 @@ export default function PermissionHeader({
               Total Users
             </span>
 
-            <span className="ml-2 font-semibold text-indigo-600">
+            <span className="ml-2 font-semibold text-blue-900">
               {totalUsers}
             </span>
           </div>
@@ -126,5 +155,17 @@ export default function PermissionHeader({
       </div>
 
     </div>
+
+      <AddUserModal
+        open={showAddUserModal}
+        onClose={() => setShowAddUserModal(false)}
+        onSubmit={(data) => {
+          console.log("New User:", data);
+
+          // Backend team will handle API integration
+          setShowAddUserModal(false);
+        }}
+      />
+    </>
   );
 }

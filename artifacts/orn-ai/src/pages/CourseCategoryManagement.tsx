@@ -5,6 +5,7 @@ import { Shell } from "@/components/layout/Shell";
 import { Search, Pencil, Trash, Plus, X } from "lucide-react";
 import api from "../../services/api";
 import { useAuth } from "@/hooks/use-auth";
+import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
 
 import { toast, Toaster } from "react-hot-toast"
 interface Category {
@@ -17,9 +18,11 @@ interface Category {
 }
 
 export default function CourseCategoryManagement() {
-      const { user } = useAuth();
-  
+    const { user } = useAuth();
     const [permissions, setPermissions] = useState([]);
+
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   
   useEffect(() => {
     if (!user?.id) return;
@@ -44,9 +47,7 @@ export default function CourseCategoryManagement() {
     );
   };
   
-    
-    console.log(user);
-  
+      
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -115,8 +116,6 @@ export default function CourseCategoryManagement() {
   };
 
   const deleteCategory = async (id: string) => {
-    if (!window.confirm("Delete Category?")) return;
-
     try {
       await api.delete(`/api/course-category/delete/${id}`);
       loadCategories();
@@ -125,6 +124,15 @@ export default function CourseCategoryManagement() {
       console.error(error);
       toast.error("Failed To Delete Category");
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedCategory) return;
+
+    await deleteCategory(selectedCategory.id);
+
+    setDeleteModalOpen(false);
+    setSelectedCategory(null);
   };
 
   const activeCount = categories.filter(
@@ -227,7 +235,7 @@ export default function CourseCategoryManagement() {
                   });
                   setShowModal(true);
                 }}
-                className="bg-blue-600 text-white px-5 rounded-xl flex items-center gap-2"
+                className="bg-blue-900 text-white px-5 rounded-xl flex items-center gap-2"
               >
                 <Plus size={18} />
                 Add Category
@@ -298,7 +306,10 @@ export default function CourseCategoryManagement() {
 
                           {hasPermission("Course Categories", "canDelete") && (
                             <button
-                              onClick={() => deleteCategory(item.id)}
+                              onClick={() => {
+                                setSelectedCategory(item);
+                                setDeleteModalOpen(true);
+                              }}
                               className="p-2 bg-red-100 rounded"
                             >
                               <Trash size={16} />
@@ -388,7 +399,7 @@ export default function CourseCategoryManagement() {
 
               <button
                 onClick={saveCategory}
-                className="bg-blue-600 text-white px-5 py-2 rounded-xl"
+                className="bg-blue-900 text-white px-5 py-2 rounded-xl"
               >
                 {editingId ? "Update" : "Save"}
               </button>
@@ -396,6 +407,19 @@ export default function CourseCategoryManagement() {
           </div>
         </div>
       )}
+
+      <DeleteConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Category?"
+        description={
+          selectedCategory
+            ? `"${selectedCategory.name}" will be permanently deleted. This action cannot be undone.`
+            : "This action cannot be undone."
+        }
+        confirmText="Delete Category"
+        onConfirm={handleConfirmDelete}
+      />
     </Shell>
   );
 }

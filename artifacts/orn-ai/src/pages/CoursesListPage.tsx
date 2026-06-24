@@ -3,7 +3,7 @@
 "use client";
 import { Shell } from "@/components/layout/Shell";
 import { useAuth } from "@/hooks/use-auth";
-
+import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
 import React, { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import {
@@ -74,7 +74,7 @@ const [, navigate] = useLocation();
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
+const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
 
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
@@ -149,8 +149,8 @@ const [, navigate] = useLocation();
   }, [searchTerm, statusFilter, courses]);
 
   // ================= DELETE COURSE =================
-  const handleDeleteClick = (courseId: string) => {
-    setCourseToDelete(courseId);
+  const handleDeleteClick = (course: Course) => {
+    setCourseToDelete(course);
     setShowDeleteModal(true);
   };
 
@@ -158,13 +158,17 @@ const [, navigate] = useLocation();
     if (!courseToDelete) return;
 
     try {
-      setDeletingId(courseToDelete);
-      console.log(courseToDelete);
-      await api.delete(`/api/courses/${courseToDelete}`, {
-        data: { courseId: courseToDelete },
+      if (!courseToDelete) return;
+
+      setDeletingId(courseToDelete._id);
+
+      await api.delete(`/api/courses/${courseToDelete._id}`, {
+        data: { courseId: courseToDelete._id },
       });
 
-      setCourses((prev) => prev.filter((course) => course._id !== courseToDelete));
+      setCourses((prev) =>
+        prev.filter((course) => course._id !== courseToDelete._id)
+      );
       setShowDeleteModal(false);
       setCourseToDelete(null);
     } catch (error) {
@@ -214,29 +218,7 @@ const [, navigate] = useLocation();
   return (
     <Shell>
     <div className="dashboard-container">
-      {/* Delete Modal */}
-      {showDeleteModal && (
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-icon">
-              <Trash2 size={24} />
-            </div>
-            <h3 className="modal-title">Delete Course</h3>
-            <p className="modal-text">
-              Are you sure you want to delete this course? This action cannot be undone.
-            </p>
-            <div className="modal-buttons">
-              <button className="modal-btn cancel" onClick={() => setShowDeleteModal(false)}>
-                Cancel
-              </button>
-              <button className="modal-btn confirm" onClick={confirmDelete}>
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+     
       {/* Header */}
       <div className="dashboard-header">
         <h1>Courses</h1>
@@ -403,7 +385,7 @@ const [, navigate] = useLocation();
                           {hasPermission("Course Management", "canDelete") && (
                             <button
                               className="action-btn delete"
-                              onClick={() => handleDeleteClick(course._id)}
+                              onClick={() => handleDeleteClick(course)}
                               disabled={deletingId === course._id}
                             >
                               <Trash2 size={18} />
@@ -461,6 +443,20 @@ const [, navigate] = useLocation();
         </>
       )}
     </div>
+
+      <DeleteConfirmationModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        title="Delete Course?"
+        description={
+          courseToDelete
+            ? `"${courseToDelete.title}" will be permanently deleted. This action cannot be undone.`
+            : "This action cannot be undone."
+        }
+        confirmText="Delete Course"
+        loading={!!deletingId}
+        onConfirm={confirmDelete}
+      />
     </Shell>
   );
 }

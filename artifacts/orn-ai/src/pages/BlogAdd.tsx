@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
-
+import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
 import { Shell } from "@/components/layout/Shell";
 
 import {
@@ -60,6 +60,8 @@ export default function BlogManagementNew() {
   const { user } = useAuth();
 
   const [permissions, setPermissions] = useState([]);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -156,18 +158,21 @@ export default function BlogManagementNew() {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmDelete = window.confirm(
-      "Delete this blog?"
-    );
-
-    if (!confirmDelete) return;
-
     try {
       await api.delete(`/api/blogs/${id}`);
       fetchBlogs();
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedBlog) return;
+
+    await handleDelete(selectedBlog.id);
+
+    setDeleteModalOpen(false);
+    setSelectedBlog(null);
   };
 
   const handleSave = async () => {
@@ -228,6 +233,8 @@ export default function BlogManagementNew() {
   const totalPages = Math.ceil(
     filteredBlogs.length / perPage
   );
+
+  
 
   return (
     <Shell>
@@ -323,7 +330,10 @@ export default function BlogManagementNew() {
                             <Button
                               size="sm"
                               variant="destructive"
-                              onClick={() => handleDelete(blog.id)}
+                              onClick={() => {
+                                setSelectedBlog(blog);
+                                setDeleteModalOpen(true);
+                              }}
                             >
                               <Trash2 size={14} />
                             </Button>
@@ -736,6 +746,19 @@ export default function BlogManagementNew() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <DeleteConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Blog?"
+        description={
+          selectedBlog
+            ? `"${selectedBlog.title}" will be permanently deleted. This action cannot be undone.`
+            : "This action cannot be undone."
+        }
+        confirmText="Delete Blog"
+        onConfirm={handleConfirmDelete}
+      />
     </Shell>
   );
 }

@@ -1,7 +1,6 @@
-import {
-  Trash2,
-  ShoppingCart,
-} from "lucide-react";
+import {Trash2,ShoppingCart,} from "lucide-react";
+import { useState } from "react";
+import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
 
 interface Props {
   courses: any[];
@@ -14,7 +13,26 @@ export default function SelectedCourses({
   courses,
   removeCourse,
 }: Props) {
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+
+
+  // Confirm Delete Handler
+
+  const handleConfirmDelete = () => {
+    if (!selectedCourse) return;
+
+    removeCourse(
+      selectedCourse.id || selectedCourse._id
+    );
+
+    setDeleteModalOpen(false);
+    setSelectedCourse(null);
+  };
+
   return (
+    <>
     <div className="overflow-hidden border border-slate-200 bg-white">
 
       {/* Header */}
@@ -107,11 +125,10 @@ export default function SelectedCourses({
                   </div>
 
                   <button
-                    onClick={() =>
-                      removeCourse(
-                       course.id || course._id
-                      )
-                    }
+                    onClick={() => {
+                      setSelectedCourse(course);
+                      setDeleteModalOpen(true);
+                    }}
                     className="
                             flex
                             h-10
@@ -143,5 +160,18 @@ export default function SelectedCourses({
       </div>
 
     </div>
+      <DeleteConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Remove Course?"
+        description={
+          selectedCourse
+            ? `"${selectedCourse.title}" will be removed from this learning path.`
+            : "This course will be removed from the learning path."
+        }
+        confirmText="Remove Course"
+        onConfirm={handleConfirmDelete}
+      />
+    </>
   );
 }

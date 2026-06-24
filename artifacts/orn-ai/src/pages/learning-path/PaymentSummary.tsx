@@ -191,7 +191,7 @@ export default function PaymentSummary({
             justify-center
             gap-2
             rounded-2xl
-            bg-green-600
+            bg-blue-900
             py-4
             font-semibold
             text-white
