@@ -1246,8 +1246,7 @@ setLessonUploading((prev) => ({
 };
 
   // ========== FILE UPLOAD HANDLERS ==========
-const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
-
+const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
 const handleCoverUpload = (
   e: React.ChangeEvent<HTMLInputElement>
 ) => {
@@ -2080,7 +2079,7 @@ toast.success(
                   <div className="upload-text">
                     Drag & Drop image or <span className="upload-browse">Browse</span>
                   </div>
-                  <div className="upload-hint">JPG, PNG, GIF, WEBP (Max 500MB)</div>
+                  <div className="upload-hint">JPG, PNG, GIF, WEBP (Max 5GB)</div>
                   <input
                     id="coverInput"
                     type="file"
@@ -2144,7 +2143,7 @@ toast.success(
                   <div className="upload-text">
                     Drag & Drop video or <span className="upload-browse">Browse</span>
                   </div>
-                  <div className="upload-hint">  MP4, MOV, AVI (Max 500MB)</div>
+                  <div className="upload-hint">  MP4, MOV, AVI (Max 5GB)</div>
                   <input
                     id="videoInput"
                     type="file"
@@ -2571,7 +2570,7 @@ toast.success(
                           >
                             <div className="upload-icon">📄</div>
                             <div className="upload-text">PDF or Image</div>
-                            <div className="upload-hint">PDF Only (Max 500MB)</div>
+                            <div className="upload-hint">PDF Only (Max 5GB)</div>
                             {lessonForms[module.id]?.documentFile && (
 
                               lessonUploading[module.id] ? (
@@ -2644,8 +2643,8 @@ toast.success(
                                   return;
                                 }
 
-                                // Max 500MB
-                                if (file.size > 500 * 1024 * 1024) {
+                                // Max 5GB
+                                if (file.size > 5 * 1024 * 1024 * 1024) {
                                   toast.error("PDF size cannot exceed 500MB");
                                   e.target.value = "";
                                   return;
@@ -2729,7 +2728,7 @@ toast.success(
                                 )
                               }
                                                         
-                            <div className="upload-hint"> Video Only (Max 500MB)</div>
+                            <div className="upload-hint"> Video Only (Max 5GB)</div>
                             <input
                               type="file"
                               accept="video/*"
@@ -2747,8 +2746,8 @@ toast.success(
                                       return;
                                     }
 
-                                    // Max 500MB
-                                    if (file.size > 500 * 1024 * 1024) {
+                                    // Max 5GB
+                                    if (file.size > 5 * 1024 * 1024 * 1024) {
                                       toast.error("Video size cannot exceed 500MB");
                                       e.target.value = "";
                                       return;
