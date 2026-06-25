@@ -2477,6 +2477,8 @@ const handleAddQuiz = async (
                     )}
 
 
+
+
                   <div className="upload-text">
                     Drag & Drop image or <span className="upload-browse">Browse</span>
                   </div>
