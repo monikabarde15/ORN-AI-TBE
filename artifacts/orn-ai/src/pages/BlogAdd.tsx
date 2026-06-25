@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../../services/api";
-
+import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
 import { Shell } from "@/components/layout/Shell";
 
 import {
@@ -41,6 +41,7 @@ import {
   ListOrdered,
   Undo2,
   Redo2,
+  Eye,
 } from "lucide-react";
 
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -56,34 +57,36 @@ interface Blog {
 }
 
 export default function BlogManagementNew() {
-    const { user } = useAuth();
+  const { user } = useAuth();
 
   const [permissions, setPermissions] = useState([]);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
 
-useEffect(() => {
-  if (!user?.id) return;
+  useEffect(() => {
+    if (!user?.id) return;
 
-  api
-    .get(`/api/user-permissions/${user.id}`)
-    .then((res) => {
-      setPermissions(res.data.permissions || []);
-    });
-}, [user?.id]);
+    api
+      .get(`/api/user-permissions/${user.id}`)
+      .then((res) => {
+        setPermissions(res.data.permissions || []);
+      });
+  }, [user?.id]);
 
-const hasPermission = (
-  moduleName: string,
-  action = "canView"
-) => {
-  if (user?.role === "admin") return true;
+  const hasPermission = (
+    moduleName: string,
+    action = "canView"
+  ) => {
+    if (user?.role === "admin") return true;
 
-  return permissions.some(
-    (p: any) =>
-      p.moduleName === moduleName &&
-      p[action]
-  );
-};
+    return permissions.some(
+      (p: any) =>
+        p.moduleName === moduleName &&
+        p[action]
+    );
+  };
 
-  
+
   console.log(user);
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [open, setOpen] = useState(false);
@@ -99,6 +102,7 @@ const hasPermission = (
 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const perPage = 5;
 
@@ -154,18 +158,21 @@ const hasPermission = (
   };
 
   const handleDelete = async (id: string) => {
-    const confirmDelete = window.confirm(
-      "Delete this blog?"
-    );
-
-    if (!confirmDelete) return;
-
     try {
       await api.delete(`/api/blogs/${id}`);
       fetchBlogs();
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedBlog) return;
+
+    await handleDelete(selectedBlog.id);
+
+    setDeleteModalOpen(false);
+    setSelectedBlog(null);
   };
 
   const handleSave = async () => {
@@ -227,14 +234,25 @@ const hasPermission = (
     filteredBlogs.length / perPage
   );
 
+  
+
   return (
     <Shell>
-      <div className="p-4 md:p-8">
-        <Card className="shadow-xl rounded-2xl">
-          <CardHeader className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-            <CardTitle className="text-2xl font-bold">
+      <div className="px-8 py-6">
+        <div
+          className="
+    flex
+    flex-col
+    md:flex-row
+    gap-4
+    md:items-center
+    md:justify-between
+    mb-8
+  "
+        >
+            <h3 className="text-3xl font-semibold tracking-tight">
               Blog Management
-            </CardTitle>
+            </h3>
 
             <div className="flex flex-col md:flex-row gap-3">
               <div className="relative">
@@ -256,9 +274,9 @@ const hasPermission = (
                 </Button>
               )}
             </div>
-          </CardHeader>
+          </div>
 
-          <CardContent>
+          <div>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -280,7 +298,7 @@ const hasPermission = (
                             blog.thumbnail ||
                             "https://placehold.co/120x80"
                           }
-                          className="h-16 w-28 rounded-lg object-cover"
+                          className="h-20 w-36 rounded-xl object-cover border shadow-sm"
                         />
                       </TableCell>
 
@@ -298,21 +316,24 @@ const hasPermission = (
 
                       <TableCell>
                         <div className="flex gap-2">
-                         {hasPermission("Blogs", "canEdit") && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEdit(blog)}
-                              >
-                                <Pencil size={14} />
-                              </Button>
-                            )}
+                          {hasPermission("Blogs", "canEdit") && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEdit(blog)}
+                            >
+                              <Pencil size={14} />
+                            </Button>
+                          )}
 
                           {hasPermission("Blogs", "canDelete") && (
                             <Button
                               size="sm"
                               variant="destructive"
-                              onClick={() => handleDelete(blog.id)}
+                              onClick={() => {
+                                setSelectedBlog(blog);
+                                setDeleteModalOpen(true);
+                              }}
                             >
                               <Trash2 size={14} />
                             </Button>
@@ -350,273 +371,394 @@ const hasPermission = (
                 Next
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
+        {/* Blog Dialog */}
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent
-  className="
-    w-[98vw]
-    h-[95vh]
-
-    max-w-7xl
-
-    overflow-hidden
-
-    rounded-3xl
-
-    p-0
-  "
->
+          <DialogContent className=" w-[98vw] h-[95vh] max-w-[1600px] overflow-hidden rounded-3xl border-0 shadow-2xl p-0"
+          >
             <DialogHeader>
-              <DialogTitle>
-                {editingBlog
-                  ? "Edit Blog"
-                  : "Create Blog"}
-              </DialogTitle>
+              <div className="px-6 py-3 border-b bg-background flex items-center justify-between">
+                <h2 className="text-lg font-semibold">
+                  {editingBlog ? "Edit Blog" : "Create Blog"}
+                </h2>
+              </div>
             </DialogHeader>
 
-            <div className=" grid
-    grid-cols-1
+            <div className="
+  flex-1
+  min-h-0
+  grid
+  grid-cols-1
+  lg:grid-cols-[340px_1fr]
 
-    lg:grid-cols-[420px_1fr]
+  overflow-hidden"
+            >
+              {/* Left Panel */}
+              <div className="border-r bg-muted/10 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto p-4 space-y-8 hide-scrollbar">
 
-    h-[calc(95vh-80px)]
+                  {/* BLOG DETAILS */}
 
-    overflow-hidden">
-              <div className="border-r
+                  <div className="space-y-4">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Blog Details
+                    </h3>
 
-    overflow-y-auto
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Blog Title
+                      </label>
 
-    p-5
+                      <Input
+                        placeholder="Enter blog title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                      />
+                    </div>
 
-    space-y-5">
-                <Input
-                  placeholder="Blog Title"
-                  value={title}
-                  onChange={(e) =>
-                    setTitle(e.target.value)
-                  }
-                />
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Category
+                      </label>
 
-                <Input
-                  placeholder="Category"
-                  value={category}
-                  onChange={(e) =>
-                    setCategory(e.target.value)
-                  }
-                />
-
-                
-<label
-  className="
-    border-2
-    border-dashed
-    rounded-2xl
-
-    h-40
-
-    flex
-    items-center
-    justify-center
-
-    cursor-pointer
-
-    hover:bg-muted
-  "
->
-  Upload Thumbnail
-
-  <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file =
-                      e.target.files?.[0];
-
-                    if (!file) return;
-
-                    setImage(file);
-
-                    setImagePreview(
-                      URL.createObjectURL(file)
-                    );
-                  }}
-                />
-</label>
-                {imagePreview && (
-                  <img
-                    src={imagePreview}
-                    className="
-                      w-full
-                      h-40
-                      sm:h-56
-                      md:h-64
-                      object-cover
-                      rounded-xl
-                      border
-                    "
-                  />
-                )}
-
-                <Button
-                  className="w-full"
-                  disabled={loading}
-                  onClick={handleSave}
-                >
-                  {loading
-                    ? "Saving..."
-                    : editingBlog
-                    ? "Update Blog"
-                    : "Create Blog"}
-                </Button>
-              </div>
-
-              <div className="flex
-    flex-col
-
-    h-full
-
-    overflow-hidden">
-                <div className=" border
-    rounded-xl
-
-    overflow-hidden
-
-    h-full
-
-    flex
-    flex-col">
-                  <div className="sticky
-    top-0
-
-    z-20
-
-    bg-background
-
-    border-b
-
-    p-3
-
-    flex
-    flex-wrap
-
-    gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        editor
-                          ?.chain()
-                          .focus()
-                          .toggleBold()
-                          .run()
-                      }
-                    >
-                      <Bold size={14} />
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        editor
-                          ?.chain()
-                          .focus()
-                          .toggleItalic()
-                          .run()
-                      }
-                    >
-                      <Italic size={14} />
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        editor
-                          ?.chain()
-                          .focus()
-                          .toggleBulletList()
-                          .run()
-                      }
-                    >
-                      <List size={14} />
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        editor
-                          ?.chain()
-                          .focus()
-                          .toggleOrderedList()
-                          .run()
-                      }
-                    >
-                      <ListOrdered size={14} />
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        editor
-                          ?.chain()
-                          .focus()
-                          .undo()
-                          .run()
-                      }
-                    >
-                      <Undo2 size={14} />
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        editor
-                          ?.chain()
-                          .focus()
-                          .redo()
-                          .run()
-                      }
-                    >
-                      <Redo2 size={14} />
-                    </Button>
+                      <Input
+                        placeholder="Enter category"
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                      />
+                    </div>
                   </div>
 
-                <div
-  className="
+                  {/* THUMBNAIL */}
+
+                  <div className="space-y-4">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Thumbnail
+                    </h3>
+
+                    <label className="border-2 border-dashed rounded-2xl h-40 flex flex-col items-center justify-center cursor-pointer hover:bg-muted transition-colors">
+                      <div className="text-center">
+                        <p className="font-medium">
+                          Upload Thumbnail
+                        </p>
+
+                        <p className="text-xs text-muted-foreground mt-1">
+                          PNG, JPG, WEBP
+                        </p>
+                      </div>
+
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+
+                          if (!file) return;
+
+                          setImage(file);
+                          setImagePreview(URL.createObjectURL(file));
+                        }}
+                      />
+                    </label>
+
+                    {imagePreview && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">
+                          Preview
+                        </p>
+
+                        <img
+                          src={imagePreview}
+                          className="w-full h-48 object-cover rounded-xl border"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+
+                <div className="border-t bg-background p-4 shrink-0">
+                  <Button
+                    className="w-full h-11 rounded-xl"
+                    disabled={loading}
+                    onClick={handleSave}
+                  >
+                    {loading
+                      ? "Saving..."
+                      : editingBlog
+                        ? "Update Blog"
+                        : "Create Blog"}
+                  </Button>
+                </div>
+
+              </div>
+
+              <div className="flex flex-col h-full overflow-hidden">
+
+                <div className="h-full flex flex-col overflow-hidden bg-muted/20 border-l">
+
+                  {/* ToolBar */}
+                  <div
+                    className="
+    sticky
+    top-0
+    z-20
+    bg-background
+    border-b
+    px-3
+    py-2
+    flex
+    items-center
+    justify-between
+    shrink-0
+  "
+                  >
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="
+                        h-9
+                        w-9
+                        p-0
+                        rounded-lg
+                      "
+                        onClick={() =>
+                          editor
+                            ?.chain()
+                            .focus()
+                            .toggleBold()
+                            .run()
+                        }
+                      >
+                        <Bold size={14} />
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="
+    h-9
+    w-9
+    p-0
+    rounded-lg
+  "
+                        onClick={() =>
+                          editor
+                            ?.chain()
+                            .focus()
+                            .toggleItalic()
+                            .run()
+                        }
+                      >
+                        <Italic size={14} />
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="
+    h-9
+    w-9
+    p-0
+    rounded-lg
+  "
+                        onClick={() =>
+                          editor
+                            ?.chain()
+                            .focus()
+                            .toggleBulletList()
+                            .run()
+                        }
+                      >
+                        <List size={14} />
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="
+    h-9
+    w-9
+    p-0
+    rounded-lg
+  "
+                        onClick={() =>
+                          editor
+                            ?.chain()
+                            .focus()
+                            .toggleOrderedList()
+                            .run()
+                        }
+                      >
+                        <ListOrdered size={14} />
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="
+    h-9
+    w-9
+    p-0
+    rounded-lg
+  "
+                        onClick={() =>
+                          editor
+                            ?.chain()
+                            .focus()
+                            .undo()
+                            .run()
+                        }
+                      >
+                        <Undo2 size={14} />
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="
+    h-9
+    w-9
+    p-0
+    rounded-lg
+  "
+                        onClick={() =>
+                          editor
+                            ?.chain()
+                            .focus()
+                            .redo()
+                            .run()
+                        }
+                      >
+                        <Redo2 size={14} />
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 bg-blue-800 text-white"
+                        onClick={() => setPreviewOpen(true)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Preview
+                      </Button>
+                    </div>
+                  </div>
+
+
+
+                  <div
+                    className="
     flex
     flex-col
     h-full
     overflow-hidden
   "
->
-  
+                  >
 
-  <EditorContent
-    editor={editor}
-    className="
-      flex-1
-      overflow-y-auto
-      p-6
-      prose
-      max-w-none
 
-      [&_.ProseMirror]:outline-none
-      [&_.ProseMirror]:min-h-full
-    "
-  />
-</div>
+                    <EditorContent
+                      editor={editor}
+                      className="
+    flex-1
+    overflow-y-auto
+
+    px-8
+    py-8
+
+    prose
+    max-w-none
+
+    [&_.ProseMirror]:max-w-4xl
+    [&_.ProseMirror]:mx-auto
+
+    [&_.ProseMirror]:min-h-[600px]
+
+    [&_.ProseMirror]:bg-background
+    [&_.ProseMirror]:rounded-2xl
+    [&_.ProseMirror]:border
+
+    [&_.ProseMirror]:p-10
+
+    [&_.ProseMirror]:shadow-sm
+
+    [&_.ProseMirror]:outline-none
+  "
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Preview Dialog */}
+
+        <Dialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+        >
+          <DialogContent className="max-w-7xl h-[90vh] overflow-hidden p-0">
+            <div className="h-full min-h-0 flex flex-col">
+
+              <div className="shrink-0 border-b px-6 py-3 bg-background">
+                <h2 className="font-semibold">
+                  Blog Preview
+                </h2>
+              </div>
+
+              <div className="flex-1 min-h-0 overflow-y-auto">
+
+                {imagePreview && (
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-[320px] object-cover"
+                  />
+                )}
+
+                <div className="max-w-4xl mx-auto px-8 py-10">
+
+                  {category && (
+                    <p className="text-sm text-muted-foreground uppercase tracking-wide mb-4">
+                      {category}
+                    </p>
+                  )}
+
+                  <h1 className="text-4xl font-bold mb-8">
+                    {title || "Untitled Blog"}
+                  </h1>
+
+                  <div
+                    className="prose prose-lg max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html: description,
+                    }}
+                  />
+                </div>
+
+              </div>
+
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
+
+      <DeleteConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Blog?"
+        description={
+          selectedBlog
+            ? `"${selectedBlog.title}" will be permanently deleted. This action cannot be undone.`
+            : "This action cannot be undone."
+        }
+        confirmText="Delete Blog"
+        onConfirm={handleConfirmDelete}
+      />
     </Shell>
   );
 }

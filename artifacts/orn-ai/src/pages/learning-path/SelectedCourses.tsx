@@ -1,7 +1,6 @@
-import {
-  Trash2,
-  ShoppingCart,
-} from "lucide-react";
+import {Trash2,ShoppingCart,} from "lucide-react";
+import { useState } from "react";
+import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
 
 interface Props {
   courses: any[];
@@ -14,24 +13,43 @@ export default function SelectedCourses({
   courses,
   removeCourse,
 }: Props) {
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+
+
+  // Confirm Delete Handler
+
+  const handleConfirmDelete = () => {
+    if (!selectedCourse) return;
+
+    removeCourse(
+      selectedCourse.id || selectedCourse._id
+    );
+
+    setDeleteModalOpen(false);
+    setSelectedCourse(null);
+  };
+
   return (
-    <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+    <>
+    <div className="overflow-hidden border border-slate-200 bg-white">
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-500 to-red-500 p-5 text-white">
+      <div className="border-b border-slate-200 px-5 py-4">
 
         <div className="flex items-center gap-3">
 
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-900">
             <ShoppingCart size={22} />
           </div>
 
           <div>
-            <p className="text-sm text-orange-100">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
               Course Bundle
             </p>
 
-            <h2 className="text-xl font-bold">
+            <h2 className="text-lg font-semibold text-slate-900">
               Selected Courses
             </h2>
           </div>
@@ -44,9 +62,9 @@ export default function SelectedCourses({
       <div className="max-h-[350px] overflow-y-auto p-4">
 
         {courses.length === 0 ? (
-          <div className="py-10 text-center">
+          <div className="py-12 text-center">
 
-            <div className="text-5xl">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-2xl">
               📚
             </div>
 
@@ -73,7 +91,7 @@ export default function SelectedCourses({
                     rounded-2xl
                     border
                     border-slate-200
-                    bg-slate-50
+                    bg-white
                     p-3
                   "
                 >
@@ -100,29 +118,32 @@ export default function SelectedCourses({
                       {course.title}
                     </h4>
 
-                    <p className="mt-1 text-green-600 font-semibold">
+                    <p className="mt-1 font-semibold text-blue-900">
                       ₹{course.price}
                     </p>
 
                   </div>
 
                   <button
-                    onClick={() =>
-                      removeCourse(
-                       course.id || course._id
-                      )
-                    }
+                    onClick={() => {
+                      setSelectedCourse(course);
+                      setDeleteModalOpen(true);
+                    }}
                     className="
-                      flex
-                      h-10
-                      w-10
-                      items-center
-                      justify-center
-                      rounded-xl
-                      bg-red-50
-                      text-red-500
-                      hover:bg-red-100
-                    "
+                            flex
+                            h-10
+                            w-10
+                            items-center
+                            justify-center
+                            rounded-xl
+                            border
+                            border-slate-200
+                            bg-white
+                            text-slate-500
+                            transition
+                            hover:bg-slate-50
+                            hover:text-red-600
+                          "
                   >
                     <Trash2
                       size={16}
@@ -139,5 +160,18 @@ export default function SelectedCourses({
       </div>
 
     </div>
+      <DeleteConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Remove Course?"
+        description={
+          selectedCourse
+            ? `"${selectedCourse.title}" will be removed from this learning path.`
+            : "This course will be removed from the learning path."
+        }
+        confirmText="Remove Course"
+        onConfirm={handleConfirmDelete}
+      />
+    </>
   );
 }

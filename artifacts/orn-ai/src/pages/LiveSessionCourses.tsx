@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import api from "../../services/api";
 import { Shell } from "@/components/layout/Shell";
 import { useAuth } from "@/hooks/use-auth";
+import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
 
 interface Session {
   id: string;
@@ -65,22 +66,16 @@ export default function LiveSessionsDashboard() {
   };
   
     
-    console.log(user);
-  const [loading, setLoading] =
-    useState(true);
-  const [currentPage, setCurrentPage] =
-    useState(1);
-  const [viewModal, setViewModal] =
-    useState(false);
-
-  const [selectedSession, setSelectedSession] =
-    useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewModal, setViewModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const itemsPerPage = 8;
-  const [sessions, setSessions] =
-    useState<Session[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [search, setSearch] = useState("");
 
-  const [search, setSearch] =
-    useState("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedSessionForDelete, setSelectedSessionForDelete] = useState<Session | null>(null);
 
   const loadSessions = async () => {
     try {
@@ -111,13 +106,6 @@ export default function LiveSessionsDashboard() {
   const deleteSession = async (
     id: string
   ) => {
-    if (
-      !window.confirm(
-        "Delete this session?"
-      )
-    )
-      return;
-
     try {
       await api.delete(
         `/api/live-sessions/${id}`
@@ -135,6 +123,19 @@ export default function LiveSessionsDashboard() {
         "Failed to delete session"
       );
     }
+  };
+
+  // Confirm Delete Handler
+
+  const handleConfirmDelete = async () => {
+    if (!selectedSessionForDelete) return;
+
+    await deleteSession(
+      selectedSessionForDelete.id
+    );
+
+    setDeleteModalOpen(false);
+    setSelectedSessionForDelete(null);
   };
 
   const filteredSessions =
@@ -447,21 +448,22 @@ export default function LiveSessionsDashboard() {
                         "Live Training Sessions",
                         "canDelete"
                       ) && (
-                        <button
-                          onClick={() =>
-                            deleteSession(session.id)
-                          }
-                          className="
-                            rounded-lg
-                            bg-red-600
-                            px-3
-                            py-2
-                            text-xs
-                            text-white
-                          "
-                        >
-                          Delete
-                        </button>
+                          <button
+                            onClick={() => {
+                              setSelectedSessionForDelete(session);
+                              setDeleteModalOpen(true);
+                            }}
+                            className="
+    rounded-lg
+    bg-red-600
+    px-3
+    py-2
+    text-xs
+    text-white
+  "
+                          >
+                            Delete
+                          </button>
                       )}
 
                       </div>
@@ -678,6 +680,19 @@ export default function LiveSessionsDashboard() {
         </div>
 
       </div>
+
+      <DeleteConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Session?"
+        description={
+          selectedSessionForDelete
+            ? `"${selectedSessionForDelete.sessionTitle}" will be permanently deleted. This action cannot be undone.`
+            : "This action cannot be undone."
+        }
+        confirmText="Delete Session"
+        onConfirm={handleConfirmDelete}
+      />
     </Shell>
   );
 }

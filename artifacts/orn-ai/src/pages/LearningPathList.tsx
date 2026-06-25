@@ -17,6 +17,7 @@ import {
 
 } from "lucide-react";
 import { toast } from "sonner";
+import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
 interface LearningPath {
   id: string;
   title: string;
@@ -57,34 +58,21 @@ export default function LearningPathList() {
   };
   
     
-    console.log(user);
   const [editingId, setEditingId] = useState<string | null>(null);
-  // const [sessionTitle, setSessionTitle] =useState("");
   const [search, setSearch] = useState("");
-  // const [trainerName, setTrainerName] =useState("");
-  // const [meetingLink, setMeetingLink] =useState("");
-  // const [sessionDate, setSessionDate] =useState("");
-  // const [startTime, setStartTime] =useState("");
-  // const [students, setStudents] =useState<any[]>([]);
-  // const [selectedStudent, setSelectedStudent] =useState<any>(null);
-  // const [endTime, setEndTime] =useState("");
   const [courses, setCourses] = useState<LearningPath[]>([]);
-  // const [description, setDescription] =useState("");
-  // const [creating, setCreating] =useState(false);
-  // const [openModal, setOpenModal] =useState(false);
-  // const [selectedCourse, setSelectedCourse] =useState<any>(null);
-  // const [sessions, setSessions] =useState([]);
   const [loading, setLoading] = useState(true);
   const [enabledPaths, setEnabledPaths] = useState<Record<string, boolean>>({});
 
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedPath, setSelectedPath] = useState<any>(null);
   const editLearningPath = (
     path: any
   ) => {
     window.location.href =
       `/recruiter/learning-path-manage/${path.id}`;
   };
-  const [paths, setPaths] =
-    useState<any[]>([]);
+  const [paths, setPaths] = useState<any[]>([]);
 
   useEffect(() => {
     loadLearningPaths();
@@ -183,35 +171,50 @@ const toggleLearningPathStatus = async (
     );
   }
 };
+
+// Delete handler for Modal
+const handleConfirmDelete = async () => {
+  if (!selectedPath) return;
+
+  await deleteLearningPath(selectedPath.id);
+
+  setDeleteModalOpen(false);
+  setSelectedPath(null);
+};
   
   return (
     <Shell>
       <div className="p-6">
 
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-10 flex items-start justify-between">
 
           <div>
-            <h1 className="text-4xl font-bold">
+            <h1 className="text-3xl font-bold tracking-tight">
               Learning Paths
             </h1>
 
-            <p className="text-slate-500">
+            <p className="mt-0 text-sm text-slate-500">
               Manage all learning paths
             </p>
           </div>
 
 
-          <div className="rounded-2xl bg-blue-100 px-4 py-2 font-semibold text-blue-700">
-            {paths.length} Paths
+          <div className="flex items-center gap-3">
+
+            <div className="inline-flex items-center rounded-xl bg-blue-100 px-4 py-2 text-md font-semibold text-slate-700">
+              {paths.length} Paths
+            </div>
+
+            {hasPermission("Learning Paths", "canAdd") && (
+              <a
+                href="/recruiter/learning-path"
+                className="inline-flex items-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-blue-700"
+              >
+                + Add Learning Path
+              </a>
+            )}
+
           </div>
-         {hasPermission("Learning Paths", "canAdd") && (
-            <a
-              href="/recruiter/learning-path"
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white"
-            >
-              📚 Learning Paths
-            </a>
-          )}
 
         </div>
 
@@ -334,7 +337,10 @@ const toggleLearningPathStatus = async (
 
                       {hasPermission("Learning Paths", "canDelete") && (
                         <button
-                          onClick={() => deleteLearningPath(path.id)}
+                          onClick={() => {
+                            setSelectedPath(path);
+                            setDeleteModalOpen(true);
+                          }}
                           className="rounded-xl bg-red-600 px-4 py-2 text-white"
                         >
                           Delete
@@ -353,6 +359,19 @@ const toggleLearningPathStatus = async (
         )}
 
       </div>
+
+      <DeleteConfirmationModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title="Delete Learning Path?"
+        description={
+          selectedPath
+            ? `"${selectedPath.title}" will be permanently deleted. This action cannot be undone.`
+            : "This action cannot be undone."
+        }
+        confirmText="Delete Learning Path"
+        onConfirm={handleConfirmDelete}
+      />
     
     </Shell>
   );
