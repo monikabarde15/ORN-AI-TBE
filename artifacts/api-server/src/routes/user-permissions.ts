@@ -38,8 +38,8 @@ router.get(
     try {
       const { userId } = req.params;
 
-      console.log("userId =>", userId);
-      console.log("table =>", userPermissionsTable);
+      // console.log("userId =>", userId);
+      // console.log("table =>", userPermissionsTable);
 
       const permissions = await db
         .select()

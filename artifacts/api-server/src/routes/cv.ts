@@ -1,3 +1,4 @@
+// artifacts\api-server\src\routes\cv.ts
 import { Router, type IRouter, type Request } from "express";
 import { eq } from "drizzle-orm";
 import multer from "multer";
@@ -10,6 +11,8 @@ import {
 import { serializeCandidate } from "../lib/serialize";
 import { evaluate, type CandidateLike } from "../lib/evaluation";
 import { parseCvBuffer, extractProfileFromText } from "../lib/cv-parser";
+import { parseCvWithAI } from "../lib/cv-parser-ai";
+import { AI_CONFIG } from "../lib/ai/config";
 import { buildCandidateCvPdf } from "../lib/cv-pdf";
 import { analyzeSkillGap } from "../lib/skill-gap";
 import { recordAudit } from "../lib/audit";
@@ -79,7 +82,35 @@ router.post(
       res.status(422).json({ error: "Could not parse the uploaded CV" });
       return;
     }
-    const extracted = extractProfileFromText(text);
+
+    
+    // ==========================================================
+    // LEGACY PARSER
+    // ==========================================================
+
+    // const extracted = extractProfileFromText(text);
+
+    // ==========================================================
+    // FULL AI PARSER
+    // ==========================================================
+
+    const extracted = await parseCvWithAI(text);
+
+    // ==========================================================
+    // HYBRID MODE (AI + LEGACY FALLBACK)
+    // ==========================================================
+
+    // let extracted;
+
+    // if (AI_CONFIG.enabled) {
+    //   try {
+    //     extracted = await parseCvWithAI(text);
+    //   } catch {
+    //     extracted = extractProfileFromText(text);
+    //   }
+    // } else {
+    //   extracted = extractProfileFromText(text);
+    // }
 
     const cvMeta = {
       fileName: file.originalname,
@@ -87,12 +118,30 @@ router.post(
       contentSummary: extracted.rawText.slice(0, 280),
     };
 
+    // const updates: Record<string, unknown> = {
+    //   cv: cvMeta,
+    //   cvFileBytes: file.buffer,
+    //   cvFileName: file.originalname,
+    //   cvMimeType: file.mimetype,
+    //   careerGapMonths: extracted.careerGapMonths,
+    // };
+
     const updates: Record<string, unknown> = {
       cv: cvMeta,
       cvFileBytes: file.buffer,
       cvFileName: file.originalname,
       cvMimeType: file.mimetype,
+
+      // ==========================
+      // AI Resume Parser
+      // ==========================
+
+      // AI
+      yearsExperience: extracted.yearsExperience,
       careerGapMonths: extracted.careerGapMonths,
+
+      // Legacy
+      // careerGapMonths: detectCareerGapMonths(text),
     };
     if (extracted.lastRole) updates["lastRole"] = extracted.lastRole;
     if (extracted.domain) updates["domain"] = extracted.domain;
@@ -110,6 +159,9 @@ router.post(
       .set(updates)
       .where(eq(candidatesTable.id, id))
       .returning();
+
+    console.log("Candidate Updated");
+    console.log(updated);
 
     if (!updated) {
       res.status(404).json({ error: "Candidate not found" });

@@ -1,3 +1,4 @@
+// artifacts\orn-ai\src\pages\RecruiterDashboard.tsx
 import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Shell } from "@/components/layout/Shell";

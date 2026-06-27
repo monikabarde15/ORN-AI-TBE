@@ -137,8 +137,8 @@ const role: UserRole =
     entityId: user.id,
     metadata: { role: user.role, hasCandidate: !!candidateId },
   });
-  console.log("ROLE =>", role);
-console.log("USER =>", user);
+  // console.log("ROLE =>", role);
+// console.log("USER =>", user);
   res.status(201).json({
     user: {
       ...publicUser(user),
@@ -153,7 +153,7 @@ router.post("/auth/login", async (req, res) => {
     password: string;
   }>;
 
-  console.log("BODY =>", req.body);
+  // console.log("BODY =>", req.body);
 
   const email = (body.email ?? "").trim().toLowerCase();
   const password = body.password ?? "";

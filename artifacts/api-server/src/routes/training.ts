@@ -53,6 +53,10 @@ import {
 } from "../lib/training";
 import { requireAuth, requireRole, requireCandidateAccess } from "../lib/auth";
 
+// Add ai imports
+import { AI_CONFIG } from "../lib/ai/config";
+import { recommendTrainingWithAI } from "../lib/training-ai";
+
 const router: IRouter = Router();
 
 // ----- Catalog -----
@@ -84,11 +88,49 @@ router.get(
       res.status(404).json({ error: "Candidate not found" });
       return;
     }
-    const rec = recommendTraining({
-      id: candidate.id,
-      targetRole: candidate.targetRole,
-      evaluation: candidate.evaluation,
-    });
+
+    // Legacy recomendation
+    // const rec = recommendTraining({
+    //   id: candidate.id,
+    //   targetRole: candidate.targetRole,
+    //   evaluation: candidate.evaluation,
+    // });
+
+    // Legacy + AI RECOMENDATION
+   const trainingCandidate = {
+  id: candidate.id,
+  targetRole: candidate.targetRole,
+  evaluation: candidate.evaluation,
+};
+
+    // ==========================================================
+    // LEGACY RECOMMENDATION
+    // ==========================================================
+
+    // const rec = recommendTraining(trainingCandidate);
+
+    // ==========================================================
+    // FULL AI RECOMMENDATION
+    // ==========================================================
+
+    const rec = await recommendTrainingWithAI(
+      trainingCandidate,
+    );
+
+    // ==========================================================
+    // HYBRID MODE (AI + LEGACY FALLBACK)
+    // ==========================================================
+
+    // let rec = recommendTraining(trainingCandidate);
+
+    // if (AI_CONFIG.enabled) {
+    //   try {
+    //     rec = await recommendTrainingWithAI(
+    //       trainingCandidate,
+    //     );
+    //   } catch {}
+    // }
+    
     const start = new Date();
     start.setDate(start.getDate() + 7); // suggest a 7-day kickoff window
     const target = new Date(start);

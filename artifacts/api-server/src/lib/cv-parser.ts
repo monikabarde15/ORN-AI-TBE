@@ -153,7 +153,9 @@ function detectYears(text: string): number | null {
  * in the work-history portion of the CV. This is a heuristic — it works best
  * for chronological CVs and degrades gracefully when the format is unusual.
  */
-function detectCareerGapMonths(text: string): number {
+export function detectCareerGapMonths(
+  text: string,
+): number {
   const dates: number[] = [];
   for (const match of text.matchAll(MONTH_RE)) {
     const yr = Number(match[2]);

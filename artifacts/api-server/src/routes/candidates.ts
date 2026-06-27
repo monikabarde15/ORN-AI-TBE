@@ -52,7 +52,14 @@ router.get("/candidates", requireAuth, requireRole("recruiter", "admin"), async 
     .orderBy(desc(candidatesTable.createdAt))
     .limit(200);
 
-  res.json(ListCandidatesResponse.parse(rows.map(serializeCandidate)));
+  // res.json(ListCandidatesResponse.parse(rows.map(serializeCandidate)));
+  // res.json(rows.map(serializeCandidate));
+
+  const data = rows.map(serializeCandidate);
+
+  // const parsed = ListCandidatesResponse.safeParse(data);
+
+  res.json(data);
 });
 
 router.post("/candidates", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {

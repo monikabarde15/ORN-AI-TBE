@@ -1,3 +1,4 @@
+// artifacts\api-server\src\routes\evaluation.ts
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, candidatesTable, activityTable } from "@workspace/db";
@@ -11,6 +12,10 @@ import { evaluate } from "../lib/evaluation";
 // import { requireAuth, requireRole } from "../lib/auth";
 import { backfillEvaluation } from "../lib/serialize";
 
+// for ai imports
+import { AI_CONFIG } from "../lib/ai/config";
+import { enhanceEvaluationWithAI } from "../lib/evaluation-ai";
+import { evaluateWithAI } from "../lib/evaluation-full-ai";
 const router: IRouter = Router();
 
 router.post(
@@ -34,7 +39,22 @@ router.post(
         return;
       }
 
-      const result = evaluate({
+      // const result = evaluate({
+      //   id: row.id,
+      //   fullName: row.fullName,
+      //   email: row.email,
+      //   englishLevel: row.englishLevel,
+      //   visaStatus: row.visaStatus,
+      //   yearsExperience: row.yearsExperience,
+      //   euWorkEligible: row.euWorkEligible,
+      //   targetRole: row.targetRole,
+      //   country: row.country,
+      //   skills: row.skills,
+      //   careerGapMonths: row.careerGapMonths ?? 0,
+      //   cv: row.cv as any,
+      // });
+
+      const candidate = {
         id: row.id,
         fullName: row.fullName,
         email: row.email,
@@ -47,21 +67,51 @@ router.post(
         skills: row.skills,
         careerGapMonths: row.careerGapMonths ?? 0,
         cv: row.cv as any,
-      });
+      };
+
+      // ==========================================================
+      // LEGACY EVALUATION
+      // ==========================================================
+
+      // let result = evaluate(candidate);
+
+      // ==========================================================
+      // FULL AI EVALUATION
+      // ==========================================================
+
+      let result = await evaluateWithAI(candidate);
+
+      // ==========================================================
+      // HYBRID MODE (AI + LEGACY ENHANCEMENT)
+      // ==========================================================
+
+      // let result = evaluate(candidate);
+
+      // if (AI_CONFIG.enabled) {
+      //   try {
+      //     result = await enhanceEvaluationWithAI(
+      //       candidate,
+      //       result,
+      //     );
+      //   } catch {}
+      // }
 
       await db
         .update(candidatesTable)
         .set({ evaluation: result })
         .where(eq(candidatesTable.id, row.id));
 
+      console.log("Evaluation Saved");
+
+
       const [updated] = await db
         .select()
         .from(candidatesTable)
         .where(eq(candidatesTable.id, row.id));
 
-      console.log("POST Candidate ID:", row.id);
-      console.log("Saved Evaluation:", updated?.evaluation);
-
+      // console.log("POST Candidate ID:", row.id);
+      console.log("Updated Evaluation :", updated?.evaluation);
+      
       await db.insert(activityTable).values({
         kind: "evaluation",
         candidateName: row.fullName,
@@ -102,8 +152,8 @@ router.get(
         return;
       }
 
-      console.log("GET Candidate ID:", row.id);
-      console.log("GET Evaluation:", row.evaluation);
+      // console.log("GET Candidate ID:", row.id);
+      // console.log("GET Evaluation:", row.evaluation);
 
       // Permission check removed
 
