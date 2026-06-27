@@ -88,13 +88,13 @@ router.post(
     // LEGACY PARSER
     // ==========================================================
 
-    // const extracted = extractProfileFromText(text);
+    const extracted = extractProfileFromText(text);
 
     // ==========================================================
     // FULL AI PARSER
     // ==========================================================
 
-    const extracted = await parseCvWithAI(text);
+    // const extracted = await parseCvWithAI(text);
 
     // ==========================================================
     // HYBRID MODE (AI + LEGACY FALLBACK)
