@@ -331,51 +331,6 @@ router.post("/auth/register", async (req, res) => {
       error: "Email already exists",
     });
   }
-
-<<<<<<< HEAD
-  const token = signToken(user);
-  setAuthCookie(res, token);
-  req.user = publicUser(user);
-  await recordAudit(req, {
-    action: "auth.register",
-    entityType: "user",
-    entityId: user.id,
-    metadata: { role: user.role, hasCandidate: !!candidateId },
-  });
-  // console.log("ROLE =>", role);
-// console.log("USER =>", user);
-  res.status(201).json({
-    user: {
-      ...publicUser(user),
-      role,
-    },
-=======
-  // Drizzle wraps PG error in cause
-  if (
-    err?.cause?.code === "23505" &&
-    err?.cause?.detail?.includes("(username)")
-  ) {
-    return res.status(409).json({
-      error: "Username already exists",
-    });
-  }
-
-  if (
-    err?.cause?.code === "23505" &&
-    err?.cause?.detail?.includes("(email)")
-  ) {
-    return res.status(409).json({
-      error: "Email already exists",
-    });
-  }
-
-  return res.status(500).json({
-    error:
-      err?.message ||
-      err?.cause?.message ||
-      "Failed to create account",
->>>>>>> 5c65ad12aefb832825356a11e650edddd4e7eeb8
-  });
 }
 });
 router.post("/auth/login", async (req, res) => {

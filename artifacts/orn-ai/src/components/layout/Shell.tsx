@@ -76,7 +76,7 @@ console.log('user=',user);
           </Avatar>
 
           <span className="hidden md:inline text-sm font-medium">
-            {user.fullName?.split(" ")[0]}s
+            {user.fullName?.split(" ")[0]}
           </span>
         </Button>
       </DropdownMenuTrigger>
@@ -84,7 +84,7 @@ console.log('user=',user);
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col">
-            <span className="text-sm">{user.fullName}</span>
+            <span className="text-sm">{user.fullName?.split(" ")[0]}</span>
             <span className="text-xs text-muted-foreground capitalize">
               {user.role}
             </span>
