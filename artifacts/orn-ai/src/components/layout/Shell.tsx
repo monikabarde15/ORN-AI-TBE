@@ -60,7 +60,7 @@ function UserMenu({ compact = false }: { compact?: boolean }) {
     .slice(0, 2)
     .join("")
     .toUpperCase();
-
+console.log('user=',user);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -76,7 +76,7 @@ function UserMenu({ compact = false }: { compact?: boolean }) {
           </Avatar>
 
           <span className="hidden md:inline text-sm font-medium">
-            {user.fullName}
+            {user.fullName?.split(" ")[0]}s
           </span>
         </Button>
       </DropdownMenuTrigger>

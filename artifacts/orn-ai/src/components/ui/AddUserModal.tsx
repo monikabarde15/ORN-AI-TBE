@@ -1,6 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
+
+import { Toaster, toast } from "react-hot-toast";
+import api from "../../../services/api";
+
 import {
     X,
     UserPlus,
@@ -89,7 +93,6 @@ export default function AddUserModal({
     onClose,
     onSubmit,
 }: AddUserModalProps) {
-
     const [generatedPassword, setGeneratedPassword] = useState("");
     const [formData, setFormData] = useState({
         firstName: "",
@@ -157,13 +160,118 @@ export default function AddUserModal({
         }));
     };
 
-    const handleSubmit = () => {
-        if (onSubmit) {
-            onSubmit(formData);
-        }
+const handleSubmit = async () => {
+  try {
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.email ||
+      !formData.password
+    ) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    const roleMap: Record<string, "candidate" | "recruiter" | "admin"> = {
+      Student: "candidate",
+      Recruiter: "recruiter",
+      Instructor: "recruiter",
+      Mentor: "recruiter",
+      "Content Manager": "admin",
+      Admin: "admin",
+      "Super Admin": "admin",
     };
 
+    const role = roleMap[formData.role] ?? "candidate";
 
+    const payload: any = {
+      email: formData.email,
+      password: formData.password,
+      fullName: `${formData.firstName} ${formData.lastName}`.trim(),
+
+      firstName: formData.firstName,
+      middleName: formData.middleName,
+      lastName: formData.lastName,
+
+      mobile: formData.mobile,
+      username: formData.username,
+      employeeId: formData.employeeId,
+
+      company: formData.company,
+      department: formData.department,
+      designation: formData.designation,
+
+      country: formData.country,
+      state: formData.state,
+      city: formData.city,
+
+      status: formData.status,
+
+      sendWelcomeEmail: formData.sendWelcomeEmail,
+      forcePasswordChange: formData.forcePasswordReset,
+      emailCredentials: formData.emailCredentials,
+
+      role,
+      gdprConsent: true,
+        createdByAdmin: true,
+    };
+
+    // Candidate/Student only
+    if (role === "candidate") {
+      payload.candidateProfile = {
+        fullName: payload.fullName,
+        email: formData.email,
+        phone: formData.mobile,
+        country: formData.country,
+
+        targetRole: formData.designation || "Student",
+
+        yearsExperience: 0,
+
+        visaStatus: "requires_sponsorship",
+
+        englishLevel: "B1",
+
+        euWorkEligible: false,
+
+        linkedinUrl: "",
+
+        skills: [],
+      };
+    }
+
+    const { data } = await api.post("/api/auth/register", payload);
+
+    // Generate evaluation only for Student/Candidate
+    if (role === "candidate" && data?.user?.candidateId) {
+      await api.post(
+        `/api/candidates/${data.user.candidateId}/evaluation`
+      );
+    }
+
+    toast.success("User created successfully");
+
+    onSubmit?.(data);
+   setTimeout(() => {
+    window.location.reload();
+    }, 2000);
+
+    onClose();
+  } catch (err: any) {
+    console.error(err);
+
+    toast.error(
+      err?.response?.data?.error ||
+      err?.response?.data?.message ||
+      "Failed to create user"
+    );
+  }
+};
 
     return (
         <div
@@ -179,6 +287,8 @@ export default function AddUserModal({
         p-4
       "
         >
+            <Toaster position="top-right" />
+
             <div
                 className="
           flex

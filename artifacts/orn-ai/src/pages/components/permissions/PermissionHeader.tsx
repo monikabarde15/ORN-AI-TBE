@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import api from "../../../../services/api";
+
 import {
   ShieldCheck,
   CheckSquare,
@@ -18,8 +20,19 @@ export default function PermissionHeader({
   onSelectAll,
   onClearAll,
 }: Props) {
-
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+    const loadUsers = async () => {
+      try {
+        const { data } = await api.get("/api/users");
+        setUsers(data.users || []);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    useEffect(() => {
+      loadUsers();
+    }, []);
   return (
     <>
     <div className="mb-6">
@@ -159,12 +172,13 @@ export default function PermissionHeader({
       <AddUserModal
         open={showAddUserModal}
         onClose={() => setShowAddUserModal(false)}
-        onSubmit={(data) => {
-          console.log("New User:", data);
+        onSubmit={async (data) => {
+            console.log("New User:", data);
 
-          // Backend team will handle API integration
-          setShowAddUserModal(false);
-        }}
+            await loadUsers();
+
+            setShowAddUserModal(false);
+          }}
       />
     </>
   );
