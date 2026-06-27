@@ -39,9 +39,9 @@ export default function DashboardSidebar({
       </div>
 
       {/* User Menu */}
-      <div className="border-t p-3 shrink-0">
+      {/* <div className="border-t p-3 shrink-0">
         <UserMenu />
-      </div>
+      </div> */}
     </aside>
   );
 }

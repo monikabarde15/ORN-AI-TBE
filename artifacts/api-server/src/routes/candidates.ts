@@ -115,15 +115,38 @@ router.get("/candidates/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(403).json({ error: "Insufficient permissions" });
     return;
   }
-  const [row] = await db
-    .select()
-    .from(candidatesTable)
-    .where(eq(candidatesTable.id, params.data.id));
-  if (!row) {
-    res.status(404).json({ error: "Candidate not found" });
-    return;
-  }
-  res.json(GetCandidateResponse.parse(serializeCandidate(row)));
+  //const [row] = await db
+    //.select()
+    //.from(candidatesTable)
+    //.where(eq(candidatesTable.id, params.data.id));
+  //if (!row) {
+    //res.status(404).json({ error: "Candidate not found" });
+    //return;
+  //}
+ // res.json(GetCandidateResponse.parse(serializeCandidate(row)));
+const [row] = await db
+  .select()
+  .from(candidatesTable)
+  .where(eq(candidatesTable.id, params.data.id));
+
+if (!row) {
+  res.status(404).json({ error: "Candidate not found" });
+  return;
+}
+
+// 👇 Ye 3 logs add karo
+console.log("DB ROW =", row);
+console.log("DB englishLevel =", row.englishLevel);
+
+const candidate = serializeCandidate(row);
+
+console.log("Serialized =", candidate);
+console.log("Serialized englishLevel =", candidate.englishLevel);
+
+// 👇 Temporary parse hata do
+res.json(candidate);
+
+
 });
 
 router.post("/candidates/:id/cv", requireAuth, requireCandidateAccess(), async (req, res): Promise<void> => {

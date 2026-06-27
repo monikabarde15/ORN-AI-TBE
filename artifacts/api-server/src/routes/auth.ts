@@ -28,106 +28,311 @@ function avatarFor(_name: string): string {
 const router: IRouter = Router();
 
 interface RegisterBody {
+  createdByAdmin:boolean;
   email: string;
   password: string;
   fullName: string;
   role: UserRole;
   gdprConsent: boolean;
+
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+
+  mobile?: string;
+  username?: string;
+  employeeId?: string;
+
+  company?: string;
+  department?: string;
+  designation?: string;
+
+  country?: string;
+  state?: string;
+  city?: string;
+
+  status?: "Active" | "Inactive";
+
+  sendWelcomeEmail?: boolean;
+  forcePasswordChange?: boolean;
+  emailCredentials?: boolean;
+
   candidateProfile?: {
     fullName: string;
     email: string;
     phone: string;
     country: string;
-    targetRole: string;
-    yearsExperience: number;
-    visaStatus: string;
-    englishLevel: string;
-    euWorkEligible: boolean;
-    linkedinUrl: string;
+
+    targetRole?: string;
+    currentRole?: string;
+    preferredRole?: string;
+
+    yearsExperience?: number;
+    yearsOfExperience?: string | number;
+
+    visaStatus?: string;
+
+    englishLevel?: string;
+
+    euWorkEligible?: boolean;
+
+    linkedinUrl?: string;
+
     skills?: string[];
+
+    availability?: string;
+    careerPreference?: string;
+    expectedSalary?: string;
+    preferredWorkMode?: string;
+    languagesKnown?: string[];
+
+    // Future compatibility
+    [key: string]: unknown;
   } | null;
 }
 
 router.post("/auth/register", async (req, res) => {
-  const body = req.body as Partial<RegisterBody>;
-  const email = (body.email ?? "").trim().toLowerCase();
-  const password = body.password ?? "";
-  const fullName = (body.fullName ?? "").trim();
-  const requestedRole = body.role;
-  const gdprConsent = body.gdprConsent === true;
+  try {
+    const body = req.body as Partial<RegisterBody>;
+    const createdByAdmin = body.createdByAdmin === true;
+    const email = (body.email ?? "").trim().toLowerCase();
+    const password = body.password ?? "";
+    const fullName = (body.fullName ?? "").trim();
+    const requestedRole = body.role;
+    const gdprConsent = body.gdprConsent === true;
 
-  if (!email || !password || !fullName) {
-    res.status(400).json({ error: "Missing required fields" });
-    return;
-  }
-  if (password.length < 8) {
-    res.status(400).json({ error: "Password must be at least 8 characters" });
-    return;
-  }
-  if (!gdprConsent) {
-    res.status(400).json({ error: "GDPR consent is required" });
-    return;
-  }
+    if (!email || !password || !fullName) {
+      return res.status(400).json({
+        error: "Missing required fields",
+      });
+    }
 
-  // Self-service registration is always "candidate" — recruiter/admin
-  // accounts must be provisioned via /api/admin/users by an existing admin.
-  // We accept (and ignore) any requestedRole to keep clients backward-compatible.
-const allowedRoles: UserRole[] = ["candidate", "recruiter", "admin"];
+    if (password.length < 8) {
+      return res.status(400).json({
+        error: "Password must be at least 8 characters",
+      });
+    }
 
-const role: UserRole =
-  requestedRole && allowedRoles.includes(requestedRole)
-    ? requestedRole
-    : "candidate";
-      void requestedRole;
+    if (!gdprConsent) {
+      return res.status(400).json({
+        error: "GDPR consent is required",
+      });
+    }
 
-  const existing = await findUserByEmail(email);
-  if (existing) {
-    res.status(409).json({ error: "An account with that email already exists" });
-    return;
-  }
+    const allowedRoles: UserRole[] = [
+      "candidate",
+      "recruiter",
+      "admin",
+    ];
 
-  let candidateId: string | null = null;
-  if (role === "candidate" && body.candidateProfile) {
-    const cp = body.candidateProfile;
-    const [created] = await db
-      .insert(candidatesTable)
+    const role: UserRole =
+      requestedRole && allowedRoles.includes(requestedRole)
+        ? requestedRole
+        : "candidate";
+
+    const existing = await findUserByEmail(email);
+
+    if (existing) {
+      return res.status(409).json({
+        error: "An account with that email already exists",
+      });
+    }
+
+    let candidateId: string | null = null;
+
+    if (role === "candidate" && body.candidateProfile) {
+      const cp = body.candidateProfile;
+      const englishLevelMap: Record<
+  string,
+  "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+> = {
+  Beginner: "A1",
+  Elementary: "A2",
+  Intermediate: "B1",
+  UpperIntermediate: "B2",
+  Advanced: "C1",
+  Fluent: "C2",
+
+  A1: "A1",
+  A2: "A2",
+  B1: "B1",
+  B2: "B2",
+  C1: "C1",
+  C2: "C2",
+};
+
+      let yearsExperience = 0;
+
+      if (typeof cp.yearsExperience === "number") {
+        yearsExperience = cp.yearsExperience;
+      } else if (cp.yearsOfExperience) {
+        yearsExperience =
+          parseInt(cp.yearsOfExperience.split("-")[0], 10) || 0;
+      }
+
+      const [created] = await db
+        .insert(candidatesTable)
+        .values({
+          fullName: cp.fullName ?? fullName,
+          email: cp.email ?? email,
+          phone: cp.phone ?? "",
+          country: cp.country ?? "",
+
+          targetRole:
+            cp.targetRole ??
+            cp.currentRole ??
+            cp.preferredRole ??
+            "Unknown",
+
+          yearsExperience,
+
+          visaStatus: cp.visaStatus ?? "requires_sponsorship",
+
+          englishLevel :
+  englishLevelMap[cp.englishLevel ?? ""] ?? "B1",
+
+          euWorkEligible:
+            cp.euWorkEligible ?? false,
+
+          linkedinUrl:
+            cp.linkedinUrl ?? "",
+
+          avatarUrl: avatarFor(cp.fullName ?? fullName),
+
+          skills: cp.skills ?? [],
+
+          source: "direct",
+        })
+        .returning();
+
+      candidateId = created.id;
+    }
+
+    const passwordHash = await hashPassword(password);
+
+   /* const [user] = await db
+      .insert(usersTable)
       .values({
-        fullName: cp.fullName,
-        email: cp.email,
-        phone: cp.phone,
-        country: cp.country,
-        targetRole: cp.targetRole,
-        yearsExperience: cp.yearsExperience,
-        visaStatus: cp.visaStatus,
-        englishLevel: cp.englishLevel,
-        euWorkEligible: cp.euWorkEligible,
-        linkedinUrl: cp.linkedinUrl,
-        avatarUrl: avatarFor(cp.fullName),
-        skills: cp.skills ?? [],
-        source: "direct",
+        email,
+        passwordHash,
+        fullName,
+        role,
+        candidateId,
+        gdprConsentAt: new Date(),
+      })
+      .returning();*/
+
+    if (body.username) {
+      const existingUsername = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.username, body.username))
+        .limit(1);
+
+      if (existingUsername.length > 0) {
+        return res.status(409).json({
+          error: "Username already exists",
+        });
+      }
+    }
+    const [user] = await db
+      .insert(usersTable)
+      .values({
+        email,
+        passwordHash,
+
+        fullName,
+
+        firstName: body.firstName ?? null,
+        middleName: body.middleName ?? null,
+        lastName: body.lastName ?? null,
+
+        mobile: body.mobile ?? null,
+        username: body.username ?? null,
+        employeeId: body.employeeId ?? null,
+
+        role,
+        status: body.status ?? "Active",
+
+        company: body.company ?? null,
+        department: body.department ?? null,
+        designation: body.designation ?? null,
+
+        country: body.country ?? null,
+        state: body.state ?? null,
+        city: body.city ?? null,
+
+        forcePasswordChange: body.forcePasswordChange ?? false,
+        sendWelcomeEmail: body.sendWelcomeEmail ?? false,
+        emailCredentials: body.emailCredentials ?? false,
+
+        candidateId,
+        gdprConsentAt: new Date(),
       })
       .returning();
-    candidateId = created?.id ?? null;
+        if (!user) {
+          return res.status(500).json({
+            error: "Failed to create account",
+          });
+        }
+
+    /*const token = signToken(user);
+
+    setAuthCookie(res, token);
+
+    req.user = publicUser(user);*/
+    if (!createdByAdmin) {
+      const token = signToken(user);
+
+      setAuthCookie(res, token);
+
+      req.user = publicUser(user);
+    }
+
+    await recordAudit(req, {
+      action: "auth.register",
+      entityType: "user",
+      entityId: user.id,
+      metadata: {
+        role: user.role,
+        hasCandidate: !!candidateId,
+      },
+    });
+
+    console.log("ROLE =>", role);
+    console.log("USER =>", user);
+
+    return res.status(201).json({
+      user: {
+        ...publicUser(user),
+        role,
+      },
+    });
+  }catch (err: any) {
+  console.error("=========== REGISTER ERROR ===========");
+  console.error(err);
+
+  // PostgreSQL duplicate username
+  if (
+    err?.code === "23505" &&
+    err?.detail?.includes("(username)")
+  ) {
+    return res.status(409).json({
+      error: "Username already exists",
+    });
   }
 
-  const passwordHash = await hashPassword(password);
-  const [user] = await db
-    .insert(usersTable)
-    .values({
-      email,
-      passwordHash,
-      fullName,
-      role,
-      candidateId,
-      gdprConsentAt: new Date(),
-    })
-    .returning();
-
-  if (!user) {
-    res.status(500).json({ error: "Failed to create account" });
-    return;
+  // PostgreSQL duplicate email
+  if (
+    err?.code === "23505" &&
+    err?.detail?.includes("(email)")
+  ) {
+    return res.status(409).json({
+      error: "Email already exists",
+    });
   }
 
+<<<<<<< HEAD
   const token = signToken(user);
   setAuthCookie(res, token);
   req.user = publicUser(user);
@@ -144,9 +349,35 @@ const role: UserRole =
       ...publicUser(user),
       role,
     },
-  });
-});
+=======
+  // Drizzle wraps PG error in cause
+  if (
+    err?.cause?.code === "23505" &&
+    err?.cause?.detail?.includes("(username)")
+  ) {
+    return res.status(409).json({
+      error: "Username already exists",
+    });
+  }
 
+  if (
+    err?.cause?.code === "23505" &&
+    err?.cause?.detail?.includes("(email)")
+  ) {
+    return res.status(409).json({
+      error: "Email already exists",
+    });
+  }
+
+  return res.status(500).json({
+    error:
+      err?.message ||
+      err?.cause?.message ||
+      "Failed to create account",
+>>>>>>> 5c65ad12aefb832825356a11e650edddd4e7eeb8
+  });
+}
+});
 router.post("/auth/login", async (req, res) => {
   const body = (req.body ?? {}) as Partial<{
     email: string;

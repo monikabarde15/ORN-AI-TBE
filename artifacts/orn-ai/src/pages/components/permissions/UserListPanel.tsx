@@ -38,7 +38,15 @@ export default function UserListPanel({
       const { data } =
         await api.get("/api/users");
 
-      setUsers(data.users || []);
+     const users = data.users || [];
+
+        users.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime()
+        );
+
+        setUsers(users);
     } catch (error) {
       console.error(error);
     } finally {
