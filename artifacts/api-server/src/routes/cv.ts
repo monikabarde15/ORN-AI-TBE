@@ -88,29 +88,29 @@ router.post(
     // LEGACY PARSER
     // ==========================================================
 
-    // const extracted = extractProfileFromText(text);
+    //const extracted = extractProfileFromText(text);
 
     // ==========================================================
     // FULL AI PARSER
     // ==========================================================
 
-    // const extracted = await parseCvWithAI(text);
+    const extracted = await parseCvWithAI(text);
 
     // ==========================================================
     // HYBRID MODE (AI + LEGACY FALLBACK)
     // ==========================================================
 
-    let extracted;
+    // let extracted;
 
-    if (AI_CONFIG.enabled) {
-      try {
-        extracted = await parseCvWithAI(text);
-      } catch {
-        extracted = extractProfileFromText(text);
-      }
-    } else {
-      extracted = extractProfileFromText(text);
-    }
+    // if (AI_CONFIG.enabled) {
+    //   try {
+    //     extracted = await parseCvWithAI(text);
+    //   } catch {
+    //     extracted = extractProfileFromText(text);
+    //   }
+    // } else {
+    //   extracted = extractProfileFromText(text);
+    // }
 
     const cvMeta = {
       fileName: file.originalname,
