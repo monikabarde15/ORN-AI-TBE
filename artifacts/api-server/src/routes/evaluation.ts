@@ -87,14 +87,14 @@ router.post(
 
       // let result = evaluate(candidate);
 
-      // if (AI_CONFIG.enabled) {
-      //   try {
-      //     result = await enhanceEvaluationWithAI(
-      //       candidate,
-      //       result,
-      //     );
-      //   } catch {}
-      // }
+      if (AI_CONFIG.enabled) {
+        try {
+          result = await enhanceEvaluationWithAI(
+            candidate,
+            result,
+          );
+        } catch {}
+      }
 
       await db
         .update(candidatesTable)
