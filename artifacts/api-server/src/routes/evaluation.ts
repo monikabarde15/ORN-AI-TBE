@@ -73,13 +73,13 @@ router.post(
       // LEGACY EVALUATION
       // ==========================================================
 
-      let result = evaluate(candidate);
+      // let result = evaluate(candidate);
 
       // ==========================================================
       // FULL AI EVALUATION
       // ==========================================================
 
-      // let result = await evaluateWithAI(candidate);
+      let result = await evaluateWithAI(candidate);
 
       // ==========================================================
       // HYBRID MODE (AI + LEGACY ENHANCEMENT)
@@ -87,14 +87,14 @@ router.post(
 
       // let result = evaluate(candidate);
 
-      // if (AI_CONFIG.enabled) {
-      //   try {
-      //     result = await enhanceEvaluationWithAI(
-      //       candidate,
-      //       result,
-      //     );
-      //   } catch {}
-      // }
+      if (AI_CONFIG.enabled) {
+        try {
+          result = await enhanceEvaluationWithAI(
+            candidate,
+            result,
+          );
+        } catch {}
+      }
 
       await db
         .update(candidatesTable)

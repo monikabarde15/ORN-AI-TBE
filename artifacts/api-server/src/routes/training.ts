@@ -107,15 +107,15 @@ router.get(
     // LEGACY RECOMMENDATION
     // ==========================================================
 
-    const rec = recommendTraining(trainingCandidate);
+    // const rec = recommendTraining(trainingCandidate);
 
     // ==========================================================
     // FULL AI RECOMMENDATION
     // ==========================================================
 
-    // const rec = await recommendTrainingWithAI(
-    //   trainingCandidate,
-    // );
+    const rec = await recommendTrainingWithAI(
+      trainingCandidate,
+    );
 
     // ==========================================================
     // HYBRID MODE (AI + LEGACY FALLBACK)
