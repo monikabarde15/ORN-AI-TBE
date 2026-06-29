@@ -87,7 +87,7 @@ export default function BlogManagementNew() {
   };
 
 
-  console.log(user);
+  // console.log(user);
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);

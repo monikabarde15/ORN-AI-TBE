@@ -65,7 +65,7 @@ router.post(
         targetRole: row.targetRole,
         country: row.country,
         skills: row.skills,
-        careerGapMonths: row.careerGapMonths ?? 0,
+        careerGapMonths: row.careerGapMonths,
         cv: row.cv as any,
       };
 

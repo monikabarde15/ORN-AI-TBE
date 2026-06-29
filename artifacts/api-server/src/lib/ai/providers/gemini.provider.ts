@@ -58,7 +58,10 @@ export class GeminiProvider implements AIProvider {
       domain: json.domain ?? null,
 
       // placeholder
-      careerGapMonths: 0,
+      careerGapMonths:
+                typeof json.careerGapMonths === "number"
+                    ? json.careerGapMonths
+                    : 0,
 
       skills: Array.isArray(json.skills)
         ? json.skills

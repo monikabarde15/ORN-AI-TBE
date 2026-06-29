@@ -41,8 +41,8 @@ export async function parseCvWithAI(
      * Keep legacy implementation for now.
      * We'll replace this later if needed.
      */
-    // careerGapMonths:detectCareerGapMonths(rawText),
-    careerGapMonths: result.careerGapMonths,
+    careerGapMonths:detectCareerGapMonths(rawText),
+    // careerGapMonths: result.careerGapMonths,
 
     skills: result.skills,
 

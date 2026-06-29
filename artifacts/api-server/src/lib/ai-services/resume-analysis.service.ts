@@ -1,3 +1,4 @@
+// artifacts\api-server\src\lib\ai-services\resume-analysis.service.ts
 import { getAIProvider } from "../ai/factory";
 import type { ResumeAnalysis } from "../ai";
 import { SKILL_POOL } from "../regions";
@@ -57,7 +58,10 @@ function normalize(data: ResumeAnalysis): ResumeAnalysis {
 
     domain: normalizeDomain(data.domain),
 
-    careerGapMonths: 0,
+    careerGapMonths:
+      typeof data.careerGapMonths === "number"
+        ? Math.max(0, Math.round(data.careerGapMonths))
+        : 0,
 
     skills: normalizeSkills(data.skills),
 

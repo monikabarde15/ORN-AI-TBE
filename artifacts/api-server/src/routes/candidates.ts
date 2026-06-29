@@ -135,13 +135,13 @@ if (!row) {
 }
 
 // 👇 Ye 3 logs add karo
-console.log("DB ROW =", row);
-console.log("DB englishLevel =", row.englishLevel);
+// console.log("DB ROW =", row);
+// console.log("DB englishLevel =", row.englishLevel);
 
 const candidate = serializeCandidate(row);
 
-console.log("Serialized =", candidate);
-console.log("Serialized englishLevel =", candidate.englishLevel);
+// console.log("Serialized =", candidate);
+// console.log("Serialized englishLevel =", candidate.englishLevel);
 
 // 👇 Temporary parse hata do
 res.json(candidate);

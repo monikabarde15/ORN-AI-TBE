@@ -1,3 +1,5 @@
+
+// artifacts\api-server\src\lib\evaluation-full-ai.ts
 import { analyzeSkillGap } from "./skill-gap";
 import { generateFullEvaluation } from "./ai-services/evaluation-full.service";
 
@@ -10,7 +12,7 @@ export async function evaluateWithAI(
   candidate: CandidateLike,
 ): Promise<EvaluationResult> {
   const ai = await generateFullEvaluation(candidate);
-  console.log("canidate evaluation score :",ai.scores);
+  // console.log("canidate evaluation score :",ai.scores);
   const skillGap = analyzeSkillGap(
     candidate.targetRole,
     candidate.skills ?? [],

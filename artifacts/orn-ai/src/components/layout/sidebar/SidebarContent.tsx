@@ -292,7 +292,7 @@ export default function SidebarContent({
 
               {hasPermission("Data Sources") && (
                 <Link
-                  href="/admin/data-sources"
+                  href="#"
                   onClick={onNavigate}
                   className={linkClass(
                     location === "/admin/data-sources"
@@ -305,7 +305,7 @@ export default function SidebarContent({
 
              {hasPermission("Settings") && (
               <Link
-                href="/admin/settings"
+                href="#"
                 onClick={onNavigate}
                 className={linkClass(
                   location === "/admin/settings"

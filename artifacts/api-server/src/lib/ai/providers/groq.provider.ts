@@ -1,3 +1,4 @@
+// artifacts\api-server\src\lib\ai\providers\groq.provider.ts
 import Groq from "groq-sdk";
 import { extractJson } from "../utils/json";
 
@@ -23,8 +24,9 @@ export class GroqProvider implements AIProvider {
 
 
         const apiKey = process.env.GROQ_API_KEY;
+        // console.log("apiKey=",apiKey)
 
-        console.log("Api Key Called", apiKey);
+        // console.log("Api Key Called", apiKey);
 
         if (!apiKey) {
             throw new Error("GROQ_API_KEY is missing.");
@@ -72,14 +74,17 @@ export class GroqProvider implements AIProvider {
     async analyzeResume(
         resumeText: string,
     ): Promise<ResumeAnalysis> {
-        const prompt =
-            buildResumeAnalysisPrompt(resumeText);
+        const prompt = buildResumeAnalysisPrompt(resumeText);
 
-        const text =
-            await this.generate(prompt);
+        const text = await this.generate(prompt);
 
-        const json =
-            extractJson<ResumeAnalysis>(text);
+        console.log("Raw AI Response:");
+        console.log(text);
+
+        const json = extractJson<ResumeAnalysis>(text);
+
+        console.log("Parsed AI JSON:");
+        console.log(json);
 
         return {
             fullName: json.fullName ?? null,
@@ -99,7 +104,10 @@ export class GroqProvider implements AIProvider {
             domain:
                 json.domain ?? null,
 
-            careerGapMonths: 0,
+            careerGapMonths:
+                typeof json.careerGapMonths === "number"
+                    ? json.careerGapMonths
+                    : 0,
 
             skills: Array.isArray(json.skills)
                 ? json.skills
