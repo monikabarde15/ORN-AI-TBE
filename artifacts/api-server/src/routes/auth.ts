@@ -28,7 +28,7 @@ function avatarFor(_name: string): string {
 const router: IRouter = Router();
 
 interface RegisterBody {
-  createdByAdmin:boolean;
+  createdByAdmin: boolean;
   email: string;
   password: string;
   fullName: string;
@@ -143,23 +143,23 @@ router.post("/auth/register", async (req, res) => {
     if (role === "candidate" && body.candidateProfile) {
       const cp = body.candidateProfile;
       const englishLevelMap: Record<
-  string,
-  "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
-> = {
-  Beginner: "A1",
-  Elementary: "A2",
-  Intermediate: "B1",
-  UpperIntermediate: "B2",
-  Advanced: "C1",
-  Fluent: "C2",
+        string,
+        "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+      > = {
+        Beginner: "A1",
+        Elementary: "A2",
+        Intermediate: "B1",
+        UpperIntermediate: "B2",
+        Advanced: "C1",
+        Fluent: "C2",
 
-  A1: "A1",
-  A2: "A2",
-  B1: "B1",
-  B2: "B2",
-  C1: "C1",
-  C2: "C2",
-};
+        A1: "A1",
+        A2: "A2",
+        B1: "B1",
+        B2: "B2",
+        C1: "C1",
+        C2: "C2",
+      };
 
       let yearsExperience = 0;
 
@@ -188,8 +188,8 @@ router.post("/auth/register", async (req, res) => {
 
           visaStatus: cp.visaStatus ?? "requires_sponsorship",
 
-          englishLevel :
-  englishLevelMap[cp.englishLevel ?? ""] ?? "B1",
+          englishLevel:
+            englishLevelMap[cp.englishLevel ?? ""] ?? "B1",
 
           euWorkEligible:
             cp.euWorkEligible ?? false,
@@ -210,17 +210,17 @@ router.post("/auth/register", async (req, res) => {
 
     const passwordHash = await hashPassword(password);
 
-   /* const [user] = await db
-      .insert(usersTable)
-      .values({
-        email,
-        passwordHash,
-        fullName,
-        role,
-        candidateId,
-        gdprConsentAt: new Date(),
-      })
-      .returning();*/
+    /* const [user] = await db
+       .insert(usersTable)
+       .values({
+         email,
+         passwordHash,
+         fullName,
+         role,
+         candidateId,
+         gdprConsentAt: new Date(),
+       })
+       .returning();*/
 
     if (body.username) {
       const existingUsername = await db
@@ -270,11 +270,11 @@ router.post("/auth/register", async (req, res) => {
         gdprConsentAt: new Date(),
       })
       .returning();
-        if (!user) {
-          return res.status(500).json({
-            error: "Failed to create account",
-          });
-        }
+    if (!user) {
+      return res.status(500).json({
+        error: "Failed to create account",
+      });
+    }
 
     /*const token = signToken(user);
 
@@ -308,48 +308,31 @@ router.post("/auth/register", async (req, res) => {
         role,
       },
     });
-  }catch (err: any) {
-  console.error("=========== REGISTER ERROR ===========");
-  console.error(err);
+  } catch (err: any) {
+    console.error("=========== REGISTER ERROR ===========");
+    console.error(err);
 
-  // PostgreSQL duplicate username
-  if (
-    err?.code === "23505" &&
-    err?.detail?.includes("(username)")
-  ) {
-    return res.status(409).json({
-      error: "Username already exists",
-    });
-  }
+    // PostgreSQL duplicate username
+    if (
+      err?.code === "23505" &&
+      err?.detail?.includes("(username)")
+    ) {
+      return res.status(409).json({
+        error: "Username already exists",
+      });
+    }
 
-  // PostgreSQL duplicate email
-  if (
-    err?.code === "23505" &&
-    err?.detail?.includes("(email)")
-  ) {
-    return res.status(409).json({
-      error: "Email already exists",
-    });
-  }
+    // PostgreSQL duplicate email
+    if (
+      err?.code === "23505" &&
+      err?.detail?.includes("(email)")
+    ) {
+      return res.status(409).json({
+        error: "Email already exists",
+      });
+    }
 
-<<<<<<< HEAD
-  const token = signToken(user);
-  setAuthCookie(res, token);
-  req.user = publicUser(user);
-  await recordAudit(req, {
-    action: "auth.register",
-    entityType: "user",
-    entityId: user.id,
-    metadata: { role: user.role, hasCandidate: !!candidateId },
-  });
-  // console.log("ROLE =>", role);
-// console.log("USER =>", user);
-  res.status(201).json({
-    user: {
-      ...publicUser(user),
-      role,
-    },
-=======
+
   // Drizzle wraps PG error in cause
   if (
     err?.cause?.code === "23505" &&
@@ -374,9 +357,8 @@ router.post("/auth/register", async (req, res) => {
       err?.message ||
       err?.cause?.message ||
       "Failed to create account",
->>>>>>> 5c65ad12aefb832825356a11e650edddd4e7eeb8
-  });
-}
+    });
+  }
 });
 router.post("/auth/login", async (req, res) => {
   const body = (req.body ?? {}) as Partial<{

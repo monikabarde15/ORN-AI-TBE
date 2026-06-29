@@ -20,7 +20,11 @@ export class GroqProvider implements AIProvider {
     private client: Groq;
 
     constructor() {
+
+
         const apiKey = process.env.GROQ_API_KEY;
+
+        console.log("Api Key Called", apiKey);
 
         if (!apiKey) {
             throw new Error("GROQ_API_KEY is missing.");
