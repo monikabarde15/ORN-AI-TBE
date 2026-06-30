@@ -52,5 +52,4 @@ Thumbs.db
 .env.local
 .env.production
 
-artifacts/api-server/.env
 artifacts/orn-ai/.env
