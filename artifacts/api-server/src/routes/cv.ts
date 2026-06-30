@@ -126,6 +126,8 @@ router.post(
     //   careerGapMonths: extracted.careerGapMonths,
     // };
 
+
+
     const updates: Record<string, unknown> = {
       cv: cvMeta,
       cvFileBytes: file.buffer,
@@ -145,14 +147,25 @@ router.post(
     };
     if (extracted.lastRole) updates["lastRole"] = extracted.lastRole;
     if (extracted.domain) updates["domain"] = extracted.domain;
+
+    // AI SKILLS + REGISTRATION SKILLS BOTH MERGED
+    // if (extracted.skills.length > 0) {
+    //   // Merge with any existing skills, dedupe case-insensitively.
+    //   const existing = (await loadCandidateRow(id))?.skills ?? [];
+    //   const merged = new Map<string, string>();
+    //   for (const s of [...existing, ...extracted.skills])
+    //     merged.set(s.toLowerCase(), s);
+    //   updates["skills"] = Array.from(merged.values()).slice(0, 24);
+    // }
+
+    
+    // AI Only Extracted Resume Skills
+
     if (extracted.skills.length > 0) {
-      // Merge with any existing skills, dedupe case-insensitively.
-      const existing = (await loadCandidateRow(id))?.skills ?? [];
-      const merged = new Map<string, string>();
-      for (const s of [...existing, ...extracted.skills])
-        merged.set(s.toLowerCase(), s);
-      updates["skills"] = Array.from(merged.values()).slice(0, 24);
+      updates["skills"] = extracted.skills.slice(0, 24);
     }
+
+
 
     const [updated] = await db
       .update(candidatesTable)
@@ -160,8 +173,6 @@ router.post(
       .where(eq(candidatesTable.id, id))
       .returning();
 
-    console.log("Candidate Updated");
-    console.log(updated);
 
     if (!updated) {
       res.status(404).json({ error: "Candidate not found" });

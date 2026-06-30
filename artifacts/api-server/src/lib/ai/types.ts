@@ -7,15 +7,13 @@ export interface ResumeAnalysis {
   phone: string | null;
   location: string | null;
 
-  yearsExperience: number | null;
-
   lastRole: string | null;
-
   domain: string | null;
 
-  careerGapMonths: number;
-
   skills: string[];
+
+  // NEW
+  employmentHistory: EmploymentHistory[];
 
   rawText: string;
 }
@@ -94,6 +92,15 @@ export interface FullEvaluationAnalysis {
   }[];
 }
 
+export interface EmploymentHistory {
+  company?: string;
+  role: string;
+  startDate: string; // YYYY-MM
+  endDate: string;   // YYYY-MM | Present
+}
+
+
+
 export interface AIProvider {
   analyzeResume(
     resumeText: string,
@@ -111,6 +118,8 @@ export interface AIProvider {
     candidate: CandidateLike,
   ): Promise<FullEvaluationAnalysis>;
 }
+
+
 
 
 // export interface AIProvider {

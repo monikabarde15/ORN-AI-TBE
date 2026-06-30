@@ -263,6 +263,8 @@ export default function CandidateEvaluation() {
     query: { enabled: !!id, queryKey: getGetSkillGapQueryKey(id || "") },
   });
 
+  console.log("Skillgap data:" , skillGap);
+
   if (!id || isLoadingCandidate || isLoadingEvaluation) {
     return (
       <Shell>

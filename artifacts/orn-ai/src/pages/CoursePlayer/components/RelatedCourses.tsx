@@ -1,3 +1,4 @@
+// artifacts\orn-ai\src\pages\CoursePlayer\components\RelatedCourses.tsx
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";

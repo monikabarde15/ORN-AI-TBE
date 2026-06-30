@@ -26,7 +26,24 @@ export async function parseCvWithAI(
 
   console.log("🤖 AI Resume Parser Started");
   const result = await analyzeResume(rawText);
-  console.log("✅ AI Response:", result);
+  
+  console.log("\n================ AI RESUME ANALYSIS ================");
+
+  console.log("Full Name        :", result.fullName);
+  console.log("Email            :", result.email);
+  console.log("Phone            :", result.phone);
+  console.log("Location         :", result.location);
+
+  console.log("Years Experience :", result.yearsExperience);
+  console.log("Career Gap       :", result.careerGapMonths);
+
+  console.log("Last Role        :", result.lastRole);
+  console.log("Domain           :", result.domain);
+
+  console.log("Skills Count     :", result.skills.length);
+  console.log("Skills           :", result.skills);
+
+  console.log("===================================================\n");
 
   return {
     fullName: result.fullName,
@@ -41,8 +58,8 @@ export async function parseCvWithAI(
      * Keep legacy implementation for now.
      * We'll replace this later if needed.
      */
-    careerGapMonths:detectCareerGapMonths(rawText),
-    // careerGapMonths: result.careerGapMonths,
+    // careerGapMonths:detectCareerGapMonths(rawText),
+    careerGapMonths: result.careerGapMonths,
 
     skills: result.skills,
 

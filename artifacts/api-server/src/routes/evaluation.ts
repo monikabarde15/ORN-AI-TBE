@@ -101,7 +101,6 @@ router.post(
         .set({ evaluation: result })
         .where(eq(candidatesTable.id, row.id));
 
-      console.log("Evaluation Saved");
 
 
       const [updated] = await db
@@ -110,7 +109,7 @@ router.post(
         .where(eq(candidatesTable.id, row.id));
 
       // console.log("POST Candidate ID:", row.id);
-      console.log("Updated Evaluation :", updated?.evaluation);
+      // console.log("Updated Evaluation :", updated?.evaluation);
       
       await db.insert(activityTable).values({
         kind: "evaluation",

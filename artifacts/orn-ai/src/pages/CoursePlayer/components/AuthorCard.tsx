@@ -1,3 +1,4 @@
+// artifacts\orn-ai\src\pages\CoursePlayer\components\AuthorCard.tsx
 interface AuthorCardProps {
   instructor: any;
 }
