@@ -1,25 +1,55 @@
 // artifacts\orn-ai\src\pages\learning-path\CourseGrid.tsx
 import CourseCard from "./CourseCard";
+import { useEffect, useMemo, useState } from "react";
+
+import LearningPathForm from "./LearningPathForm";
+import UploadMedia from "./UploadMedia";
+
 
 interface Props {
   courses: any[];
   selectedCourses: any[];
-  toggleCourse: (
-    course: any
-  ) => void;
+  toggleCourse: (course: any) => void;
   loading?: boolean;
-}
 
-export default function CourseGrid({
+  title: string;
+  description: string;
+  setTitle: (value: string) => void;
+  setDescription: (value: string) => void;
+
+  setThumbnail: (file: File | null) => void;
+  setVideo: (file: File | null) => void;
+
+  thumbnailPreview: string;
+  videoPreview: string;
+
+  setThumbnailPreview: (value: string) => void;
+  setVideoPreview: (value: string) => void;
+}export default function CourseGrid({
   courses,
   selectedCourses,
   toggleCourse,
   loading,
-}: Props) {
+
+  title,
+  description,
+  setTitle,
+  setDescription,
+
+  setThumbnail,
+  setVideo,
+
+  thumbnailPreview,
+  videoPreview,
+
+  setThumbnailPreview,
+  setVideoPreview,
+}: Props){
+ 
   if (loading) {
     return (
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-
+      
         {[...Array(6)].map(
           (_, index) => (
             <div
@@ -53,13 +83,29 @@ export default function CourseGrid({
     );
   }
 
-  return (
+  return ( 
     <div>
+<div className="mb-8 space-y-6">
+      <LearningPathForm
+        title={title}
+        description={description}
+        setTitle={setTitle}
+        setDescription={setDescription}
+      />
 
+      <UploadMedia
+        setThumbnail={setThumbnail}
+        setVideo={setVideo}
+        thumbnailPreview={thumbnailPreview}
+        videoPreview={videoPreview}
+        setThumbnailPreview={setThumbnailPreview}
+        setVideoPreview={setVideoPreview}
+      />
+    </div>
       <div className="mb-5 flex items-center justify-between">
 
         <h3 className="text-xl font-bold">
-          Available Courses
+          Available Courses1
         </h3>
 
         <span className="rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700">

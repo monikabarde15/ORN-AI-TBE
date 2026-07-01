@@ -27,7 +27,7 @@ export default function CourseSearch({
 
           <div>
             <h2 className="text-xl font-bold">
-              Select Courses
+              Select Courses 
             </h2>
 
             <p className="text-sm text-blue-100">

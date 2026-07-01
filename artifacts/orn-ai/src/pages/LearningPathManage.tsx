@@ -43,7 +43,9 @@ export default function LearningPathManage() {
     };
     
       
-      console.log(user);
+      console.log(user);const [thumbnailPreview, setThumbnailPreview] = useState("");
+const [videoPreview, setVideoPreview] = useState("");
+
     const [activeTab, setActiveTab] = useState("courses");
     const [loading, setLoading] = useState(false);
     const [courses, setCourses] = useState<any[]>([]);
@@ -617,16 +619,24 @@ export default function LearningPathManage() {
                                         />
 
                                         <CourseGrid
-                                            courses={
-                                                filteredCourses
-                                            }
-                                            selectedCourses={
-                                                selectedCourses
-                                            }
-                                            toggleCourse={
-                                                toggleCourse
-                                            }
-                                            loading={loading}
+                                        courses={filteredCourses}
+                                        selectedCourses={selectedCourses}
+                                        toggleCourse={toggleCourse}
+                                        loading={loading}
+
+                                        title={title}
+                                        description={description}
+                                        setTitle={setTitle}
+                                        setDescription={setDescription}
+
+                                        setThumbnail={setThumbnail}
+                                        setVideo={setIntroVideo}
+
+                                        thumbnailPreview={thumbnailPreview}
+                                        videoPreview={videoPreview}
+
+                                        setThumbnailPreview={setThumbnailPreview}
+                                        setVideoPreview={setVideoPreview}
                                         />
 
                                     </div>
