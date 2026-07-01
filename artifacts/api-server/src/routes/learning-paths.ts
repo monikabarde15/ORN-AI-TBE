@@ -16,14 +16,10 @@ const router: IRouter =
 /* =========================================
 CREATE LEARNING PATH
 ========================================= */
-
 router.post(
   "/learning-paths",
   requireAuth,
-  requireRole(
-    "admin",
-    "recruiter"
-  ),
+  requireRole("admin", "recruiter"),
   upload.fields([
     {
       name: "thumbnail",
@@ -36,14 +32,9 @@ router.post(
   ]),
   async (req, res) => {
     try {
-
       console.log(
         "FILES =>",
-        JSON.stringify(
-          req.files,
-          null,
-          2
-        )
+        JSON.stringify(req.files, null, 2)
       );
 
       const {
@@ -53,41 +44,78 @@ router.post(
       } = req.body;
 
       const thumbnailFile =
-        (req.files as any)
-          ?.thumbnail?.[0];
+        (req.files as any)?.thumbnail?.[0];
 
       const introVideoFile =
-        (req.files as any)
-          ?.introVideo?.[0];
+        (req.files as any)?.introVideo?.[0];
 
       const courseIds =
-        typeof req.body.courseIds ===
-        "string"
-          ? JSON.parse(
-              req.body.courseIds
-            )
-          : req.body.courseIds ||
-            [];
+        typeof req.body.courseIds === "string"
+          ? JSON.parse(req.body.courseIds)
+          : req.body.courseIds || [];
 
+      // Sort course ids so [1,2] and [2,1] are considered same
+      const sortedCourseIds = [...courseIds].sort();
+
+      // ==========================
+      // Title Duplicate Check
+      // ==========================
+      const existingTitle = await db
+        .select()
+        .from(learningPathsTable)
+        .where(eq(learningPathsTable.title, title));
+
+      if (existingTitle.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error:
+            "Learning Path title already exists.",
+        });
+      }
+
+      // ==========================
+      // CourseIds Duplicate Check
+      // ==========================
+      const learningPaths = await db
+        .select()
+        .from(learningPathsTable);
+
+      const duplicateCourses =
+        learningPaths.find((item) => {
+          const existingCourseIds = [
+            ...(item.courseIds || []),
+          ].sort();
+
+          return (
+            JSON.stringify(existingCourseIds) ===
+            JSON.stringify(sortedCourseIds)
+          );
+        });
+
+      if (duplicateCourses) {
+        return res.status(400).json({
+          success: false,
+          error:
+            "Selected course(s) already exist in another Learning Path.",
+        });
+      }
+
+      // ==========================
+      // Create Learning Path
+      // ==========================
       const [learningPath] =
         await db
-          .insert(
-            learningPathsTable
-          )
+          .insert(learningPathsTable)
           .values({
             title,
             description,
-
             thumbnail:
-              thumbnailFile
-                ?.location || "",
-
+              thumbnailFile?.location || "",
             introVideo:
-              introVideoFile
-                ?.location || "",
-
+              introVideoFile?.location || "",
             paymentLink,
-            courseIds,
+            courseIds:
+              sortedCourseIds,
           })
           .returning();
 
@@ -95,9 +123,7 @@ router.post(
         success: true,
         data: learningPath,
       });
-
     } catch (error) {
-
       console.log(
         "LEARNING PATH ERROR =>",
         error
@@ -108,11 +134,9 @@ router.post(
         error:
           "Failed to create learning path",
       });
-
     }
   }
 );
-
 /* =========================================
 GET ALL LEARNING PATHS
 ========================================= */
@@ -409,8 +433,8 @@ DELETE LEARNING PATH
 router.delete(
   "/learning-paths/:id",
   requireAuth,
-  requireRole("admin"),
-  async (req, res) => {
+   requireRole("admin", "recruiter"),
+    async (req, res) => {
     try {
       await db
         .delete(

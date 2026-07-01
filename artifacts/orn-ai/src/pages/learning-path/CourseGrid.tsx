@@ -75,10 +75,9 @@ export default function CourseGrid({
             <CourseCard
               key={course._id}
               course={course}
-              selected={selectedCourses.some(
+             selected={selectedCourses.some(
                 (c: any) =>
-                  c._id ===
-                  course._id
+                  (c.id || c._id) === (course.id || course._id)
               )}
               onToggle={() =>
                 toggleCourse(

@@ -542,7 +542,7 @@ DELETE SESSION
 router.delete(
   "/live-sessions/:id",
   requireAuth,
-  requireRole("admin"),
+ requireRole("admin", "recruiter"),
   async (req, res) => {
     try {
       await db
