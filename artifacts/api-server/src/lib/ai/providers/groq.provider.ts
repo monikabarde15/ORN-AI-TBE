@@ -16,6 +16,7 @@ import { buildCandidateInsightsPrompt } from "../prompts/candidate-insights.prom
 import { buildResumeAnalysisPrompt } from "../prompts/resume-analysis.prompt";
 import { buildTrainingRecommendationPrompt } from "../prompts/training-recommendation.prompt";
 import { buildFullEvaluationPrompt } from "../prompts/evaluation-full.prompt";
+import {calculateYearsExperience,calculateCareerGapMonths,} from "../utils/employment";
 
 export class GroqProvider implements AIProvider {
     private client: Groq;
@@ -86,6 +87,15 @@ export class GroqProvider implements AIProvider {
         console.log("Parsed AI JSON:");
         console.log(json);
 
+    
+        console.log(
+            "Career Gap:",
+            calculateCareerGapMonths(
+                json.employmentHistory ?? [],
+            ),
+        );
+        console.log("=========================================\n");
+
         return {
             fullName: json.fullName ?? null,
 
@@ -96,7 +106,9 @@ export class GroqProvider implements AIProvider {
             location: json.location ?? null,
 
             yearsExperience:
-                json.yearsExperience ?? null,
+                calculateYearsExperience(
+                    json.employmentHistory ?? [],
+                ),
 
             lastRole:
                 json.lastRole ?? null,
@@ -105,12 +117,16 @@ export class GroqProvider implements AIProvider {
                 json.domain ?? null,
 
             careerGapMonths:
-                typeof json.careerGapMonths === "number"
-                    ? json.careerGapMonths
-                    : 0,
+                calculateCareerGapMonths(
+                    json.employmentHistory ?? [],
+                ),
 
             skills: Array.isArray(json.skills)
                 ? json.skills
+                : [],
+
+            employmentHistory: Array.isArray(json.employmentHistory)
+                ? json.employmentHistory
                 : [],
 
             rawText: resumeText.slice(0, 4000),
@@ -194,19 +210,26 @@ export class GroqProvider implements AIProvider {
     async generateFullEvaluation(
         candidate: CandidateLike,
     ): Promise<FullEvaluationAnalysis> {
+
+
+        console.log("\n================ CANDIDATE FOR AI EVALUATION ================");
+        console.dir(candidate, { depth: null });
+        console.log("=============================================================\n");
+
+
         const prompt =
             buildFullEvaluationPrompt(
                 candidate,
             );
 
-        const text =
-            await this.generate(prompt);
+        const text = await this.generate(prompt);
 
         const json =
             extractJson<FullEvaluationAnalysis>(
                 text,
             );
 
+        
         return json;
     }
 

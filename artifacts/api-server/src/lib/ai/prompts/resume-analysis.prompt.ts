@@ -59,24 +59,6 @@ location
 
 --------------------------------------------------
 
-yearsExperience
-
-Calculate TOTAL professional work experience.
-
-Rules
-
-- Count only professional employment.
-- Count full-time employment.
-- Count contract employment.
-- Count freelance only if clearly professional.
-- Ignore education.
-- Ignore internships unless they are clearly full-time professional experience.
-- Ignore certifications.
-- Ignore projects without employment.
-- Return a whole number.
-
---------------------------------------------------
-
 lastRole
 
 Return the MOST RECENT professional job title.
@@ -113,53 +95,38 @@ Allowed values
 
 If multiple companies belong to different industries, choose the industry of the candidate's most recent primary experience.
 
+
 --------------------------------------------------
 
-careerGapMonths
+employmentHistory
 
-Calculate the largest employment gap.
+Extract EVERY professional employment record from the resume.
 
 Rules
 
-- Compare consecutive professional employments.
-- Ignore normal job transitions shorter than 6 months.
-- Ignore education periods.
-- Ignore internships.
-- Ignore overlapping employment.
-- Ignore part-time education while employed.
-- If the latest role is marked Present or Current, use today's date.
-- Return the largest employment gap in months.
-- If there is no significant employment gap, return 0.
+- Include ONLY professional employment.
+- Ignore Education.
+- Ignore Certifications.
+- Ignore Projects.
+- Ignore Skills.
+- Ignore Resume Summary.
+- Ignore Internships unless they are clearly professional employment.
+- Return jobs in chronological order (oldest first).
+- Use YYYY-MM format for dates.
+- If the resume says Present, return exactly "Present".
+- Do not estimate missing dates.
+- Do not invent companies or job titles.
 
-Career Gap Calculation
+Return exactly:
 
-1. Extract every professional employment.
-
-2. Order them chronologically.
-
-3. Compare the end date of one employment with the start date of the next employment.
-
-4. Ignore:
-
-- education
-- internships
-- overlapping jobs
-- gaps smaller than 6 months
-
-5. Return the largest remaining gap in months.
-
-Example
-
-Jan 2018 – Feb 2020
-
-Feb 2023 – Present
-
-Gap = 36 months
-
-Return
-
-careerGapMonths = 36
-
+[
+  {
+    "company": "",
+    "role": "",
+    "startDate": "YYYY-MM",
+    "endDate": "YYYY-MM | Present"
+  }
+]
 --------------------------------------------------
 
 skills
@@ -192,10 +159,17 @@ Return exactly this JSON:
   "email": null,
   "phone": null,
   "location": null,
-  "yearsExperience": null,
   "lastRole": null,
   "domain": null,
-  "careerGapMonths": 0,
+  "employmentHistory": [
+    {
+      "company": "",
+      "role": "",
+      "startDate": "YYYY-MM",
+      "endDate": "YYYY-MM | Present"
+    }
+  ],
+
   "skills": []
 }
 
