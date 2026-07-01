@@ -12,6 +12,9 @@ import SessionsTab from "./learning-path-manage/SessionsTab";
 import SessionForm from "./learning-path-manage/SessionForm";
 import LearningPathSidebar from "./learning-path-manage/LearningPathSidebar";
 import { useAuth } from "@/hooks/use-auth";
+import LearningPathForm from "../pages/learning-path/LearningPathForm";
+import UploadMedia from "../pages/learning-path/UploadMedia";
+
 
 
 export default function LearningPathManage() {
@@ -611,6 +614,21 @@ const [videoPreview, setVideoPreview] = useState("");
                                     />
                                 ) : (
                                     <div className="space-y-6">
+                                        <LearningPathForm
+                                            title={title}
+                                            description={description}
+                                            setTitle={setTitle}
+                                            setDescription={setDescription}
+                                        />
+
+                                        <UploadMedia
+                                            setThumbnail={setThumbnail}
+                                            setVideo={setIntroVideo}
+                                            thumbnailPreview={thumbnailPreview}
+                                            videoPreview={videoPreview}
+                                            setThumbnailPreview={setThumbnailPreview}
+                                            setVideoPreview={setVideoPreview}
+                                        />
 
 
                                         <CourseSearch
@@ -618,7 +636,10 @@ const [videoPreview, setVideoPreview] = useState("");
                                             setSearch={setSearch}
                                         />
 
-                                        <CourseGrid
+                                        <CourseGrid  
+                                        showForm={true}
+
+
                                         courses={filteredCourses}
                                         selectedCourses={selectedCourses}
                                         toggleCourse={toggleCourse}

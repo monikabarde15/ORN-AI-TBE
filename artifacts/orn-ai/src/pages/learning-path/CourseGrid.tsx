@@ -11,7 +11,7 @@ interface Props {
   selectedCourses: any[];
   toggleCourse: (course: any) => void;
   loading?: boolean;
-
+showForm?: boolean;
   title: string;
   description: string;
   setTitle: (value: string) => void;
@@ -38,7 +38,7 @@ interface Props {
 
   setThumbnail,
   setVideo,
-
+showForm = false, 
   thumbnailPreview,
   videoPreview,
 
@@ -85,27 +85,11 @@ interface Props {
 
   return ( 
     <div>
-<div className="mb-8 space-y-6">
-      <LearningPathForm
-        title={title}
-        description={description}
-        setTitle={setTitle}
-        setDescription={setDescription}
-      />
 
-      <UploadMedia
-        setThumbnail={setThumbnail}
-        setVideo={setVideo}
-        thumbnailPreview={thumbnailPreview}
-        videoPreview={videoPreview}
-        setThumbnailPreview={setThumbnailPreview}
-        setVideoPreview={setVideoPreview}
-      />
-    </div>
       <div className="mb-5 flex items-center justify-between">
 
         <h3 className="text-xl font-bold">
-          Available Courses1
+          Available Courses
         </h3>
 
         <span className="rounded-full bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700">
