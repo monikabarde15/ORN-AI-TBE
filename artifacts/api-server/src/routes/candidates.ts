@@ -65,6 +65,7 @@ router.get("/candidates", requireAuth, requireRole("recruiter", "admin"), async 
 
 router.post("/candidates", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
   const parsed = RegisterCandidateBody.safeParse(req.body);
+  console.log("parsed=",parsed,"req=",req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;

@@ -1043,6 +1043,7 @@ export const RegisterCandidateBody = zod.object({
   phone: zod.string(),
   country: zod.string(),
   targetRole: zod.string(),
+  currentRole:zod.string(),
   yearsExperience: zod
     .number()
     .min(registerCandidateBodyYearsExperienceMin)
