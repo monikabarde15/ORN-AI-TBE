@@ -1,3 +1,4 @@
+// artifacts\api-server\src\routes\candidates.ts
 import { Router, type IRouter } from "express";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import { db, candidatesTable, activityTable } from "@workspace/db";

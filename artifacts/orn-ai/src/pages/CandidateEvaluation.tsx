@@ -263,7 +263,7 @@ export default function CandidateEvaluation() {
     query: { enabled: !!id, queryKey: getGetSkillGapQueryKey(id || "") },
   });
 
-  console.log("Skillgap data:" , skillGap);
+  console.log("Skillgap data:" , candidate);
 
   if (!id || isLoadingCandidate || isLoadingEvaluation) {
     return (
@@ -350,7 +350,7 @@ export default function CandidateEvaluation() {
                   </h1>
                   <p className="text-muted-foreground text-base flex items-center gap-2 mt-1">
                     <Briefcase className="size-4" />
-                    {candidate.targetRole}
+                    {candidate.currentRole}
                     <span className="text-muted-foreground/50">•</span>
                     {candidate.yearsExperience} yrs exp
                   </p>

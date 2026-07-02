@@ -255,6 +255,7 @@ export default function Register() {
           skills: values.skills,
           currentRole: values.currentRole,
           preferredRole: values.preferredRole,
+          targetRole: values.preferredRole,
           yearsOfExperience: values.yearsOfExperience,
           languagesKnown: values.languagesKnown,
           careerPreference: values.careerPreference,

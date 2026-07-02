@@ -7,7 +7,7 @@ import {
   Ban,
   UserPlus
 } from "lucide-react";
-import AddUserModal from "@/components/ui/AddUserModal";
+// import AddUserModal from "@/components/ui/AddUserModal";
 interface Props {
   totalUsers: number;
   onSelectAll: () => void;
@@ -20,7 +20,7 @@ export default function PermissionHeader({
   onSelectAll,
   onClearAll,
 }: Props) {
-  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  // const [showAddUserModal, setShowAddUserModal] = useState(false);
     const loadUsers = async () => {
       try {
         const { data } = await api.get("/api/users");
@@ -78,30 +78,6 @@ export default function PermissionHeader({
 
         {/* Right */}
         <div className="flex items-center gap-3">
-
-
-          {/* ADD USER BUTTON */}
-
-          <button
-            onClick={() => setShowAddUserModal(true)}
-            className="
-    flex
-    items-center
-    gap-2
-    px-4
-    py-3
-    rounded-xl
-    bg-blue-900
-    text-white
-    hover:bg-blue-800
-    transition
-    shadow-sm
-  "
-          >
-            <UserPlus size={18} />
-            Add User
-          </button>
-
 
           <div
             className="
@@ -168,18 +144,6 @@ export default function PermissionHeader({
       </div>
 
     </div>
-
-      <AddUserModal
-        open={showAddUserModal}
-        onClose={() => setShowAddUserModal(false)}
-        onSubmit={async (data) => {
-            console.log("New User:", data);
-
-            await loadUsers();
-
-            setShowAddUserModal(false);
-          }}
-      />
     </>
   );
 }

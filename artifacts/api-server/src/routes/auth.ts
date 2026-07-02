@@ -1,3 +1,4 @@
+// artifacts\api-server\src\routes\auth.ts
 import { Router, type IRouter } from "express";
 import {
   db,
@@ -46,7 +47,7 @@ interface RegisterBody {
   company?: string;
   department?: string;
   designation?: string;
-
+  currentLocation?: string;
   country?: string;
   state?: string;
   city?: string;
@@ -176,6 +177,14 @@ router.post("/auth/register", async (req, res) => {
           fullName: cp.fullName ?? fullName,
           email: cp.email ?? email,
           phone: cp.phone ?? "",
+          currentLocation:
+            (cp.currentLocation as string) ?? "",
+
+          currentRole:
+            cp.currentRole ?? "",
+
+          preferredRole:
+            cp.preferredRole ?? "",
           country: cp.country ?? "",
 
           targetRole:

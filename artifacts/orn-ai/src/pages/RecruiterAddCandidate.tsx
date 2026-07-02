@@ -12,20 +12,55 @@ import {
   useRegisterCandidate,
   useUploadCvFile,
   useRunEvaluation,
+  useListRegions,
+  getListRegionsQueryKey,
   ApiError,
 } from "@workspace/api-client-react";
 import { Loader2, Upload, FileText, ArrowRight } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
+// ----- Constants -----
+const VISA_VALUES = [
+  "eu_citizen",
+  "work_permit",
+  "blue_card",
+  "requires_sponsorship",
+  "student_visa",
+] as const;
+
+
+const VISA_LABELS: Record<(typeof VISA_VALUES)[number], string> = {
+  eu_citizen: "EU Citizen",
+  work_permit: "Work Permit",
+  blue_card: "EU Blue Card",
+  requires_sponsorship: "Requires Sponsorship",
+  student_visa: "Student Visa",
+};
 export default function RecruiterAddCandidate() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [country, setCountry] = useState("Romania");
+  const [currentLocation, setCurrentLocation] = useState("");
+  const [country, setCountry] = useState("");
+  const [visaStatus, setVisaStatus] = useState("eu_citizen");
+  const [currentRole, setCurrentRole] = useState("");
+  const [preferredRole, setPreferredRole] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { data: regions } = useListRegions({
+    query: {
+      queryKey: getListRegionsQueryKey(),
+    },
+  });
   const register = useRegisterCandidate();
   const uploadCv = useUploadCvFile();
   const runEval = useRunEvaluation();
@@ -46,51 +81,128 @@ export default function RecruiterAddCandidate() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+
     if (!file) {
-      toast({ title: "CV required", description: "Attach a PDF, DOC or DOCX file.", variant: "destructive" });
+      toast({
+        title: "CV required",
+        description: "Attach a PDF, DOC or DOCX file.",
+        variant: "destructive",
+      });
       return;
     }
-    if (!fullName || !email) {
-      toast({ title: "Missing info", description: "Name and email are required.", variant: "destructive" });
+
+    if (
+      !fullName.trim() ||
+      !email.trim() ||
+      !currentLocation ||
+      !country ||
+      !visaStatus ||
+      !currentRole.trim() ||
+      !preferredRole.trim()
+    ) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required candidate details.",
+        variant: "destructive",
+      });
       return;
     }
+
+    /* ---------- Normalize Inputs ---------- */
+
+    const normalizedFullName = fullName.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedCurrentRole = currentRole.trim();
+    const normalizedPreferredRole = preferredRole.trim();
+
+    /* ---------- API Payload ---------- */
+
+    const candidatePayload = {
+      fullName: normalizedFullName,
+      email: normalizedEmail,
+      phone: "",
+
+      currentLocation,
+      country,
+
+      visaStatus,
+
+      currentRole: normalizedCurrentRole,
+
+      preferredRole: normalizedPreferredRole,
+
+      // Preferred Role becomes Target Role
+      targetRole: normalizedPreferredRole,
+
+      yearsExperience: 0,
+
+      englishLevel: "B2",
+      euWorkEligible: true,
+
+      linkedinUrl: "",
+      skills: [],
+    };
+
     setBusy(true);
+
+    console.log("candidatePayload=",candidatePayload);
     try {
       const created = await register.mutateAsync({
-        data: {
-          fullName,
-          email,
-          phone: "",
-          country,
-          targetRole: "fullstack",
-          yearsExperience: 0,
-          visaStatus: "eu_citizen",
-          englishLevel: "B2",
-          euWorkEligible: true,
-          linkedinUrl: "",
-          skills: [],
-        },
+        data: candidatePayload,
       });
+
       const candidateId = created.id;
-      await uploadCv.mutateAsync({ id: candidateId, data: { file } });
-      await runEval.mutateAsync({ id: candidateId });
-      toast({ title: "Candidate added", description: "CV parsed and evaluation generated." });
+
+      await uploadCv.mutateAsync({
+        id: candidateId,
+        data: { file },
+      });
+
+      await runEval.mutateAsync({
+        id: candidateId,
+      });
+
+      toast({
+        title: "Candidate added",
+        description: "CV parsed and evaluation generated.",
+      });
+
       navigate(`/candidate/${candidateId}/evaluation`);
     } catch (err) {
-      const message = err instanceof ApiError && typeof err.data === "object" && err.data && "message" in err.data
-        ? String((err.data as { message?: string }).message)
-        : err instanceof Error
-          ? err.message
-          : "Could not add candidate";
-      toast({ title: "Failed", description: message, variant: "destructive" });
+      const message =
+        err instanceof ApiError &&
+          typeof err.data === "object" &&
+          err.data &&
+          "message" in err.data
+          ? String((err.data as { message?: string }).message)
+          : err instanceof Error
+            ? err.message
+            : "Could not add candidate";
+
+      toast({
+        title: "Failed",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setBusy(false);
     }
   }
 
+
+  const phase1 = Array.isArray((regions as any)?.phase1)
+    ? (regions as any).phase1
+    : [];
+
+  const phase2 = Array.isArray((regions as any)?.phase2)
+    ? (regions as any).phase2
+    : [];
+
+  
+
   return (
     <Shell>
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="mb-6">
           <h1 className="text-2xl font-bold tracking-tight">Add candidate</h1>
           <p className="text-muted-foreground">Upload a CV — we extract skills, experience and contact details automatically.</p>
@@ -104,10 +216,13 @@ export default function RecruiterAddCandidate() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={onSubmit} className="space-y-5">
+            <form onSubmit={onSubmit} className="space-y-6">
+
+              {/* ================= Contact Information ================= */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full name</Label>
+                  <Label htmlFor="fullName">Full Name *</Label>
                   <Input
                     id="fullName"
                     value={fullName}
@@ -116,8 +231,9 @@ export default function RecruiterAddCandidate() {
                     required
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
                     type="email"
@@ -127,19 +243,188 @@ export default function RecruiterAddCandidate() {
                     required
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    data-testid="input-add-candidate-country"
-                  />
-                </div>
+
               </div>
 
+              {/* ================= Location ================= */}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <div className="space-y-2">
+                  <Label>Current Location *</Label>
+
+                  <Select
+                    value={currentLocation}
+                    onValueChange={setCurrentLocation}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select current location" />
+                    </SelectTrigger>
+
+                    <SelectContent className="max-h-[320px]">
+
+                      {phase1.length > 0 && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-semibold uppercase text-muted-foreground">
+                            Phase 1 — Active
+                          </div>
+
+                          {phase1.map((c) => (
+                            <SelectItem key={c.code} value={c.code}>
+                              {c.flag} {c.name}
+                            </SelectItem>
+                          ))}
+
+                          {phase2.length > 0 && (
+                            <div className="px-2 py-1.5 mt-1 border-t text-xs font-semibold uppercase text-muted-foreground">
+                              Phase 2 — Coming Soon
+                            </div>
+                          )}
+
+                          {phase2.map((c) => (
+                            <SelectItem key={c.code} value={c.code}>
+                              {c.flag} {c.name}
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Country of Residence *</Label>
+
+                  <Select
+                    value={country}
+                    onValueChange={setCountry}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+
+                    <SelectContent className="max-h-[320px]">
+
+                      {phase1.length > 0 && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-semibold uppercase text-muted-foreground">
+                            Phase 1 — Active
+                          </div>
+
+                          {phase1.map((c) => (
+                            <SelectItem key={c.code} value={c.code}>
+                              {c.flag} {c.name}
+                            </SelectItem>
+                          ))}
+
+                          {phase2.length > 0 && (
+                            <div className="px-2 py-1.5 mt-1 border-t text-xs font-semibold uppercase text-muted-foreground">
+                              Phase 2 — Coming Soon
+                            </div>
+                          )}
+
+                          {phase2.map((c) => (
+                            <SelectItem key={c.code} value={c.code}>
+                              {c.flag} {c.name}
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+
+                    </SelectContent>
+                  </Select>
+                </div>
+
+              </div>
+
+              {/* ================= Visa ================= */}
+
               <div className="space-y-2">
-                <Label>CV file</Label>
+
+                <Label>Visa Status *</Label>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-2">
+
+                  {VISA_VALUES.map((value) => {
+
+                    const selected = visaStatus === value;
+
+                    return (
+
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setVisaStatus(value)}
+                        className={`flex items-center gap-3 rounded-lg border px-4 py-3 transition-all ${selected
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/30"
+                          }`}
+                      >
+
+                        <div
+                          className={`size-4 rounded-full border-2 flex items-center justify-center ${selected
+                              ? "border-primary"
+                              : "border-muted-foreground/30"
+                            }`}
+                        >
+                          {selected && (
+                            <div className="size-2 rounded-full bg-primary" />
+                          )}
+                        </div>
+
+                        <span className="text-sm">
+                          {VISA_LABELS[value]}
+                        </span>
+
+                      </button>
+
+                    );
+
+                  })}
+
+                </div>
+
+              </div>
+
+              {/* ================= Roles ================= */}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <div className="space-y-2">
+                  <Label htmlFor="currentRole">
+                    Current Role *
+                  </Label>
+
+                  <Input
+                    id="currentRole"
+                    value={currentRole}
+                    onChange={(e) => setCurrentRole(e.target.value)}
+                    placeholder="e.g. Senior Frontend Developer"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="preferredRole">
+                    Preferred Role *
+                  </Label>
+
+                  <Input
+                    id="preferredRole"
+                    value={preferredRole}
+                    onChange={(e) => setPreferredRole(e.target.value)}
+                    placeholder="e.g. Frontend Engineer, Tech Lead, AI Engineer"
+                  />
+                </div>
+
+              </div>
+
+              {/* ================= Resume Upload ================= */}
+
+              <div className="space-y-2">
+
+                <Label>Candidate Resume *</Label>
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -148,22 +433,46 @@ export default function RecruiterAddCandidate() {
                   className="hidden"
                   data-testid="input-add-candidate-cv"
                 />
+
                 <button
                   type="button"
                   onClick={pickFile}
-                  className="w-full flex items-center justify-between gap-3 border-2 border-dashed border-border rounded-lg p-4 hover:border-primary hover:bg-primary/5 transition-colors text-left"
+                  className="w-full rounded-xl border-2 border-dashed border-border p-8 hover:border-primary hover:bg-primary/5 transition-all text-left"
                   data-testid="button-add-candidate-pick-cv"
                 >
-                  <div className="flex items-center gap-3">
-                    {file ? <FileText className="size-5 text-primary" /> : <Upload className="size-5 text-muted-foreground" />}
-                    <div>
-                      <p className="text-sm font-medium">{file ? file.name : "Choose CV file"}</p>
-                      <p className="text-xs text-muted-foreground">PDF, DOC or DOCX, up to 5MB</p>
+
+                  <div className="flex flex-col items-center justify-center gap-3">
+
+                    {file
+                      ? <FileText className="size-8 text-primary" />
+                      : <Upload className="size-8 text-muted-foreground" />
+                    }
+
+                    <div className="text-center">
+
+                      <p className="font-medium">
+                        {file ? file.name : "Upload Candidate Resume"}
+                      </p>
+
+                      <p className="text-sm text-muted-foreground">
+                        PDF, DOC or DOCX • Maximum 5MB
+                      </p>
+
                     </div>
+
+                    {file && (
+                      <Badge variant="secondary">
+                        {(file.size / 1024).toFixed(0)} KB
+                      </Badge>
+                    )}
+
                   </div>
-                  {file && <Badge variant="secondary">{(file.size / 1024).toFixed(0)} KB</Badge>}
+
                 </button>
+
               </div>
+
+              {/* ================= Submit ================= */}
 
               <Button
                 type="submit"
@@ -171,9 +480,15 @@ export default function RecruiterAddCandidate() {
                 disabled={busy}
                 data-testid="button-add-candidate-submit"
               >
-                {busy ? <Loader2 className="size-4 animate-spin" /> : <ArrowRight className="size-4" />}
-                Create candidate & evaluate
+                {busy
+                  ? <Loader2 className="size-4 animate-spin" />
+                  : <ArrowRight className="size-4" />
+                }
+
+                Create Candidate & Run AI Evaluation
+
               </Button>
+
             </form>
           </CardContent>
         </Card>

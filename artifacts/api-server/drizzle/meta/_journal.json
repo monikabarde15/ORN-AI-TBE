@@ -99,6 +99,13 @@
       "when": 1782543611652,
       "tag": "0013_right_warhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1782897890827,
+      "tag": "0014_right_rhodey",
+      "breakpoints": true
     }
   ]
 }

@@ -79,7 +79,24 @@ export async function ensureSchema(): Promise<void> {
 
   // ---- Candidate column additions for the talent transformation engine ----
   // Each ALTER is wrapped in an IF NOT EXISTS so reboots are idempotent.
+
+ await db.execute(sql.raw(`
+ALTER TABLE candidates
+ADD COLUMN IF NOT EXISTS current_location text NOT NULL DEFAULT '';
+`));
+
+await db.execute(sql.raw(`
+ALTER TABLE candidates
+ADD COLUMN IF NOT EXISTS current_job_role text NOT NULL DEFAULT '';
+`));
+
+await db.execute(sql.raw(`
+ALTER TABLE candidates
+ADD COLUMN IF NOT EXISTS preferred_role text NOT NULL DEFAULT '';
+`));
+
   await db.execute(sql`ALTER TABLE candidates
+
     ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'direct',
     ADD COLUMN IF NOT EXISTS last_role text,
     ADD COLUMN IF NOT EXISTS domain text,

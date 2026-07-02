@@ -69,31 +69,37 @@ export function backfillEvaluation(
 
 export function serializeCandidate(row: CandidateRow) {
   return {
-    id: row.id,
-    fullName: row.fullName,
-    email: row.email,
-    phone: row.phone,
-    country: row.country,
-    targetRole: row.targetRole,
-    yearsExperience: row.yearsExperience,
-    visaStatus: row.visaStatus,
-    englishLevel: row.englishLevel,
-    euWorkEligible: row.euWorkEligible,
-    linkedinUrl: row.linkedinUrl,
-    avatarUrl: row.avatarUrl,
-    skills: row.skills ?? [],
-    createdAt: row.createdAt.toISOString(),
-    cv: row.cv ?? null,
-    evaluation: backfillEvaluation(row.evaluation, row),
-    source: (row.source ?? "direct") as "direct" | "recruiter",
-    lastRole: row.lastRole ?? null,
-    domain: row.domain ?? null,
-    careerGapMonths: row.careerGapMonths ?? 0,
-    isShortlisted: row.isShortlisted ?? false,
-    isClientReady: row.isClientReady ?? false,
-    isIndustryReady: row.isIndustryReady ?? false,
-    hasCvFile: !!row.cvFileBytes,
-  };
+  id: row.id,
+  fullName: row.fullName,
+  email: row.email,
+  phone: row.phone,
+
+  currentLocation: row.currentLocation,
+  currentRole: row.currentRole,
+  preferredRole: row.preferredRole,
+
+  country: row.country,
+  targetRole: row.targetRole,
+
+  yearsExperience: row.yearsExperience,
+  visaStatus: row.visaStatus,
+  englishLevel: row.englishLevel,
+  euWorkEligible: row.euWorkEligible,
+  linkedinUrl: row.linkedinUrl,
+  avatarUrl: row.avatarUrl,
+  skills: row.skills ?? [],
+  createdAt: row.createdAt.toISOString(),
+  cv: row.cv ?? null,
+  evaluation: backfillEvaluation(row.evaluation, row),
+  source: (row.source ?? "direct") as "direct" | "recruiter",
+  lastRole: row.lastRole ?? null,
+  domain: row.domain ?? null,
+  careerGapMonths: row.careerGapMonths ?? 0,
+  isShortlisted: row.isShortlisted ?? false,
+  isClientReady: row.isClientReady ?? false,
+  isIndustryReady: row.isIndustryReady ?? false,
+  hasCvFile: !!row.cvFileBytes,
+};
 }
 
 export function serializeActivity(row: ActivityRow) {

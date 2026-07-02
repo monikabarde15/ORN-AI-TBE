@@ -1,3 +1,4 @@
+// lib\db\src\schema\candidates.ts
 import {
   pgTable,
   uuid,
@@ -20,6 +21,9 @@ export const candidatesTable = pgTable("candidates", {
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone").notNull(),
+  currentLocation: text("current_location").notNull(),
+  currentRole: text("current_job_role").notNull(),
+  preferredRole: text("preferred_role").notNull(),
   country: text("country").notNull(),
   targetRole: text("target_role").notNull(),
   yearsExperience: integer("years_experience").notNull(),

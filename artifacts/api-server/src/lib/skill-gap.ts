@@ -1,3 +1,4 @@
+// artifacts\api-server\src\lib\skill-gap.ts
 // Required skill catalog per target role. Used by the skill-gap analysis to
 // surface specific missing capabilities and recommend next-step training.
 

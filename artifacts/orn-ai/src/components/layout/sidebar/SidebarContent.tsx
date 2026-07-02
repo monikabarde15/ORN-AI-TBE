@@ -9,12 +9,14 @@ import React, {
 import {
   Search,
   UserPlus,
+  Settings,
   Settings2,
   BarChart3,
   Database,
   GraduationCap,
   User as UserIcon,
 } from "lucide-react";
+import AddUserModal from "@/components/ui/AddUserModal";
 
 interface SidebarContentProps {
   user: any;
@@ -33,305 +35,334 @@ export default function SidebarContent({
   location,
   onNavigate,
 }: SidebarContentProps) {
-  const [permissions, setPermissions] =
-  useState<Permission[]>([]);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
 
-   useEffect(() => {
-  if (user?.id) {
-    loadPermissions();
-  }
-}, [user?.id]);
+  useEffect(() => {
+    if (user?.id) {
+      loadPermissions();
+    }
+  }, [user?.id]);
 
-    const loadPermissions = async () => {
-      try {
-        const { data } = await api.get(
-          `/api/user-permissions/${user.id}`
-        );
-
-        setPermissions(data.permissions || []);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    const hasPermission = (
-      moduleName: string,
-      action = "canView"
-    ) => {
-      if (user?.role === "admin") {
-        return true;
-      }
-
-      return permissions.some(
-        (permission) =>
-          permission.moduleName === moduleName &&
-          permission[action as keyof Permission]
+  const loadPermissions = async () => {
+    try {
+      const { data } = await api.get(
+        `/api/user-permissions/${user.id}`
       );
-    };
+
+      setPermissions(data.permissions || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  const hasPermission = (
+    moduleName: string,
+    action = "canView"
+  ) => {
+    if (user?.role === "admin") {
+      return true;
+    }
+
+    return permissions.some(
+      (permission) =>
+        permission.moduleName === moduleName &&
+        permission[action as keyof Permission]
+    );
+  };
   if (!user) return null;
 
   const linkClass = (active: boolean) =>
-    `flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${
-      active
-        ? "bg-primary/10 text-primary font-medium"
-        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+    `flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${active
+      ? "bg-primary/10 text-primary font-medium"
+      : "text-muted-foreground hover:bg-muted hover:text-foreground"
     }`;
 
   return (
-    <div className="flex flex-col gap-1">
-      {user.role === "candidate" ? (
-        <>
-          <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Learning Hub
-          </div>
+    <>
+      <div className="flex flex-col gap-1">
+        {user.role === "candidate" ? (
+          <>
+            <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Learning Hub
+            </div>
 
-          <Link
-            href="#"
-            onClick={onNavigate}
-            className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
-          >
-            <BarChart3 className="size-4" />
-            Feed
-          </Link>
-
-          <Link
-            href="#"
-            onClick={onNavigate}
-            className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
-          >
-            <GraduationCap className="size-4" />
-            Workshops
-          </Link>
-
-          <Link
-            href="/courses"
-            onClick={onNavigate}
-            className={linkClass(location === "/courses")}
-          >
-            <GraduationCap className="size-4" />
-            Courses
-          </Link>
-
-          <Link
-            href="/recruiter/student-live-session"
-            onClick={onNavigate}
-            className={linkClass(
-              location === "/recruiter/student-live-session"
-            )}
-          >
-            <BarChart3 className="size-4" />
-            Live Session Courses
-          </Link>
-
-          <Link
-            href="#"
-            onClick={onNavigate}
-            className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
-          >
-            <UserIcon className="size-4" />
-            Messages
-          </Link>
-
-          {user?.candidateId && (
             <Link
-              href={`/candidate/${user.candidateId}/evaluation`}
+              href="#"
               onClick={onNavigate}
               className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
             >
               <BarChart3 className="size-4" />
-              My Evaluation
+              Feed
             </Link>
-          )}
-        </>
-      ) : (
-        <>
-          <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Recruitment
-          </div>
-       {hasPermission("Talent Search") && (
-          <Link
-            href="/recruiter"
-            onClick={onNavigate}
-            className={linkClass(location === "/recruiter")}
-          >
-            <Search className="size-4" />
-            Talent Search
-          </Link>
-        )}
-         {hasPermission("Blogs") && (
-          <Link
-            href="/admin/blog/add"
-            onClick={onNavigate}
-            className={linkClass(location === "/blog/add")}
-          >
-            <GraduationCap className="size-4" />
-            Blogs
-          </Link>
-        )}
-        
 
-         {hasPermission("Add Candidate") && (
-          <Link
-            href="/recruiter/add"
-            onClick={onNavigate}
-            className={linkClass(location === "/recruiter/add")}
-          >
-            <UserPlus className="size-4" />
-            Add Candidate
-          </Link>
-        )}
+            <Link
+              href="#"
+              onClick={onNavigate}
+              className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
+            >
+              <GraduationCap className="size-4" />
+              Workshops
+            </Link>
 
-          {(
-  hasPermission("Course Categories") ||
-  hasPermission("Course Management") ||
-  hasPermission("Learning Paths") ||
-  hasPermission("Live Training Sessions")
-) && (
-  <>
-    <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-      LMS & Learning Ecosystem
-    </div>
+            <Link
+              href="/courses"
+              onClick={onNavigate}
+              className={linkClass(location === "/courses")}
+            >
+              <GraduationCap className="size-4" />
+              Courses
+            </Link>
 
-    {hasPermission("Course Categories") && (
-      <Link
-        href="/recruiter/categories"
-        onClick={onNavigate}
-        className={linkClass(
-          location === "/recruiter/categories"
-        )}
-      >
-        <UserPlus className="size-4" />
-        Course Categories
-      </Link>
-    )}
+            <Link
+              href="/recruiter/student-live-session"
+              onClick={onNavigate}
+              className={linkClass(
+                location === "/recruiter/student-live-session"
+              )}
+            >
+              <BarChart3 className="size-4" />
+              Live Session Courses
+            </Link>
 
-    {hasPermission("Course Management") && (
-      <Link
-        href="/recruiter/courses"
-        onClick={onNavigate}
-        className={linkClass(
-          location === "/recruiter/courses" ||
-          location === "/recruiter/course/add"
-        )}
-      >
-        <UserPlus className="size-4" />
-        Course Management
-      </Link>
-    )}
+            <Link
+              href="#"
+              onClick={onNavigate}
+              className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
+            >
+              <UserIcon className="size-4" />
+              Messages
+            </Link>
 
-    {hasPermission("Learning Paths") && (
-      <Link
-        href="/recruiter/learning-path-list"
-        onClick={onNavigate}
-        className={linkClass(
-          location === "/recruiter/learning-path-list" ||
-          location === "/recruiter/learning-path"
-        )}
-      >
-        <UserPlus className="size-4" />
-        Learning Paths
-      </Link>
-    )}
-
-    {hasPermission("Live Training Sessions") && (
-      <Link
-        href="/recruiter/live-session"
-        onClick={onNavigate}
-        className={linkClass(
-          location === "/recruiter/live-session"
-        )}
-      >
-        <UserPlus className="size-4" />
-        Live Training Sessions
-      </Link>
-    )}
-  </>
-)}
-
-         {/* Career Transformation */}
-          {hasPermission("Training Pipeline") && (
-            <>
-              <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Career Transformation
-              </div>
-
+            {user?.candidateId && (
               <Link
-                href="/training"
+                href={`/candidate/${user.candidateId}/evaluation`}
                 onClick={onNavigate}
-                className={linkClass(
-                  location.startsWith("/training") ||
-                  /^\/candidate\/[^/]+\/training$/.test(location)
-                )}
+                className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
+              >
+                <BarChart3 className="size-4" />
+                My Evaluation
+              </Link>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Recruitment
+            </div>
+            {hasPermission("Talent Search") && (
+              <Link
+                href="/recruiter"
+                onClick={onNavigate}
+                className={linkClass(location === "/recruiter")}
+              >
+                <Search className="size-4" />
+                Talent Search
+              </Link>
+            )}
+            {hasPermission("Blogs") && (
+              <Link
+                href="/admin/blog/add"
+                onClick={onNavigate}
+                className={linkClass(location === "/blog/add")}
               >
                 <GraduationCap className="size-4" />
-                Training Pipeline
+                Blogs
               </Link>
-            </>
-          )}
+            )}
 
-          {/* Platform Section */}
-          {(
-            hasPermission("Overview") ||
-            hasPermission("Data Sources") ||
-            hasPermission("Settings")
-          ) && (
-            <>
-              <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Platform
-              </div>
 
-              {hasPermission("Overview") && (
-                <Link
-                  href="/admin"
-                  onClick={onNavigate}
-                  className={linkClass(location === "/admin")}
-                >
-                  <BarChart3 className="size-4" />
-                  Overview
-                </Link>
+            {hasPermission("Add Candidate") && (
+              <Link
+                href="/recruiter/add"
+                onClick={onNavigate}
+                className={linkClass(location === "/recruiter/add")}
+              >
+                <UserPlus className="size-4" />
+                Add Candidate
+              </Link>
+            )}
+
+            {(
+              hasPermission("Course Categories") ||
+              hasPermission("Course Management") ||
+              hasPermission("Learning Paths") ||
+              hasPermission("Live Training Sessions")
+            ) && (
+                <>
+                  <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    LMS & Learning Ecosystem
+                  </div>
+
+                  {hasPermission("Course Categories") && (
+                    <Link
+                      href="/recruiter/categories"
+                      onClick={onNavigate}
+                      className={linkClass(
+                        location === "/recruiter/categories"
+                      )}
+                    >
+                      <UserPlus className="size-4" />
+                      Course Categories
+                    </Link>
+                  )}
+
+                  {hasPermission("Course Management") && (
+                    <Link
+                      href="/recruiter/courses"
+                      onClick={onNavigate}
+                      className={linkClass(
+                        location === "/recruiter/courses" ||
+                        location === "/recruiter/course/add"
+                      )}
+                    >
+                      <UserPlus className="size-4" />
+                      Course Management
+                    </Link>
+                  )}
+
+                  {hasPermission("Learning Paths") && (
+                    <Link
+                      href="/recruiter/learning-path-list"
+                      onClick={onNavigate}
+                      className={linkClass(
+                        location === "/recruiter/learning-path-list" ||
+                        location === "/recruiter/learning-path"
+                      )}
+                    >
+                      <UserPlus className="size-4" />
+                      Learning Paths
+                    </Link>
+                  )}
+
+                  {hasPermission("Live Training Sessions") && (
+                    <Link
+                      href="/recruiter/live-session"
+                      onClick={onNavigate}
+                      className={linkClass(
+                        location === "/recruiter/live-session"
+                      )}
+                    >
+                      <UserPlus className="size-4" />
+                      Live Training Sessions
+                    </Link>
+                  )}
+                </>
               )}
 
-              {hasPermission("Data Sources") && (
+            {/* Career Transformation */}
+            {hasPermission("Training Pipeline") && (
+              <>
+                <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Career Transformation
+                </div>
+
                 <Link
-                  href="#"
+                  href="/training"
                   onClick={onNavigate}
                   className={linkClass(
-                    location === "/admin/data-sources"
+                    location.startsWith("/training") ||
+                    /^\/candidate\/[^/]+\/training$/.test(location)
                   )}
                 >
-                  <Database className="size-4" />
-                  Data Sources
+                  <GraduationCap className="size-4" />
+                  Training Pipeline
                 </Link>
+              </>
+            )}
+
+            {/* Platform Section */}
+            {(
+              hasPermission("Overview") ||
+              hasPermission("Data Sources") ||
+              hasPermission("Settings")
+            ) && (
+                <>
+                  <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Platform
+                  </div>
+
+                  {hasPermission("Overview") && (
+                    <Link
+                      href="/admin"
+                      onClick={onNavigate}
+                      className={linkClass(location === "/admin")}
+                    >
+                      <BarChart3 className="size-4" />
+                      Overview
+                    </Link>
+                  )}
+
+                  {hasPermission("Data Sources") && (
+                    <Link
+                      href="#"
+                      onClick={onNavigate}
+                      className={linkClass(
+                        location === "/admin/data-sources"
+                      )}
+                    >
+                      <Database className="size-4" />
+                      Data Sources
+                    </Link>
+                  )}
+
+                  {hasPermission("Settings") && (
+                    <Link
+                      href="#"
+                      onClick={onNavigate}
+                      className={linkClass(
+                        location === "/admin/settings"
+                      )}
+                    >
+                      <Settings className="size-4" />
+                      Settings
+                    </Link>
+                  )}
+
+                </>
               )}
 
-             {hasPermission("Settings") && (
-              <Link
-                href="#"
-                onClick={onNavigate}
-                className={linkClass(
-                  location === "/admin/settings"
-                )}
-              >
-                <Settings2 className="size-4" />
-                Settings
-              </Link>
-            )}
-
+            {/* Role & Permissions */}
             {hasPermission("Permissions") && (
-              <Link
-                href="/admin/permissons"
-                onClick={onNavigate}
-                className={linkClass(
-                  location === "/admin/permissons"
+              <>
+                <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Role & Permissions
+                </div>
+
+                {hasPermission("Permissions") && (
+                  <Link
+                    href="/admin/permissons"
+                    onClick={onNavigate}
+                    className={linkClass(
+                      location === "/admin/permissons"
+                    )}
+                  >
+                    <GraduationCap className="size-4" />
+                    Permissons
+                  </Link>
                 )}
-              >
-                <GraduationCap className="size-4" />
-                Permissons
-              </Link>
+
+                <button
+                  onClick={() => setShowAddUserModal(true)}
+                  // className={linkClass(location === "/admin/users")}
+                  className={linkClass(false)}
+                >
+                  <UserPlus className="size-4" />
+                  Add User
+                </button>
+              </>
             )}
-            </>
-          )}
-        </>
-      )}
-    </div>
+          </>
+        )}
+      </div>
+
+      <AddUserModal
+        open={showAddUserModal}
+        onClose={() => setShowAddUserModal(false)}
+        onSubmit={async (data) => {
+          console.log("New User:", data);
+          setShowAddUserModal(false);
+        }}
+      />
+    </>
   );
 }
