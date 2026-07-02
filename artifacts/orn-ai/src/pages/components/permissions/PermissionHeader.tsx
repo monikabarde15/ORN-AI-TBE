@@ -1,26 +1,24 @@
+// artifacts\orn-ai\src\pages\components\permissions\PermissionHeader.tsx
 import React, { useEffect, useState } from "react";
 import api from "../../../../services/api";
 
 import {
   ShieldCheck,
-  CheckSquare,
-  Ban,
-  UserPlus
 } from "lucide-react";
-// import AddUserModal from "@/components/ui/AddUserModal";
 interface Props {
   totalUsers: number;
-  onSelectAll: () => void;
-  onClearAll: () => void;
-  // onAddUser: () => void;
+
+  adminCount?: number;
+  recruiterCount?: number;
+  candidateCount?: number;
 }
 
 export default function PermissionHeader({
   totalUsers,
-  onSelectAll,
-  onClearAll,
+  adminCount = 0,
+  recruiterCount = 0,
+  candidateCount = 0,
 }: Props) {
-  // const [showAddUserModal, setShowAddUserModal] = useState(false);
     const loadUsers = async () => {
       try {
         const { data } = await api.get("/api/users");
@@ -77,7 +75,7 @@ export default function PermissionHeader({
         </div>
 
         {/* Right */}
-        <div className="flex items-center gap-3">
+        {/* <div className="flex items-center gap-3">
 
           <div
             className="
@@ -139,9 +137,53 @@ export default function PermissionHeader({
             Clear All
           </button>
 
-        </div>
+        </div> */}
 
       </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-8">
+
+          <div className="rounded-2xl border bg-white p-5 shadow-sm">
+            <p className="text-sm text-gray-500">
+              Total Users
+            </p>
+
+            <h2 className="mt-2 text-3xl font-bold text-slate-900">
+              {totalUsers}
+            </h2>
+          </div>
+
+          <div className="rounded-2xl border bg-white p-5 shadow-sm">
+            <p className="text-sm text-gray-500">
+              Admins
+            </p>
+
+            <h2 className="mt-2 text-3xl font-bold text-slate-900">
+              {adminCount}
+            </h2>
+          </div>
+
+          <div className="rounded-2xl border bg-white p-5 shadow-sm">
+            <p className="text-sm text-gray-500">
+              Recruiters
+            </p>
+
+            <h2 className="mt-2 text-3xl font-bold text-slate-900">
+              {recruiterCount}
+            </h2>
+          </div>
+
+          <div className="rounded-2xl border bg-white p-5 shadow-sm">
+            <p className="text-sm text-gray-500">
+              Candidates
+            </p>
+
+            <h2 className="mt-2 text-3xl font-bold text-slate-900">
+              {candidateCount}
+            </h2>
+          </div>
+
+        </div>
 
     </div>
     </>
