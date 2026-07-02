@@ -43,54 +43,116 @@ interface User {
 }
 
 export default function UserPermissions() {
- const [selectedUser, setSelectedUser] =
-  useState<User | null>(null);
+  const [selectedUser, setSelectedUser] =
+    useState<User | null>(null);
+
+  const [showPermissionDrawer, setShowPermissionDrawer] =
+    useState(false);
   const [users, setUsers] = useState<User[]>([]);
 
-        useEffect(() => {
-        loadUsers();
-        }, []);
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
-        const loadUsers = async () => {
-        try {
-            const { data } = await api.get("/api/users");
-            setUsers(data.users || []);
-        } catch (error) {
-            console.error(error);
-        }
-        };
+  const loadUsers = async () => {
+    try {
+      const { data } = await api.get("/api/users");
+      setUsers(data.users || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
   return (
     <Shell>
-        <Toaster position="top-right" />
+      <Toaster position="top-right" />
 
-        <div className="p-6">
+      <div className="p-6">
 
-           <PermissionHeader
-            totalUsers={users.length}
-            onSelectAll={() => {}}
-            onClearAll={() => {}}
+        <PermissionHeader
+          totalUsers={users.length}
+        />
+
+        {/* <div className="grid grid-cols-12 gap-6">
+
+          <div className="col-span-4">
+            <UserListPanel
+              selectedUser={selectedUser}
+              onSelectUser={setSelectedUser}
             />
+          </div>
 
-            <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-8">
+            <PermissionMatrix
+              selectedUser={
+                selectedUser
+              }
+            />
+          </div>
 
-            <div className="col-span-4">
-               <UserListPanel
+        </div> */}
+
+        <div className="space-y-6">
+
+          <UserListPanel
+            selectedUser={selectedUser}
+            onSelectUser={(user) => {
+              setSelectedUser(user);
+              setShowPermissionDrawer(true);
+            }}
+          />
+
+          {/* Permission Matrix */}
+
+          {/* {selectedUser && (
+            <div className="mt-6">
+              <PermissionMatrix
                 selectedUser={selectedUser}
-                onSelectUser={setSelectedUser}
-                />
+              />
             </div>
-
-            <div className="col-span-8">
-               <PermissionMatrix
-                    selectedUser={
-                        selectedUser
-                    }
-                    />
-            </div>
-
-            </div>
+          )} */}
 
         </div>
+
+      </div>
+
+      {showPermissionDrawer && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => {
+              setShowPermissionDrawer(false);
+              setSelectedUser(null);
+            }}
+            className="fixed inset-0 z-40 bg-black/40"
+          />
+
+          {/* Drawer */}
+          <div
+            className="
+        fixed
+        right-0
+        top-0
+        z-50
+        h-screen
+        w-full
+        max-w-3xl
+        overflow-y-auto
+        bg-white
+        shadow-2xl
+        transition-transform
+        duration-300
+      "
+          >
+            <PermissionMatrix
+              selectedUser={selectedUser}
+              onClose={() => {
+                setShowPermissionDrawer(false);
+                setSelectedUser(null);
+              }}
+            />
+          </div>
+        </>
+      )}
     </Shell>
   );
 }

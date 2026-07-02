@@ -1,3 +1,4 @@
+// artifacts\orn-ai\src\pages\components\permissions\PermissionMatrix.tsx
 import React, {
   useEffect,
   useState,
@@ -8,6 +9,7 @@ import {
   Save,
   CheckSquare,
   Ban,
+  X,
 } from "lucide-react";
 
 import api from "../../../../services/api";
@@ -28,6 +30,7 @@ interface Permission {
 
 interface Props {
   selectedUser: User | null;
+  onClose?: () => void;
 }
 
 const MODULES = [
@@ -46,6 +49,7 @@ const MODULES = [
 
 export default function PermissionMatrix({
   selectedUser,
+  onClose,
 }: Props) {
   const [permissions, setPermissions] =
     useState<Permission[]>([]);
@@ -224,23 +228,42 @@ export default function PermissionMatrix({
     <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
 
       {/* Header */}
-      <div className="p-6 border-b">
+      {/* Header */}
+      <div className="sticky top-0 z-20 border-b bg-white px-6 py-5">
 
-        <h2 className="text-2xl font-bold">
-          Access Control
-        </h2>
+        <div className="flex items-start justify-between">
 
-        <p className="text-gray-500 mt-1">
-          {
-            selectedUser.fullName
-          }
-        </p>
+          <div>
 
-        <p className="text-sm text-gray-400">
-          {
-            selectedUser.email
-          }
-        </p>
+            <h2 className="text-2xl font-bold text-slate-900">
+              Access Control
+            </h2>
+
+            <p className="mt-2 font-medium text-slate-700">
+              {selectedUser.fullName}
+            </p>
+
+            <p className="text-sm text-slate-500">
+              {selectedUser.email}
+            </p>
+
+          </div>
+
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="
+          rounded-lg
+          p-2
+          transition
+          hover:bg-slate-100
+        "
+            >
+              <X size={20} />
+            </button>
+          )}
+
+        </div>
 
       </div>
 
