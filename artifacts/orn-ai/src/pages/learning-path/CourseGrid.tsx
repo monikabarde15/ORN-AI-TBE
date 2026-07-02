@@ -1,25 +1,55 @@
 // artifacts\orn-ai\src\pages\learning-path\CourseGrid.tsx
 import CourseCard from "./CourseCard";
+import { useEffect, useMemo, useState } from "react";
+
+import LearningPathForm from "./LearningPathForm";
+import UploadMedia from "./UploadMedia";
+
 
 interface Props {
   courses: any[];
   selectedCourses: any[];
-  toggleCourse: (
-    course: any
-  ) => void;
+  toggleCourse: (course: any) => void;
   loading?: boolean;
-}
+showForm?: boolean;
+  title: string;
+  description: string;
+  setTitle: (value: string) => void;
+  setDescription: (value: string) => void;
 
-export default function CourseGrid({
+  setThumbnail: (file: File | null) => void;
+  setVideo: (file: File | null) => void;
+
+  thumbnailPreview: string;
+  videoPreview: string;
+
+  setThumbnailPreview: (value: string) => void;
+  setVideoPreview: (value: string) => void;
+}export default function CourseGrid({
   courses,
   selectedCourses,
   toggleCourse,
   loading,
-}: Props) {
+
+  title,
+  description,
+  setTitle,
+  setDescription,
+
+  setThumbnail,
+  setVideo,
+showForm = false, 
+  thumbnailPreview,
+  videoPreview,
+
+  setThumbnailPreview,
+  setVideoPreview,
+}: Props){
+ 
   if (loading) {
     return (
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-
+      
         {[...Array(6)].map(
           (_, index) => (
             <div
@@ -53,7 +83,7 @@ export default function CourseGrid({
     );
   }
 
-  return (
+  return ( 
     <div>
 
       <div className="mb-5 flex items-center justify-between">
@@ -75,10 +105,9 @@ export default function CourseGrid({
             <CourseCard
               key={course._id}
               course={course}
-              selected={selectedCourses.some(
+             selected={selectedCourses.some(
                 (c: any) =>
-                  c._id ===
-                  course._id
+                  (c.id || c._id) === (course.id || course._id)
               )}
               onToggle={() =>
                 toggleCourse(

@@ -141,7 +141,7 @@ export default function LearningPathForm({
             />
 
             <div className="mt-2 text-right text-xs text-slate-400">
-              {description.length}/1000
+              {(description || "").length}/1000
             </div>
 
           </div>

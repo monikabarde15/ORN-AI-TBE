@@ -269,16 +269,7 @@ export default function PermissionMatrix({
           Recruiter
         </button>
 
-        <button
-          onClick={() =>
-            applyRoleTemplate(
-              "candidate"
-            )
-          }
-          className="px-4 py-2 rounded-xl border"
-        >
-          Candidate
-        </button>
+        
 
       </div>
 

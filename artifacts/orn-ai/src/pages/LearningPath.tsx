@@ -661,7 +661,7 @@ hover:bg-blue-800
                 </h2>
 
                 <p className="text-sm text-slate-500">
-                  Select courses for this learning path
+                  Select courses for this learning path 
                 </p>
               </div>
 

@@ -12,6 +12,9 @@ import SessionsTab from "./learning-path-manage/SessionsTab";
 import SessionForm from "./learning-path-manage/SessionForm";
 import LearningPathSidebar from "./learning-path-manage/LearningPathSidebar";
 import { useAuth } from "@/hooks/use-auth";
+import LearningPathForm from "../pages/learning-path/LearningPathForm";
+import UploadMedia from "../pages/learning-path/UploadMedia";
+
 
 
 export default function LearningPathManage() {
@@ -43,7 +46,9 @@ export default function LearningPathManage() {
     };
     
       
-      console.log(user);
+      console.log(user);const [thumbnailPreview, setThumbnailPreview] = useState("");
+const [videoPreview, setVideoPreview] = useState("");
+
     const [activeTab, setActiveTab] = useState("courses");
     const [loading, setLoading] = useState(false);
     const [courses, setCourses] = useState<any[]>([]);
@@ -609,6 +614,21 @@ export default function LearningPathManage() {
                                     />
                                 ) : (
                                     <div className="space-y-6">
+                                        <LearningPathForm
+                                            title={title}
+                                            description={description}
+                                            setTitle={setTitle}
+                                            setDescription={setDescription}
+                                        />
+
+                                        <UploadMedia
+                                            setThumbnail={setThumbnail}
+                                            setVideo={setIntroVideo}
+                                            thumbnailPreview={thumbnailPreview}
+                                            videoPreview={videoPreview}
+                                            setThumbnailPreview={setThumbnailPreview}
+                                            setVideoPreview={setVideoPreview}
+                                        />
 
 
                                         <CourseSearch
@@ -616,17 +636,28 @@ export default function LearningPathManage() {
                                             setSearch={setSearch}
                                         />
 
-                                        <CourseGrid
-                                            courses={
-                                                filteredCourses
-                                            }
-                                            selectedCourses={
-                                                selectedCourses
-                                            }
-                                            toggleCourse={
-                                                toggleCourse
-                                            }
-                                            loading={loading}
+                                        <CourseGrid  
+                                        showForm={true}
+
+
+                                        courses={filteredCourses}
+                                        selectedCourses={selectedCourses}
+                                        toggleCourse={toggleCourse}
+                                        loading={loading}
+
+                                        title={title}
+                                        description={description}
+                                        setTitle={setTitle}
+                                        setDescription={setDescription}
+
+                                        setThumbnail={setThumbnail}
+                                        setVideo={setIntroVideo}
+
+                                        thumbnailPreview={thumbnailPreview}
+                                        videoPreview={videoPreview}
+
+                                        setThumbnailPreview={setThumbnailPreview}
+                                        setVideoPreview={setVideoPreview}
                                         />
 
                                     </div>
