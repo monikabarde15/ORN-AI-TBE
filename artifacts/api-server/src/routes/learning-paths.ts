@@ -5,10 +5,15 @@ import {
   db,
   learningPathsTable,
   coursesTable,
+  paymentLinksTable,
 } from "@workspace/db";
 import { requireAuth, requireRole } from "../lib/auth";
-import { desc, eq } from "drizzle-orm";
-
+import {
+  and,
+  desc,
+  eq,
+  inArray,
+} from "drizzle-orm";
 
 const router: IRouter =
   Router();
@@ -516,6 +521,90 @@ router.patch(
         success: false,
         error:
           "Failed to update learning path status",
+      });
+    }
+  }
+);
+/* =========================================
+GET STUDENT LEARNING PATHS
+========================================= */
+
+router.get(
+  "/student/learning-pathsnew",
+  requireAuth,
+  requireRole("candidate"),
+  async (req: any, res) => {
+    try {
+      const studentEmail = req.user.email.trim().toLowerCase();
+
+      // Student ke paid payments
+      const payments = await db
+        .select()
+        .from(paymentLinksTable)
+        .where(
+          and(
+            eq(paymentLinksTable.studentEmail, studentEmail),
+            eq(paymentLinksTable.status, "paid")
+          )
+        );
+
+      const paidLearningPathIds = [
+        ...new Set(
+          payments
+            .map((p) => p.learningPathId)
+            .filter(Boolean)
+        ),
+      ];
+
+      // Sab Learning Paths
+      const learningPaths = await db
+        .select()
+        .from(learningPathsTable);
+
+      // Sab Courses
+      const allCourses = await db
+        .select()
+        .from(coursesTable);
+
+      const result: any[] = [];
+
+      for (const path of learningPaths) {
+        const courses = allCourses.filter((course) =>
+          path.courseIds?.includes(course.id)
+        );
+
+        // Agar sab courses free hain
+        const isFree =
+          courses.length > 0 &&
+          courses.every(
+            (course) => Number(course.price || 0) === 0
+          );
+
+        // Agar purchase kiya hua hai
+        const isPurchased = paidLearningPathIds.includes(
+          path.id
+        );
+
+        // Free ya Purchased dono me dikhao
+        if (isFree || isPurchased) {
+          result.push({
+            ...path,
+            courses,
+          });
+        }
+      }
+
+      return res.json({
+        success: true,
+        count: result.length,
+        data: result,
+      });
+    } catch (error) {
+      console.error("Student Learning Path Error:", error);
+
+      return res.status(500).json({
+        success: false,
+        error: "Failed to fetch learning paths",
       });
     }
   }

@@ -37,6 +37,7 @@ import LiveSessionCourses from "@/pages/LiveSessionCourses";
 import LearningPathStudent from "@/pages/LearningPathStudent";
 
 import LearningPathList from "@/pages/LearningPathList";
+import LearningStudentPathList from "@/pages/LearningStudentPathList";
 
 import DataScientce from "@/pages/Data";
 import Advancedprograms from "@/pages/Advancedprograms";
@@ -57,7 +58,9 @@ import UserPermissions from "@/pages/UserPermissions";
 
 
 import { Loader2 } from "lucide-react";
+
 import LearningPathManage from "./pages/LearningPathManage";
+import LearningPathStudentViewManage from "./pages/LearningPathStudentViewManage";
 import LearningPathCourses from "./pages/LearningPathCourses";
 import LearningPathSessions from "./pages/LearningPathSessions";
 
@@ -140,10 +143,17 @@ function Router() {
         </ProtectedRoute>
       </Route>
       
+      <Route path="/recruiter/learning-path-manage-view/:id">
+          <LearningPathStudentViewManage />
+      </Route>
+      
       <Route path="/admin/permissons">
         <ProtectedRoute roles={["admin"]}>
           <UserPermissions  />
         </ProtectedRoute>
+      </Route>
+      <Route path="/recruiter/learning-student-path-list">
+          <LearningStudentPathList  />
       </Route>
        <Route path="/recruiter/live-session">
         {/* <ProtectedRoute roles={["candidate"]}> */}

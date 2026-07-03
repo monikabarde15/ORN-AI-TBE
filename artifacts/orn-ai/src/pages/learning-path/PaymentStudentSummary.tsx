@@ -16,7 +16,7 @@ interface Props {
   generatePaymentLink: () => void;
 }
 
-export default function PaymentSummary({
+export default function PaymentStudentSummary({
   subtotal,
   gst,
   total,
@@ -127,55 +127,31 @@ export default function PaymentSummary({
 
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-3">
-
-              <button
-                onClick={
-                  copyLink
-                }
-                className="
-                  flex
-                  items-center
-                  justify-center
-                  gap-2
-                  rounded-xl
-                bg-blue-900
-                hover:bg-blue-800 
-                  transition
-                  py-3
-                  text-white
-                "
-              >
-                <Copy
-                  size={16}
-                />
-                Copy
-              </button>
-
-              <button
-                onClick={() =>
-                  window.open(
-                    paymentLink,
-                    "_blank"
-                  )
-                }
-                className="
-                  flex
-                  items-center
-                  justify-center
-                  gap-2
-                  rounded-xl
-                  border
-                  py-3
-                "
-              >
-                <ExternalLink
-                  size={16}
-                />
-                Open
-              </button>
-
-            </div>
+           <div className="mt-4 flex justify-center">
+  <button
+    onClick={() => {
+      window.location.href = paymentLink!;
+    }}
+    className="
+      flex
+      items-center
+      justify-center
+      gap-2
+      rounded-xl
+      bg-blue-900
+      hover:bg-blue-800
+      transition
+      py-3
+      px-8
+      min-w-[220px]
+      font-semibold
+      text-white
+    "
+  >
+    <CreditCard size={18} />
+    Pay Now
+  </button>
+</div>
 
           </div>
 

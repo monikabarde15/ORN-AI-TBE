@@ -20,26 +20,31 @@ router.post(
   async (req, res): Promise<void> => {
     try {
       const {
+        learningPathId,
         courseIds,
         amount,
         callback_url,
       } = req.body;
 
+      if (!learningPathId) {
+        return res.status(400).json({
+          error: "learningPathId required",
+        });
+      }
+
       if (
         !Array.isArray(courseIds) ||
         courseIds.length === 0
       ) {
-        res.status(400).json({
+        return res.status(400).json({
           error: "courseIds required",
         });
-        return;
       }
 
       if (!amount || Number(amount) <= 0) {
-        res.status(400).json({
+        return res.status(400).json({
           error: "amount required",
         });
-        return;
       }
 
       const paymentId = crypto.randomUUID();
@@ -52,32 +57,18 @@ router.post(
         callback_url ||
         `${frontendUrl}/payment-success/${paymentId}`;
 
-      console.log(
-        "FRONTEND_URL =>",
-        frontendUrl
-      );
-
-      console.log(
-        "CALLBACK_URL =>",
-        callbackUrl
-      );
-
       const link =
         await razorpay.paymentLink.create({
-          amount: Math.round(
-            Number(amount) * 100
-          ),
-
+          amount: Math.round(Number(amount) * 100),
           currency: "INR",
 
           callback_url: callbackUrl,
-
           callback_method: "get",
 
           notes: {
             paymentId,
-            courseIds:
-              courseIds.join(","),
+            learningPathId,
+            courseIds: courseIds.join(","),
           },
         });
 
@@ -85,48 +76,34 @@ router.post(
         .insert(paymentLinksTable)
         .values({
           paymentId,
+          learningPathId, // ✅ Save Learning Path
+
           courseIds,
+
           amount: amount.toString(),
-          paymentLink:
-            link.short_url,
+
+          paymentLink: link.short_url,
+
           status: "pending",
+
           expiresAt: new Date(
             Date.now() +
-              7 *
-                24 *
-                60 *
-                60 *
-                1000
+              7 * 24 * 60 * 60 * 1000
           ),
         })
         .returning();
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
-        paymentId:
-          row.paymentId,
-        paymentLink:
-          row.paymentLink,
+        paymentId: row.paymentId,
+        paymentLink: row.paymentLink,
       });
     } catch (error: any) {
-      console.error(
-        "RAZORPAY ERROR =>",
-        error
-      );
+      console.error(error);
 
-      console.error(
-        "RAZORPAY ERROR JSON =>",
-        JSON.stringify(
-          error,
-          null,
-          2
-        )
-      );
-
-      res.status(500).json({
+      return res.status(500).json({
         error:
-          error?.error
-            ?.description ||
+          error?.error?.description ||
           error?.message ||
           "Failed to generate payment link",
       });

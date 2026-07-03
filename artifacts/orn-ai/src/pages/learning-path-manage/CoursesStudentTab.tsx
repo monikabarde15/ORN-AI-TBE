@@ -1,4 +1,4 @@
-import CourseCard from "../learning-path/CourseCard";
+import CourseCard from "../learning-path/CourseStudentCard";
 
 interface CoursesTabProps {
     selectedCourses: any[];
@@ -7,7 +7,7 @@ interface CoursesTabProps {
     ) => void;
 }
 
-export default function CoursesTab({
+export default function CoursesStudentTab({
     selectedCourses,
     setShowCourseManager,
 }: CoursesTabProps) {

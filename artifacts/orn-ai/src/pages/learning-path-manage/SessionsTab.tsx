@@ -36,7 +36,7 @@ export default function SessionsTab({
                         onClick={() =>
                             setShowSessionForm(true)
                         }
-                        className="rounded-xl bg-blue-600 px-5 py-3 text-white"
+                        className="rounded-xl bg-blue-900 px-5 py-3 text-white"
                     >
                         Add Live Session
                     </button>

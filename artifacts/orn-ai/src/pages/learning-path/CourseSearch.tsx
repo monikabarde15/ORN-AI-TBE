@@ -17,7 +17,7 @@ export default function CourseSearch({
   return (
     <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
 
-      <div className="border-b bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white">
+      <div className="border-b bg-gradient-to-r from-blue-900 to-indigo-900 p-5 text-white">
 
         <div className="flex items-center gap-3">
 

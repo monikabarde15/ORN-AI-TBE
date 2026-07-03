@@ -1044,6 +1044,7 @@ export const RegisterCandidateBody = zod.object({
   country: zod.string(),
   targetRole: zod.string(),
   currentRole:zod.string(),
+  preferredRole:zod.string(),
   yearsExperience: zod
     .number()
     .min(registerCandidateBodyYearsExperienceMin)
