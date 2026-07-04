@@ -112,6 +112,14 @@ export default function SidebarContent({
               <GraduationCap className="size-4" />
              Learning Path
             </Link>
+            <Link
+              href="/test-assignment"
+              onClick={onNavigate}
+              className={linkClass(location === "/recruiter/learning-student-path-list")}
+            >
+              <GraduationCap className="size-4" />
+             Assignment
+            </Link>
 
             <Link
               href="/recruiter/student-live-session"
@@ -233,6 +241,19 @@ export default function SidebarContent({
                       Learning Paths
                     </Link>
                   )}
+
+                  {/* {hasPermission("Learning Paths") && ( */}
+                    <Link
+                      href="/admin-test-assignment"
+                      onClick={onNavigate}
+                      className={linkClass(
+                        location === "/admin-test-assignment" 
+                      )}
+                    >
+                      <UserPlus className="size-4" />
+                      Assignment
+                    </Link>
+                  {/* )} */}
 
                   {hasPermission("Live Training Sessions") && (
                     <Link
