@@ -57,12 +57,15 @@ import BlogDetail from "@/pages/BlogDetail";
 import UserPermissions from "@/pages/UserPermissions";
 
 
+import { MCQExamPortal } from "./pages/MCQExamPortal";
+
 import { Loader2 } from "lucide-react";
 
 import LearningPathManage from "./pages/LearningPathManage";
 import LearningPathStudentViewManage from "./pages/LearningPathStudentViewManage";
 import LearningPathCourses from "./pages/LearningPathCourses";
 import LearningPathSessions from "./pages/LearningPathSessions";
+import { MCQAdminPanel } from "./pages/MCQAdminPanel";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -122,6 +125,11 @@ function Router() {
 
       <Route path="/lab/:id" component={LabDetail} />
       <Route path="/courses" component={MyFeed} />
+
+      <Route path="/test-assignment" component={MCQExamPortal}/>
+      <Route path="/admin-test-assignment" component={MCQAdminPanel}/>
+
+
       <Route path="/recruiter/add">
         <ProtectedRoute roles={["recruiter", "admin"]}>
           <RecruiterAddCandidate />
