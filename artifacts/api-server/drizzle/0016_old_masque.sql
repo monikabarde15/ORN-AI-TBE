@@ -1,0 +1,1 @@
+ALTER TABLE "training_assignments" ADD COLUMN "learning_path_id" uuid NOT NULL;

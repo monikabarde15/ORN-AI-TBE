@@ -74,7 +74,7 @@ export const User: UserDef[] = [
 ];
 export const TRAINERS: TrainerDef[] = [
   {
-    id: "trn_eu_business_english",
+    id: "791f832c-d9b3-43b2-8f07-b361fab4e6b3",
     name: "Dr. Helena Brașov",
     specialism: "EU Business English & Cross-Cultural Communication",
     yearsExperience: 14,
@@ -119,7 +119,7 @@ export const TRAINERS: TrainerDef[] = [
 
 export const TRAINING_PROGRAMS: TrainingProgramDef[] = [
   {
-    id: "prog_eu_workplace_english",
+    id: "8174c290-50f4-42be-a6c8-093525ba649a",
     name: "EU Workplace Communication & Business English",
     trainingType: "upskilling",
     recommendedPath: "Workplace Communication Path",

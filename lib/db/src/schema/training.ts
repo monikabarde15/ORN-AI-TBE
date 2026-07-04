@@ -17,7 +17,9 @@ import {
  */
 export const trainingAssignmentsTable = pgTable("training_assignments", {
   id: uuid("id").primaryKey().defaultRandom(),
-  candidateId: uuid("candidate_id").notNull(),
+ candidateId: uuid("candidate_id").notNull(),
+
+  learningPathId: uuid("learning_path_id"),
   // 'needs_upskilling' | 'needs_reskilling'
   assessmentCategory: text("assessment_category").notNull(),
   // 'upskilling' | 'reskilling'

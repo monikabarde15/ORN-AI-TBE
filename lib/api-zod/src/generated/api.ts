@@ -2108,8 +2108,9 @@ export const ListTrainingAssignmentsResponse = zod.array(
  */
 export const CreateTrainingAssignmentBody = zod.object({
   candidateId: zod.string(),
-  programId: zod.string(),
-  trainerId: zod.string(),
+  // programId: zod.string(),
+  // trainerId: zod.string(),
+  learningPathId:zod.string(),
   startDate: zod.coerce.date(),
   targetCompletionDate: zod.coerce.date(),
 });

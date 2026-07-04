@@ -14,6 +14,7 @@ import {
   sectionsTable,
   subSectionsTable,
   candidatesTable,
+  usersTable,
   trainingAssignmentsTable,
   activityTable,
   mcqTable,
@@ -210,92 +211,233 @@ router.get("/training/assignments", requireAuth, async (req, res): Promise<void>
   res.json(ListTrainingAssignmentsResponse.parse(out));
 });
 // ----- Create assignment -----
-router.post("/training/assignments", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
+router.post(
+  "/training/assignments",
+  requireAuth,
+  requireRole("recruiter", "admin"),
+  async (req, res): Promise<void> => {
+    try {
+      console.log("========== CREATE TRAINING ASSIGNMENT ==========");
+      console.log("USER =", req.user);
+      console.log("BODY =", req.body);
 
-  console.log("========== CREATE TRAINING ASSIGNMENT ==========");
-  console.log("USER =", req.user);
-  console.log("BODY =", req.body);
-  const body = CreateTrainingAssignmentBody.safeParse(req.body);
+      const body = CreateTrainingAssignmentBody.safeParse(req.body);
 
-  if (!body.success) {
-    console.log("========== ZOD ERROR ==========");
-    console.dir(body.error.flatten(), { depth: null });
+      if (!body.success) {
+        console.log(body.error.flatten());
 
-    return res.status(400).json({
-      success: false,
-      issues: body.error.flatten(),
-    });
+        return res.status(400).json({
+          success: false,
+          issues: body.error.flatten(),
+        });
+      }
+
+      // =====================================================
+      // Candidate
+      // =====================================================
+
+      const [candidate] = await db
+        .select()
+        .from(candidatesTable)
+        .where(eq(candidatesTable.id, body.data.candidateId));
+
+        const recruiters = await db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.role, "recruiter"));
+          console.log("recruiters=",recruiters);
+
+      if (!recruiters) {
+        return res.status(404).json({
+          success: false,
+          error: "Candidate not found",
+        });
+      }
+
+      // =====================================================
+      // Learning Path
+      // =====================================================
+
+      const [learningPath] = await db
+        .select()
+        .from(learningPathsTable)
+        .where(eq(learningPathsTable.id, body.data.learningPathId));
+
+      if (!learningPath) {
+        return res.status(404).json({
+          success: false,
+          error: "Learning Path not found",
+        });
+      }
+
+      // =====================================================
+      // Courses
+      // =====================================================
+
+      const courses =
+        learningPath.courseIds?.length > 0
+          ? await db
+              .select()
+              .from(coursesTable)
+              .where(
+                inArray(
+                  coursesTable.id,
+                  learningPath.courseIds
+                )
+              )
+          : [];
+
+      // =====================================================
+      // Program Object
+      // =====================================================
+
+      const program = {
+        id: learningPath.id,
+        name: learningPath.title,
+         trainingType: "upskilling",
+        // trainingType: body.data.trainingType,
+        recommendedPath: learningPath.title,
+        deliveryMode: "hybrid",
+        durationWeeks: 8,
+        focusAreas: [],
+        moduleTemplates: courses.map((course) => ({
+          title: course.title,
+          durationMinutes: 60,
+        })),
+      };
+
+     // =====================================================
+      // Trainer = Logged In User
+      // =====================================================
+
+      const trainer = {
+        id: req.user!.id,
+        name: req.user!.fullName,
+      };
+
+      console.log("Logged In User =>", trainer);
+      // =====================================================
+      // Dates
+      // =====================================================
+
+      const startDate = new Date(body.data.startDate);
+
+      const targetCompletionDate = new Date(
+        body.data.targetCompletionDate
+      );
+
+      // =====================================================
+      // Modules & Sessions
+      // =====================================================
+
+      const modules = buildInitialModules(program);
+
+      const liveSessions =
+        buildInitialLiveSessions(
+          program,
+          trainer,
+          startDate
+        );
+
+      // =====================================================
+      // Assessment
+      // =====================================================
+
+      const assessmentCategory =
+        program.trainingType === "reskilling"
+          ? "needs_reskilling"
+          : "needs_upskilling";
+
+      // =====================================================
+      // Save Assignment
+      // =====================================================
+
+    const [row] = await db
+  .insert(trainingAssignmentsTable)
+  .values({
+    candidateId: candidate.id,
+
+    learningPathId: learningPath.id,
+
+    assessmentCategory,
+
+    trainingType: program.trainingType,
+
+    programId: program.id,
+
+    programName: program.name,
+
+    recommendedPath: program.recommendedPath,
+
+    deliveryMode: program.deliveryMode,
+
+    trainerId: req.user!.id,
+
+    trainerName: req.user!.fullName,
+
+    modules,
+
+    liveSessions,
+
+    startDate,
+
+    targetCompletionDate,
+
+    status: "not_started",
+
+    progressPct: 0,
+  })
+  .returning();
+
+      if (!row) {
+        return res.status(500).json({
+          success: false,
+          error: "Failed to create assignment",
+        });
+      }
+
+      // =====================================================
+      // Activity
+      // =====================================================
+
+      await db.insert(activityTable).values({
+        kind: "upskilling",
+
+        candidateName:
+          candidate.fullName,
+
+        country: candidate.country,
+
+        message: `${candidate.fullName} assigned to ${learningPath.title}`,
+      });
+
+      // =====================================================
+      // Response
+      // =====================================================
+
+      return res.status(201).json(
+        GetTrainingAssignmentResponse.parse(
+          serializeTrainingAssignment(
+            row,
+            candidate
+          )
+        )
+      );
+
+    } catch (error: any) {
+
+      console.log(
+        "CREATE TRAINING ERROR =>",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
   }
-  
-  const program = findProgramById(body.data.programId);
-  if (!program) {
-    res.status(400).json({ error: "Unknown programId" });
-    return;
-  }
-  const trainer = findTrainerById(body.data.trainerId);
-  if (!trainer) {
-    res.status(400).json({ error: "Unknown trainerId" });
-    return;
-  }
-  const [candidate] = await db
-    .select()
-    .from(candidatesTable)
-    .where(eq(candidatesTable.id, body.data.candidateId));
-  if (!candidate) {
-    res.status(404).json({ error: "Candidate not found" });
-    return;
-  }
-
-  const startDate = new Date(body.data.startDate);
-  const targetCompletionDate = new Date(body.data.targetCompletionDate);
-  const modules = buildInitialModules(program);
-  const liveSessions = buildInitialLiveSessions(program, trainer, startDate);
-
-  // Derive assessment category from program training type (single source of truth)
-  const assessmentCategory =
-    program.trainingType === "reskilling" ? "needs_reskilling" : "needs_upskilling";
-
-  const [row] = await db
-    .insert(trainingAssignmentsTable)
-    .values({
-      candidateId: candidate.id,
-      assessmentCategory,
-      trainingType: program.trainingType,
-      programId: program.id,
-      programName: program.name,
-      recommendedPath: program.recommendedPath,
-      deliveryMode: "hybrid",
-      trainerId: trainer.id,
-      trainerName: trainer.name,
-      modules,
-      liveSessions,
-      startDate,
-      targetCompletionDate,
-      status: "not_started",
-      progressPct: 0,
-    })
-    .returning();
-  if (!row) {
-    res.status(500).json({ error: "Failed to create assignment" });
-    return;
-  }
-
-  await db.insert(activityTable).values({
-    kind: "upskilling",
-    candidateName: candidate.fullName,
-    country: candidate.country,
-    message: `${candidate.fullName} assigned to ${program.name}`,
-  });
-
-  res
-    .status(201)
-    .json(
-      GetTrainingAssignmentResponse.parse(
-        serializeTrainingAssignment(row, candidate),
-      ),
-    );
-});
-
+);
 // ----- Get one -----
 router.get("/training/assignments/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetTrainingAssignmentParams.safeParse(req.params);

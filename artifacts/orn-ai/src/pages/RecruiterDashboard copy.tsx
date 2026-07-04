@@ -4,9 +4,6 @@ import { useLocation } from "wouter";
 import { Shell } from "@/components/layout/Shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import AIHeroSearch from "./recruiter/components/AIHeroSearch";
-import SearchLoading from "./recruiter/components/SearchLoading";
-import CandidateFilters from "./recruiter/components/CandidateFilters";
 import {
   Select,
   SelectContent,
@@ -54,7 +51,6 @@ import {
   getDownloadMaskedCvUrl,
   type Candidate,
 } from "@workspace/api-client-react";
-import api from "../../services/api";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Search,
@@ -152,31 +148,9 @@ type StatusFilter = CandidateStatus | "all" | "none";
 // ============================================================
 export default function RecruiterDashboard() {
   const [, setLocation] = useLocation();
-  const [searched, setSearched] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [aiCandidates, setAiCandidates] = useState<Candidate[]>([]);
-
-  const handleAISearch = async () => {
-  try {
-    setLoading(true);
-
-    const res = await api.post(
-      "/api/recruiter/ai-search",
-      {
-        query: searchTerm,
-      }
-    );
-
-    setAiCandidates(res.data.data);
-
-    setSearched(true);
-
-  } finally {
-    setLoading(false);
-  }
-};
 
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 350);
 
   const [filters, setFilters] = useState({
     country: "",
@@ -245,21 +219,14 @@ export default function RecruiterDashboard() {
   });
 
   const queryParams = {
-  country: filters.country || undefined,
-  role: filters.role || undefined,
-  minReadiness: filters.minReadiness
-    ? parseInt(filters.minReadiness)
-    : undefined,
-  englishLevel: filters.englishLevel || undefined,
-  experienceMin:
-    debouncedExperience[0] > 0
-      ? debouncedExperience[0]
-      : undefined,
-  experienceMax:
-    debouncedExperience[1] < 20
-      ? debouncedExperience[1]
-      : undefined,
-};
+    search: debouncedSearch || undefined,
+    country: filters.country || undefined,
+    role: filters.role || undefined,
+    minReadiness: filters.minReadiness ? parseInt(filters.minReadiness) : undefined,
+    englishLevel: filters.englishLevel || undefined,
+    experienceMin: debouncedExperience[0] > 0 ? debouncedExperience[0] : undefined,
+    experienceMax: debouncedExperience[1] < 20 ? debouncedExperience[1] : undefined,
+  };
 
   const { data: candidates, isLoading: isLoadingCandidates } = useListCandidates(
     queryParams,
@@ -267,54 +234,35 @@ export default function RecruiterDashboard() {
   );
 
   // Apply status filter + sort client-side
-const displaySource = searched
-  ? aiCandidates
-  : (candidates || []);
+  const filteredCandidates = useMemo(() => {
+    if (!candidates) return [];
+    const filtered = candidates.filter((c) => {
+      if (filters.statusFilter === "all") return true;
+      const status = statuses[c.id];
+      if (filters.statusFilter === "none") return !status;
+      return status === filters.statusFilter;
+    });
 
-const filteredCandidates = useMemo(() => {
-  const filtered = displaySource.filter((c) => {
-    if (filters.statusFilter === "all") return true;
-
-    const status = statuses[c.id];
-
-    if (filters.statusFilter === "none") return !status;
-
-    return status === filters.statusFilter;
-  });
-
-  const sorted = [...filtered].sort((a, b) => {
-    const dir = sort.dir === "asc" ? 1 : -1;
-
-    switch (sort.field) {
-      case "name":
-        return a.fullName.localeCompare(b.fullName) * dir;
-
-      case "score":
-        return (
-          ((a.evaluation?.scores.overall ?? 0) -
-            (b.evaluation?.scores.overall ?? 0)) * dir
-        );
-
-      case "experience":
-        return (a.yearsExperience - b.yearsExperience) * dir;
-
-      case "country":
-        return a.country.localeCompare(b.country) * dir;
-
-      case "status": {
-        const aStatus = statuses[a.id] ?? "zzz";
-        const bStatus = statuses[b.id] ?? "zzz";
-        return aStatus.localeCompare(bStatus) * dir;
+    const sorted = [...filtered].sort((a, b) => {
+      const dir = sort.dir === "asc" ? 1 : -1;
+      switch (sort.field) {
+        case "name":
+          return a.fullName.localeCompare(b.fullName) * dir;
+        case "score":
+          return ((a.evaluation?.scores.overall ?? 0) - (b.evaluation?.scores.overall ?? 0)) * dir;
+        case "experience":
+          return (a.yearsExperience - b.yearsExperience) * dir;
+        case "country":
+          return a.country.localeCompare(b.country) * dir;
+        case "status": {
+          const aStatus = statuses[a.id] ?? "zzz";
+          const bStatus = statuses[b.id] ?? "zzz";
+          return aStatus.localeCompare(bStatus) * dir;
+        }
       }
-
-      default:
-        return 0;
-    }
-  });
-
-  return sorted;
-}, [displaySource, statuses, filters.statusFilter, sort]);
-
+    });
+    return sorted;
+  }, [candidates, statuses, filters.statusFilter, sort]);
 
   const selectedCandidate = useMemo(
     () => candidates?.find((c) => c.id === selectedId) ?? null,
@@ -396,15 +344,7 @@ const filteredCandidates = useMemo(() => {
     <Shell>
       <div className="p-6 lg:p-8 max-w-7xl mx-auto w-full">
         {/* ====== Header ====== */}
-        <AIHeroSearch
-          value={searchTerm}
-          loading={loading}
-          onChange={setSearchTerm}
-          onSearch={handleAISearch}
-        />
-          {loading && <SearchLoading />}
-        <br/>
-        {/* <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-1">
               Recruiter Workspace
@@ -422,10 +362,10 @@ const filteredCandidates = useMemo(() => {
               Open Admin Pipeline <ArrowRight className="size-4" />
             </Button>
           </div>
-        </div> */}
+        </div>
 
         {/* ====== Summary Metrics ====== */}
-        {/* {isLoadingSummary ? (
+        {isLoadingSummary ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {Array(4).fill(0).map((_, i) => (
               <Card key={i} className="h-24 animate-pulse bg-muted/50" />
@@ -455,7 +395,7 @@ const filteredCandidates = useMemo(() => {
               icon={Clock}
             />
           </div>
-        ) : null} */}
+        ) : null}
 
         {/* ====== Status pipeline chips ====== */}
         <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -500,21 +440,133 @@ const filteredCandidates = useMemo(() => {
 
         {/* ====== Filters ====== */}
         <Card className="mb-6 border shadow-sm">
-          {searched && (
-            <CandidateFilters
-              filters={filters}
-              experience={experience}
-              roles={roles || []}
-              regions={allCountries}
-              onChange={(key, value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  [key]: value,
-                }))
-              }
-              onExperienceChange={setExperience}
-            />
-          )}
+          <CardContent className="p-4 space-y-4">
+            <div className="flex flex-col lg:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, skills, or keywords..."
+                  className="pl-9 bg-muted/20"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Select
+                  value={filters.role || "all"}
+                  onValueChange={(val) =>
+                    setFilters((f) => ({ ...f, role: val === "all" ? "" : val }))
+                  }
+                >
+                  <SelectTrigger className="w-[170px]">
+                    <SelectValue placeholder="Any Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any Role</SelectItem>
+                    {roles?.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={filters.country || "all"}
+                  onValueChange={(val) =>
+                    setFilters((f) => ({ ...f, country: val === "all" ? "" : val }))
+                  }
+                >
+                  <SelectTrigger className="w-[170px]">
+                    <SelectValue placeholder="Any Country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any Country</SelectItem>
+                    {regions?.phase1.map((r) => (
+                      <SelectItem key={r.code} value={r.code}>
+                        <span className="mr-2">{r.flag}</span>
+                        {r.name}
+                      </SelectItem>
+                    ))}
+                    {regions?.phase2.map((r) => (
+                      <SelectItem key={r.code} value={r.code}>
+                        <span className="mr-2">{r.flag}</span>
+                        {r.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={filters.englishLevel || "all"}
+                  onValueChange={(val) =>
+                    setFilters((f) => ({ ...f, englishLevel: val === "all" ? "" : val }))
+                  }
+                >
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Any English" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any English</SelectItem>
+                    <SelectItem value="A1">A1 — Beginner</SelectItem>
+                    <SelectItem value="A2">A2 — Elementary</SelectItem>
+                    <SelectItem value="B1">B1 — Intermediate</SelectItem>
+                    <SelectItem value="B2">B2 — Upper-Int.</SelectItem>
+                    <SelectItem value="C1">C1 — Advanced</SelectItem>
+                    <SelectItem value="C2">C2 — Proficient</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={filters.minReadiness || "all"}
+                  onValueChange={(val) =>
+                    setFilters((f) => ({ ...f, minReadiness: val === "all" ? "" : val }))
+                  }
+                >
+                  <SelectTrigger className="w-[170px]">
+                    <SelectValue placeholder="Any Readiness" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any Readiness</SelectItem>
+                    <SelectItem value="75">Recruiter Ready (75+)</SelectItem>
+                    <SelectItem value="55">Needs Upskilling (55+)</SelectItem>
+                    <SelectItem value="0">Include Not Ready</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Experience slider */}
+            <div className="flex items-center gap-4 pt-1">
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground shrink-0 w-24">
+                Experience
+              </div>
+              <Slider
+                min={0}
+                max={20}
+                step={1}
+                value={experience}
+                onValueChange={(v) => setExperience([v[0]!, v[1]!])}
+                className="flex-1 max-w-md"
+              />
+              <div className="text-xs font-mono tabular-nums text-foreground w-24 shrink-0">
+                <span className="font-bold">{experience[0]}</span>
+                <span className="text-muted-foreground"> – </span>
+                <span className="font-bold">{experience[1]}{experience[1] === 20 ? "+" : ""}</span>
+                <span className="text-muted-foreground"> yrs</span>
+              </div>
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="ml-auto gap-1.5 text-xs"
+                >
+                  <X className="size-3.5" /> Clear filters
+                </Button>
+              )}
+            </div>
+          </CardContent>
         </Card>
 
         {/* ====== Table ====== */}
@@ -556,100 +608,210 @@ const filteredCandidates = useMemo(() => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/10 hover:bg-muted/10">
-                   <TableHead>Image</TableHead>
-                    <TableHead>Candidate ID</TableHead>
-                    <TableHead>Name</TableHead>
+                    <TableHead className="w-[280px]">
+                      <SortHeader field="name" sort={sort} onSort={handleSort}>
+                        Candidate
+                      </SortHeader>
+                    </TableHead>
+                    <TableHead>
+                      <SortHeader field="country" sort={sort} onSort={handleSort}>
+                        Country
+                      </SortHeader>
+                    </TableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead>Experience</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Action</TableHead>
+                    <TableHead className="w-[80px]">
+                      <SortHeader field="experience" sort={sort} onSort={handleSort}>
+                        Exp
+                      </SortHeader>
+                    </TableHead>
+                    <TableHead className="w-[80px]">English</TableHead>
+                    <TableHead className="w-[180px]">
+                      <SortHeader field="score" sort={sort} onSort={handleSort}>
+                        Readiness
+                      </SortHeader>
+                    </TableHead>
+                    <TableHead className="w-[140px]">
+                      <SortHeader field="status" sort={sort} onSort={handleSort}>
+                        Status
+                      </SortHeader>
+                    </TableHead>
+                    <TableHead className="w-[60px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-               <TableBody>
-                {filteredCandidates.map((c) => {
-                  const status = statuses[c.id];
-
-                  return (
-                    <TableRow
-                      key={c.id}
-                      className="hover:bg-muted/40 transition-colors"
-                    >
-                      {/* Image */}
-                      <TableCell>
-                        <div className="h-10 w-10 rounded-full overflow-hidden border bg-muted flex items-center justify-center">
-                          {c.avatarUrl ? (
-                            <img
-                              src={c.avatarUrl}
-                              alt={c.fullName}
-                              className="h-full w-full object-cover"
-                            />
+                <TableBody>
+                  {filteredCandidates.map((c) => {
+                    const score = c.evaluation?.scores.overall ?? 0;
+                    const readiness = getReadinessLabel(score);
+                    const status = statuses[c.id];
+                    const flag = allCountries.find((r) => r.code === c.country)?.flag ?? "";
+                    return (
+                      <TableRow
+                        key={c.id}
+                        onClick={() => setSelectedId(c.id)}
+                        className="cursor-pointer hover:bg-muted/40 transition-colors"
+                      >
+                        <TableCell className="py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="size-9 rounded-full bg-muted border overflow-hidden shrink-0 flex items-center justify-center text-xs font-medium">
+                              {c.avatarUrl ? (
+                                <img
+                                  src={c.avatarUrl}
+                                  alt={c.fullName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                c.fullName.charAt(0)
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-semibold text-sm truncate flex items-center gap-1.5">
+                                {c.fullName}
+                                {c.euWorkEligible && (
+                                  <span
+                                    className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1 py-0 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                                    title="EU work eligible"
+                                  >
+                                    EU
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted-foreground truncate">
+                                {c.email}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5 text-sm">
+                            <span>{flag}</span>
+                            <span>{c.country}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">{c.targetRole}</TableCell>
+                        <TableCell className="text-sm font-mono tabular-nums">
+                          {c.yearsExperience}y
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {c.englishLevel}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <div className="flex items-baseline justify-between mb-0.5">
+                                <span className={`font-bold text-sm tabular-nums ${scoreColor(score)}`}>
+                                  {score}
+                                </span>
+                                <span className="text-[9px] uppercase font-semibold tracking-wider text-muted-foreground">
+                                  /100
+                                </span>
+                              </div>
+                              <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${scoreBg(score)}`}
+                                  style={{ width: `${score}%` }}
+                                />
+                              </div>
+                              <div
+                                className={`text-[9px] font-semibold uppercase tracking-wider mt-1 inline-block px-1.5 py-0.5 rounded border ${readiness.className}`}
+                              >
+                                {readiness.label}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {status ? (
+                            <Badge
+                              variant="outline"
+                              className={`gap-1.5 font-medium text-[11px] ${STATUS_META[status].className}`}
+                            >
+                              <span className={`size-1.5 rounded-full ${STATUS_META[status].dotClass}`} />
+                              {STATUS_META[status].label}
+                            </Badge>
                           ) : (
-                            <span className="font-semibold text-sm">
-                              {c.fullName.charAt(0).toUpperCase()}
-                            </span>
+                            <span className="text-xs text-muted-foreground italic">Unreviewed</span>
                           )}
-                        </div>
-                      </TableCell>
-
-                      {/* Candidate ID */}
-                      <TableCell>
-                        <span className="font-medium">
-                          {c.id.slice(0, 8).toUpperCase()}
-                        </span>
-                      </TableCell>
-
-                      {/* Name */}
-                      <TableCell>
-                        <div>
-                          <div className="font-semibold">
-                            {c.fullName}
-                          </div>
-
-                          <div className="text-xs text-muted-foreground">
-                            {c.email}
-                          </div>
-                        </div>
-                      </TableCell>
-
-                      {/* Role */}
-                      <TableCell>
-                        {c.targetRole}
-                      </TableCell>
-
-                      {/* Experience */}
-                      <TableCell>
-                        {c.yearsExperience} Years
-                      </TableCell>
-
-                      {/* Status */}
-                      <TableCell>
-                        {status ? (
-                          <Badge
-                            variant="outline"
-                            className={STATUS_META[status].className}
-                          >
-                            {STATUS_META[status].label}
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            New
-                          </Badge>
-                        )}
-                      </TableCell>
-
-                      {/* Action */}
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          onClick={() => setSelectedId(c.id)}
-                        >
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
+                        </TableCell>
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8">
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-52">
+                              <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => setSelectedId(c.id)}>
+                                <ExternalLink className="size-4" /> View details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setLocation(`/candidate/${c.id}/evaluation`)}
+                              >
+                                <Sparkles className="size-4" /> Full evaluation
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  handleStatusChange(c.id, "shortlisted", c.fullName);
+                                  shortlistMut.mutate({
+                                    id: c.id,
+                                    data: { shortlisted: !c.isShortlisted },
+                                  });
+                                }}
+                                data-testid={`menu-shortlist-${c.id}`}
+                              >
+                                <CheckCircle2 className="size-4 text-emerald-500" />{" "}
+                                {c.isShortlisted ? "Remove from shortlist" : "Shortlist"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  clientReadyMut.mutate({
+                                    id: c.id,
+                                    data: { clientReady: !c.isClientReady },
+                                  })
+                                }
+                                data-testid={`menu-client-ready-${c.id}`}
+                              >
+                                <Star className="size-4 text-primary" />{" "}
+                                {c.isClientReady ? "Unmark client-ready" : "Mark client-ready"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  window.open(getDownloadMaskedCvUrl(c.id), "_blank")
+                                }
+                                data-testid={`menu-masked-cv-${c.id}`}
+                              >
+                                <FileText className="size-4 text-primary" /> Download masked CV
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleStatusChange(c.id, "needs_training", c.fullName)}
+                              >
+                                <GraduationCap className="size-4 text-amber-500" /> Send to upskilling
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleStatusChange(c.id, "not_suitable", c.fullName)}
+                              >
+                                <XCircle className="size-4 text-rose-500" /> Mark not suitable
+                              </DropdownMenuItem>
+                              {status && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => handleStatusChange(c.id, null, c.fullName)}
+                                  >
+                                    <X className="size-4" /> Clear status
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
               </Table>
             </div>
           )}
