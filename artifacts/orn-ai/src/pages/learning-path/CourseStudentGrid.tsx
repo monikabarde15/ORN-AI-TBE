@@ -1,5 +1,5 @@
 // artifacts\orn-ai\src\pages\learning-path\CourseGrid.tsx
-import CourseCard from "./CourseCard";
+import CourseCard from "./CourseStudentCard";
 import { useEffect, useMemo, useState } from "react";
 
 import LearningPathForm from "./LearningPathForm";
@@ -25,7 +25,7 @@ showForm?: boolean;
 
   setThumbnailPreview: (value: string) => void;
   setVideoPreview: (value: string) => void;
-}export default function CourseGrid({
+}export default function CourseStudentGrid({
   courses,
   selectedCourses,
   toggleCourse,

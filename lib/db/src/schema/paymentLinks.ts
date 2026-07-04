@@ -6,68 +6,52 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
-export const paymentLinksTable = pgTable(
-  "payment_links",
-  {
-    id: uuid("id")
-      .primaryKey()
-      .defaultRandom(),
+export const paymentLinksTable = pgTable("payment_links", {
+  id: uuid("id").primaryKey().defaultRandom(),
 
-    paymentId: text("payment_id")
-      .notNull()
-      .unique(),
+  paymentId: text("payment_id")
+    .notNull()
+    .unique(),
 
-    courseIds: text("course_ids")
-      .array()
-      .notNull()
-      .default([]),
+  // ✅ Add this
+  learningPathId: uuid("learning_path_id"),
 
-    amount: numeric("amount", {
-      precision: 12,
-      scale: 2,
-    }).notNull(),
+  courseIds: text("course_ids")
+    .array()
+    .notNull()
+    .default([]),
 
-    status: text("status")
-      .notNull()
-      .default("pending"),
+  amount: numeric("amount", {
+    precision: 12,
+    scale: 2,
+  }).notNull(),
 
-    paymentLink: text("payment_link")
-      .notNull(),
+  status: text("status")
+    .notNull()
+    .default("pending"),
 
-    // NEW FIELDS
-    studentName: text("student_name"),
-    studentEmail: text("student_email"),
-    studentPhone: text("student_phone"),
+  paymentLink: text("payment_link").notNull(),
 
-    razorpayPaymentId: text("razorpay_payment_id"),
-    razorpayOrderId: text("razorpay_order_id"),
+  studentName: text("student_name"),
+  studentEmail: text("student_email"),
+  studentPhone: text("student_phone"),
 
-    createdBy: uuid("created_by"),
+  razorpayPaymentId: text("razorpay_payment_id"),
+  razorpayOrderId: text("razorpay_order_id"),
 
-    paidAt: timestamp("paid_at", {
-      withTimezone: true,
-    }),
+  createdBy: uuid("created_by"),
 
-    expiresAt: timestamp("expires_at", {
-      withTimezone: true,
-    }),
+  paidAt: timestamp("paid_at", {
+    withTimezone: true,
+  }),
 
-    createdAt: timestamp("created_at", {
-      withTimezone: true,
-    })
-      .notNull()
-      .defaultNow(),
-  }
-);
+  expiresAt: timestamp("expires_at", {
+    withTimezone: true,
+  }),
 
-export type PaymentLinkRow =
-  typeof paymentLinksTable.$inferSelect;
-
-export type InsertPaymentLinkRow =
-  typeof paymentLinksTable.$inferInsert;
-
-export type PaymentStatus =
-  | "pending"
-  | "paid"
-  | "expired"
-  | "cancelled";
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+  })
+    .notNull()
+    .defaultNow(),
+});

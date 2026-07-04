@@ -13,7 +13,7 @@ interface Props {
   onToggle: () => void;
 }
 
-export default function CourseCard({
+export default function CourseStudentCard({
   course,
   selected,
   onToggle,
@@ -37,6 +37,12 @@ export default function CourseCard({
             : "border-slate-200"
         }
       `}
+      onClick={() =>
+                window.open(
+                  `/course/details/${course.id}`,
+                  "_blank"
+                )
+              }
     >
       {/* Thumbnail */}
 
@@ -111,73 +117,8 @@ export default function CourseCard({
 
         </div>
 
-        {/* Footer */}
-
-        {/* <div className="mt-5 flex items-center justify-between">
-
-          <div>
-
-            <p className="text-xs text-slate-400">
-              Price
-            </p>
-
-            <h3 className="text-2xl font-bold text-green-600">
-              ₹{Number(
-                course.price || 0
-              ).toLocaleString()}
-            </h3>
-
-          </div>
-
-          <button
-            onClick={onToggle}
-            className={`
-              flex
-              items-center
-              gap-2
-              rounded-2xl
-              px-4
-              py-3
-              font-semibold
-              transition-all
-
-              ${
-                selected
-                  ? "bg-green-100 text-green-700"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
-              }
-            `}
-          >
-            {selected ? (
-              <>
-                <CheckCircle2
-                  size={18}
-                />
-                Added
-              </>
-            ) : (
-              <>
-                <Plus size={18} />
-                Add
-              </>
-            )}
-          </button>
-
-        </div> */}
+       
         <div className="mt-5 space-y-3">
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-400">
-                Price
-              </p>
-
-              <h3 className="text-2xl font-bold text-blue-900">
-                ₹{Number(course.price || 0).toLocaleString()}
-              </h3>
-            </div>
-          </div>
-
           <div className="grid grid-cols-2 gap-2">
 
             <button

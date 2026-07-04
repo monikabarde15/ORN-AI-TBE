@@ -4,6 +4,7 @@ import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
 
 interface Props {
   courses: any[];
+  showRemoveButton?: boolean;
   removeCourse: (
     id: string
   ) => void;
@@ -12,6 +13,7 @@ interface Props {
 export default function SelectedCourses({
   courses,
   removeCourse,
+  showRemoveButton = true,
 }: Props) {
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -123,32 +125,33 @@ export default function SelectedCourses({
                     </p>
 
                   </div>
-
-                  <button
-                    onClick={() => {
-                      setSelectedCourse(course);
-                      setDeleteModalOpen(true);
-                    }}
-                    className="
-                            flex
-                            h-10
-                            w-10
-                            items-center
-                            justify-center
-                            rounded-xl
-                            border
-                            border-slate-200
-                            bg-white
-                            text-slate-500
-                            transition
-                            hover:bg-slate-50
-                            hover:text-red-600
-                          "
-                  >
-                    <Trash2
-                      size={16}
-                    />
-                  </button>
+                  {showRemoveButton && (
+                    <button
+                      onClick={() => {
+                        setSelectedCourse(course);
+                        setDeleteModalOpen(true);
+                      }}
+                      className="
+                              flex
+                              h-10
+                              w-10
+                              items-center
+                              justify-center
+                              rounded-xl
+                              border
+                              border-slate-200
+                              bg-white
+                              text-slate-500
+                              transition
+                              hover:bg-slate-50
+                              hover:text-red-600
+                            "
+                    >
+                      <Trash2
+                        size={16}
+                      />
+                    </button>
+                  )}
 
                 </div>
               )
