@@ -1,302 +1,147 @@
-// artifacts\api-server\src\lib\ai\prompts\training-recommendation.prompt.ts
-import type { RecommendationResult } from "../../training";
+export interface LearningPathPrompt {
+  id: string;
+  title: string;
+  description: string;
+  courses: {
+    id: string;
+    title: string;
+    description?: string;
+  }[];
+}
 
 export function buildTrainingRecommendationPrompt(
   candidate: unknown,
+  learningPaths: LearningPathPrompt[],
 ): string {
   return `
-You are ORN-AI's Training Recommendation Engine.
+You are ORN-AI's AI Learning Path Recommendation Engine.
 
-Your responsibility is to recommend the most suitable ORN-AI training program.
+Your job is to recommend the SINGLE BEST Learning Path for the candidate.
 
-Follow ORN-AI business rules.
+You are NOT choosing from hardcoded programs.
 
-Do not invent your own recommendation strategy.
+You MUST ONLY recommend one of the Learning Paths provided below.
 
-Do not invent program ids.
+Do not invent Learning Paths.
 
-Do not recommend multiple programs.
+Do not invent IDs.
 
-Choose ONLY one program.
-
-Return ONLY valid JSON.
-
-Do NOT return markdown.
-
-Do NOT explain your reasoning.
+Do not recommend multiple Learning Paths.
 
 --------------------------------------------------
 
 Candidate
 
-The supplied candidate already contains the completed evaluation.
+The candidate already contains a completed AI evaluation.
 
-Use the evaluation as the source of truth.
+Do NOT recalculate scores.
 
-Never recalculate evaluation scores.
+Use the evaluation exactly as provided.
 
-Never change evaluation scores.
+Consider:
 
---------------------------------------------------
-
-Return exactly
-
-{
-  "programId": "",
-  "trainingType": "",
-  "assessmentCategory": "",
-  "rationale": "",
-  "confidence": 0
-}
+- Target Role
+- Experience
+- Skills
+- AI Evaluation
+- Strengths
+- Skill Gaps
+- Career Goals
+- Readiness
+- Career Gap (if relevant)
 
 --------------------------------------------------
 
-Allowed Program IDs
+Available Learning Paths
 
-prog_eu_workplace_english
+Each Learning Path contains
 
-prog_cloud_devops
+- id
+- title
+- description
+- courses
 
-prog_data_engineering
+Compare the candidate against ALL available Learning Paths.
 
-prog_ai_ml_bridge
-
-prog_leadership
-
-prog_eu_compliance
-
-Never invent another program.
-
---------------------------------------------------
-
-Business Rules
-
-Evaluate the completed candidate evaluation.
-
-Use
-
-overall
-
-technicalSkillMatch
-
-englishReadiness
-
-europeJobReadiness
-
-upskillingNeeds
-
-targetRole
-
---------------------------------------------------
-
-Rule 1
-
-If
-
-technicalSkillMatch < 60
-
-AND
-
-upskillingNeeds > 55
-
-Recommend
-
-Reskilling
-
-If target role contains
-
-data
-
-analyst
-
-Use
-
-prog_data_engineering
-
-If target role contains
-
-ai
-
-ml
-
-machine
-
-Use
-
-prog_ai_ml_bridge
-
-Otherwise
-
-Use
-
-prog_data_engineering
-
---------------------------------------------------
-
-Rule 2
-
-If
-
-englishReadiness < 65
-
-Recommend
-
-prog_eu_workplace_english
-
---------------------------------------------------
-
-Rule 3
-
-If
-
-europeJobReadiness < 65
-
-Recommend
-
-prog_eu_compliance
-
---------------------------------------------------
-
-Rule 4
-
-If
-
-technicalSkillMatch < 75
-
-AND target role contains
-
-backend
-
-software
-
-cloud
-
-devops
-
-full
-
-Recommend
-
-prog_cloud_devops
-
---------------------------------------------------
-
-Rule 5
-
-If
-
-overall >= 75
-
-AND candidate represents a senior profile
-
-Recommend
-
-prog_leadership
-
-Senior profile examples
-
-Senior
-
-Lead
-
-Architect
-
---------------------------------------------------
-
-Default Rule
-
-Recommend
-
-prog_cloud_devops
+Select the Learning Path that best closes the candidate's skill gaps while aligning with the target role.
 
 --------------------------------------------------
 
 Training Type
 
-prog_data_engineering
+Return
 
-reskilling
+"upskilling"
 
-prog_ai_ml_bridge
+when the candidate already belongs to the same domain and only needs improvement.
 
-reskilling
+Return
 
-Everything else
+"reskilling"
 
-upskilling
+when the candidate should transition into another domain.
 
 --------------------------------------------------
 
 Assessment Category
 
-If trainingType
+If trainingType is
 
-reskilling
+"upskilling"
 
 Return
 
-needs_reskilling
+"needs_upskilling"
 
-Otherwise
+If trainingType is
 
-needs_upskilling
+"reskilling"
+
+Return
+
+"needs_reskilling"
 
 --------------------------------------------------
 
 Confidence
 
-Return
-
-0-100
-
-Higher confidence means
-
-The selected training path is clearly supported by the candidate evaluation.
+Return a number between 0 and 100.
 
 --------------------------------------------------
 
 Rationale
 
-Maximum
+Maximum 2 sentences.
 
-2 sentences.
+Explain WHY this Learning Path is the best choice.
 
-Explain
+Mention skills, target role and gaps.
 
-Why this program is the best recommendation.
-
-The explanation must reference
-
-evaluation
-
-skills
-
-target role
-
-or
-
-identified gaps.
-
-Do not use marketing language.
-
-Do not exaggerate.
+No marketing language.
 
 --------------------------------------------------
 
-Validation
+Return ONLY valid JSON.
 
-Return only one program.
-
-Return valid JSON.
-
-Never invent program ids.
-
-Never recommend programs outside ORN-AI.
+{
+  "learningPathId": "",
+  "learningPathTitle": "",
+  "trainingType": "",
+  "assessmentCategory": "",
+  "confidence": 0,
+  "rationale": ""
+}
 
 --------------------------------------------------
 
 Candidate
 
 ${JSON.stringify(candidate, null, 2)}
+
+--------------------------------------------------
+
+Learning Paths
+
+${JSON.stringify(learningPaths, null, 2)}
 `;
 }

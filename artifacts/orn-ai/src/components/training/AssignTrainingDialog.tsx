@@ -1,3 +1,4 @@
+// artifacts\orn-ai\src\components\training\AssignTrainingDialog.tsx
 import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
@@ -15,19 +16,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import api from "../../../services/api";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import {
-  useListTrainingCatalog,
+  // useListTrainingCatalog,
   useRecommendTrainingForCandidate,
   useCreateTrainingAssignment,
   getTrainingDashboardQueryKey,
   getListTrainingAssignmentsQueryKey,
   getGetCandidateTrainingQueryKey,
   getRecommendTrainingForCandidateQueryKey,
-  getListTrainingCatalogQueryKey,
+  // getListTrainingCatalogQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Sparkles, RefreshCcw, Compass } from "lucide-react";
@@ -62,44 +64,79 @@ export function AssignTrainingDialog({
       queryKey: getRecommendTrainingForCandidateQueryKey(candidateId),
     },
   });
-  const catalogQuery = useListTrainingCatalog({
-    query: {
-      enabled: open,
-      queryKey: getListTrainingCatalogQueryKey(),
-    },
-  });
+  // const catalogQuery = useListTrainingCatalog({
+  //   query: {
+  //     enabled: open,
+  //     queryKey: getListTrainingCatalogQueryKey(),
+  //   },
+  // });
 
   const rec = recQuery.data;
-  const catalog = catalogQuery.data;
+  // const catalog = catalogQuery.data;
 
-  const [programId, setProgramId] = useState<string>("");
+  const [learningPathId,setLearningPathId] = useState("");
   const [trainerId, setTrainerId] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [targetDate, setTargetDate] = useState<string>("");
+  const [learningPaths, setLearningPaths] = useState<any[]>([]);
+  const [loadingLearningPaths, setLoadingLearningPaths] = useState(false);
+
+  // Load Learning Path
+  useEffect(() => {
+  if (!open) return;
+
+  const loadLearningPaths = async () => {
+    try {
+      setLoadingLearningPaths(true);
+
+      const res = await api.get("/api/learning-paths");
+
+      setLearningPaths(res.data.data || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingLearningPaths(false);
+    }
+  };
+
+  loadLearningPaths();
+}, [open]);
 
   // Initialize form when recommendation arrives
   useEffect(() => {
     if (rec && open) {
-      setProgramId(rec.program.id);
-      setTrainerId(rec.suggestedTrainer.id);
+      // setProgramId(rec.program.id);
+      // setTrainerId(rec.suggestedTrainer.id);
+      setLearningPathId(rec.learningPathId);
+      // setTrainerId("");
       setStartDate(dateInputValue(rec.suggestedStartDate));
       setTargetDate(dateInputValue(rec.suggestedTargetCompletionDate));
     }
   }, [rec, open]);
 
   // When user changes program, recompute target completion date
-  const selectedProgram = useMemo(
-    () => catalog?.programs.find((p) => p.id === programId),
-    [catalog, programId],
+  // const selectedProgram = useMemo(
+  //   () => catalog?.programs.find((p) => p.id === programId),
+  //   [catalog, programId],
+  // );
+
+  const selectedLearningPath = useMemo(
+    () =>
+      learningPaths.find(
+        (path) =>
+          path.id === learningPathId
+      ),
+    [learningPaths, learningPathId]
   );
-  useEffect(() => {
-    if (selectedProgram && startDate) {
-      const s = new Date(startDate);
-      const t = new Date(s);
-      t.setDate(t.getDate() + selectedProgram.durationWeeks * 7);
-      setTargetDate(dateInputValue(t.toISOString()));
-    }
-  }, [selectedProgram, startDate]);
+
+  // useEffect(() => {
+  //   if (selectedProgram && startDate) {
+  //     const s = new Date(startDate);
+  //     const t = new Date(s);
+  //     t.setDate(t.getDate() + selectedProgram.durationWeeks * 7);
+  //     setTargetDate(dateInputValue(t.toISOString()));
+  //   }
+  // }, [selectedProgram, startDate]);
 
   const createMut = useCreateTrainingAssignment({
     mutation: {
@@ -126,11 +163,11 @@ export function AssignTrainingDialog({
   });
 
   const onSubmit = () => {
-    if (!programId || !trainerId || !startDate || !targetDate) return;
+    if (!learningPathId || !trainerId || !startDate || !targetDate) return;
     createMut.mutate({
       data: {
         candidateId,
-        programId,
+        learningPathId,
         trainerId,
         startDate: new Date(startDate).toISOString(),
         targetCompletionDate: new Date(targetDate).toISOString(),
@@ -138,8 +175,11 @@ export function AssignTrainingDialog({
     });
   };
 
-  const loading = recQuery.isLoading || catalogQuery.isLoading;
-  const fetchError = recQuery.isError || catalogQuery.isError;
+  // const loading = recQuery.isLoading || catalogQuery.isLoading;
+  // const fetchError = recQuery.isError || catalogQuery.isError;
+
+  const loading =recQuery.isLoading || loadingLearningPaths;
+  const fetchError = recQuery.isError;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -166,7 +206,7 @@ export function AssignTrainingDialog({
               size="sm"
               onClick={() => {
                 recQuery.refetch();
-                catalogQuery.refetch();
+                // catalogQuery.refetch();
               }}
               data-testid="button-retry-assign-dialog"
             >
@@ -195,12 +235,12 @@ export function AssignTrainingDialog({
                     )}
                   </Badge>
                 </div>
-                <div className="text-sm font-semibold mb-1">
-                  {rec.program.name}
-                </div>
-                <div className="text-xs text-muted-foreground mb-2">
-                  {rec.recommendedPath} · suggested trainer: {rec.suggestedTrainer.name}
-                </div>
+                    <div className="text-sm font-semibold mb-1">
+                      {rec.learningPathTitle}
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Confidence: {rec.confidence}%
+                    </div>
                 <p className="text-xs leading-relaxed text-foreground/80">
                   {rec.rationale}
                 </p>
@@ -208,13 +248,13 @@ export function AssignTrainingDialog({
             )}
 
             <div className="grid gap-2">
-              <Label>Program</Label>
-              <Select value={programId} onValueChange={setProgramId}>
+              <Label>Learning Path</Label>
+              <Select value={learningPathId} onValueChange={setLearningPathId}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {catalog?.programs.map((p) => (
+                  {/* {catalog?.programs.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       <span className="flex items-center gap-2">
                         <span className="text-[10px] uppercase text-muted-foreground">
@@ -223,18 +263,26 @@ export function AssignTrainingDialog({
                         <span>{p.name}</span>
                       </span>
                     </SelectItem>
-                  ))}
+                  ))} */}
+                      {learningPaths.map((path) => (
+                        <SelectItem
+                          key={path.id}
+                          value={path.id}
+                        >
+                          {path.title}
+                        </SelectItem>
+                      ))}
                 </SelectContent>
               </Select>
-              {selectedProgram && (
+              {/* {selectedProgram && (
                 <div className="text-xs text-muted-foreground">
                   {selectedProgram.durationWeeks} weeks · {selectedProgram.moduleTemplates.length}{" "}
                   modules · hybrid (recorded + live)
                 </div>
-              )}
+              )} */}
             </div>
 
-            <div className="grid gap-2">
+            {/* <div className="grid gap-2">
               <Label>Trainer</Label>
               <Select value={trainerId} onValueChange={setTrainerId}>
                 <SelectTrigger>
@@ -253,7 +301,7 @@ export function AssignTrainingDialog({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
@@ -289,8 +337,7 @@ export function AssignTrainingDialog({
             disabled={
               loading ||
               createMut.isPending ||
-              !programId ||
-              !trainerId ||
+              !learningPathId ||
               !startDate ||
               !targetDate
             }

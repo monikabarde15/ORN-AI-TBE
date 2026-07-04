@@ -30,13 +30,9 @@ export interface CandidateInsights {
 }
 
 export interface TrainingRecommendationAnalysis {
-  programId:
-    | "prog_eu_workplace_english"
-    | "prog_cloud_devops"
-    | "prog_data_engineering"
-    | "prog_ai_ml_bridge"
-    | "prog_leadership"
-    | "prog_eu_compliance";
+  learningPathId: string;
+
+  learningPathTitle: string;
 
   trainingType:
     | "upskilling"
@@ -101,6 +97,17 @@ export interface EmploymentHistory {
 
 
 
+export interface LearningPathAIInput {
+  id: string;
+  title: string;
+  description: string;
+  courses: {
+    id: string;
+    title: string;
+    description?: string;
+  }[];
+}
+
 export interface AIProvider {
   analyzeResume(
     resumeText: string,
@@ -112,6 +119,7 @@ export interface AIProvider {
 
   generateTrainingRecommendation(
     candidate: unknown,
+    learningPaths: LearningPathAIInput[],
   ): Promise<TrainingRecommendationAnalysis>;
 
   generateFullEvaluation(

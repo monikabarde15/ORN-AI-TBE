@@ -1,3 +1,4 @@
+// artifacts\api-server\src\lib\ai\prompts\training-recommendation.prompt.ts
 import "dotenv/config";
 
 import { generateTrainingRecommendation } from "../ai-services/training-recommendation.service";

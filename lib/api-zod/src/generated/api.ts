@@ -1037,16 +1037,61 @@ export const registerCandidateBodyFullNameMin = 2;
 export const registerCandidateBodyYearsExperienceMin = 0;
 export const registerCandidateBodyYearsExperienceMax = 50;
 
+// export const RegisterCandidateBody = zod.object({
+//   fullName: zod.string().min(registerCandidateBodyFullNameMin),
+//   email: zod.string().email(),
+//   phone: zod.string(),
+//   country: zod.string(),
+//   targetRole: zod.string(),
+//   yearsExperience: zod
+//     .number()
+//     .min(registerCandidateBodyYearsExperienceMin)
+//     .max(registerCandidateBodyYearsExperienceMax),
+//   visaStatus: zod.enum([
+//     "eu_citizen",
+//     "work_permit",
+//     "blue_card",
+//     "requires_sponsorship",
+//     "student_visa",
+//   ]),
+// englishLevel: zod.enum([
+//   "A1",
+//   "A2",
+//   "B1",
+//   "B2",
+//   "C1",
+//   "C2",
+//   "Intermediate",
+// ]),  euWorkEligible: zod.boolean(),
+//   linkedinUrl: zod.string(),
+//   skills: zod.array(zod.string()).optional(),
+// });
+
 export const RegisterCandidateBody = zod.object({
   fullName: zod.string().min(registerCandidateBodyFullNameMin),
+
   email: zod.string().email(),
+
   phone: zod.string(),
+
+  // NEW
+  currentLocation: zod.string(),
+
+  // NEW
+ currentRole: zod.string(),
+
+  // NEW
+  preferredRole: zod.string(),
+
   country: zod.string(),
+
   targetRole: zod.string(),
+
   yearsExperience: zod
     .number()
     .min(registerCandidateBodyYearsExperienceMin)
     .max(registerCandidateBodyYearsExperienceMax),
+
   visaStatus: zod.enum([
     "eu_citizen",
     "work_permit",
@@ -1054,16 +1099,21 @@ export const RegisterCandidateBody = zod.object({
     "requires_sponsorship",
     "student_visa",
   ]),
-englishLevel: zod.enum([
-  "A1",
-  "A2",
-  "B1",
-  "B2",
-  "C1",
-  "C2",
-  "Intermediate",
-]),  euWorkEligible: zod.boolean(),
+
+  englishLevel: zod.enum([
+    "A1",
+    "A2",
+    "B1",
+    "B2",
+    "C1",
+    "C2",
+    "Intermediate",
+  ]),
+
+  euWorkEligible: zod.boolean(),
+
   linkedinUrl: zod.string(),
+
   skills: zod.array(zod.string()).optional(),
 });
 

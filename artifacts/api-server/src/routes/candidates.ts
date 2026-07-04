@@ -63,45 +63,81 @@ router.get("/candidates", requireAuth, requireRole("recruiter", "admin"), async 
   res.json(data);
 });
 
-router.post("/candidates", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
-  const parsed = RegisterCandidateBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const submittedSkills = parsed.data.skills?.filter((s) => s.trim().length > 0) ?? [];
-  const skills =
-    submittedSkills.length > 0
-      ? submittedSkills.slice(0, 20)
-      : pickSkillsFor(parsed.data.targetRole, Date.now());
-  const seed = Math.floor(Math.random() * 89) + 1;
-  const gender = seed % 2 === 0 ? "men" : "women";
-  const avatarUrl = `https://randomuser.me/api/portraits/${gender}/${seed}.jpg`;
+router.post(
+  "/candidates",
+  requireAuth,
+  requireRole("recruiter", "admin"),
+  async (req, res): Promise<void> => {
+    try {
+      const parsed = RegisterCandidateBody.safeParse(req.body);
 
-  const { skills: _ignored, ...rest } = parsed.data;
-  const [row] = await db
-    .insert(candidatesTable)
-    .values({
-      ...rest,
-      skills,
-      avatarUrl,
-    })
-    .returning();
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          error: parsed.error.flatten(),
+        });
+        return;
+      }
 
-  if (!row) {
-    res.status(500).json({ error: "Failed to create candidate" });
-    return;
-  }
+      const submittedSkills =
+        parsed.data.skills?.filter((s) => s.trim().length > 0) ?? [];
 
-  await db.insert(activityTable).values({
-    kind: "registration",
-    candidateName: row.fullName,
-    country: row.country,
-    message: `${row.fullName} registered as ${row.targetRole}`,
-  });
+      const skills =
+        submittedSkills.length > 0
+          ? submittedSkills.slice(0, 20)
+          : pickSkillsFor(parsed.data.targetRole, Date.now());
 
-  res.status(201).json(GetCandidateResponse.parse(serializeCandidate(row)));
-});
+      const seed = Math.floor(Math.random() * 89) + 1;
+      const gender = seed % 2 === 0 ? "men" : "women";
+
+      const avatarUrl = `https://randomuser.me/api/portraits/${gender}/${seed}.jpg`;
+
+      const { skills: _ignored, ...rest } = parsed.data;
+
+      console.log("===== CANDIDATE INSERT =====");
+      console.log(rest);
+
+      const [row] = await db
+        .insert(candidatesTable)
+        .values({
+          ...rest,
+          skills,
+          avatarUrl,
+        })
+        .returning();
+
+      if (!row) {
+        res.status(500).json({
+          success: false,
+          message: "Failed to create candidate",
+        });
+        return;
+      }
+
+      await db.insert(activityTable).values({
+        kind: "registration",
+        candidateName: row.fullName,
+        country: row.country,
+        message: `${row.fullName} registered as ${row.targetRole}`,
+      });
+
+      res
+        .status(201)
+        .json(GetCandidateResponse.parse(serializeCandidate(row)));
+    } catch (error: any) {
+      console.error("========== CREATE CANDIDATE ERROR ==========");
+      console.error(error);
+      console.error(error?.cause);
+      console.error(error?.stack);
+
+      res.status(500).json({
+        success: false,
+        message: error?.message,
+        detail: error?.cause ?? null,
+      });
+    }
+  },
+);
 
 router.get("/candidates/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetCandidateParams.safeParse(req.params);
@@ -117,35 +153,35 @@ router.get("/candidates/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   //const [row] = await db
-    //.select()
-    //.from(candidatesTable)
-    //.where(eq(candidatesTable.id, params.data.id));
+  //.select()
+  //.from(candidatesTable)
+  //.where(eq(candidatesTable.id, params.data.id));
   //if (!row) {
-    //res.status(404).json({ error: "Candidate not found" });
-    //return;
+  //res.status(404).json({ error: "Candidate not found" });
+  //return;
   //}
- // res.json(GetCandidateResponse.parse(serializeCandidate(row)));
-const [row] = await db
-  .select()
-  .from(candidatesTable)
-  .where(eq(candidatesTable.id, params.data.id));
+  // res.json(GetCandidateResponse.parse(serializeCandidate(row)));
+  const [row] = await db
+    .select()
+    .from(candidatesTable)
+    .where(eq(candidatesTable.id, params.data.id));
 
-if (!row) {
-  res.status(404).json({ error: "Candidate not found" });
-  return;
-}
+  if (!row) {
+    res.status(404).json({ error: "Candidate not found" });
+    return;
+  }
 
-// 👇 Ye 3 logs add karo
-// console.log("DB ROW =", row);
-// console.log("DB englishLevel =", row.englishLevel);
+  // 👇 Ye 3 logs add karo
+  // console.log("DB ROW =", row);
+  // console.log("DB englishLevel =", row.englishLevel);
 
-const candidate = serializeCandidate(row);
+  const candidate = serializeCandidate(row);
 
-// console.log("Serialized =", candidate);
-// console.log("Serialized englishLevel =", candidate.englishLevel);
+  // console.log("Serialized =", candidate);
+  // console.log("Serialized englishLevel =", candidate.englishLevel);
 
-// 👇 Temporary parse hata do
-res.json(candidate);
+  // 👇 Temporary parse hata do
+  res.json(candidate);
 
 
 });

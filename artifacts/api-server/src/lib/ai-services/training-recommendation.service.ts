@@ -1,10 +1,17 @@
 import { getAIProvider } from "../ai/factory";
-import type { TrainingRecommendationAnalysis } from "../ai/types";
+import type {
+  TrainingRecommendationAnalysis,
+  LearningPathAIInput,
+} from "../ai/types";
 
 export async function generateTrainingRecommendation(
   candidate: unknown,
+  learningPaths: LearningPathAIInput[],
 ): Promise<TrainingRecommendationAnalysis> {
   const provider = getAIProvider();
 
-  return provider.generateTrainingRecommendation(candidate);
+  return provider.generateTrainingRecommendation(
+    candidate,
+    learningPaths,
+  );
 }

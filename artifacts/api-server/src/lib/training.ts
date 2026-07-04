@@ -1,13 +1,10 @@
+// artifacts\api-server\src\lib\training.ts
 import type { TrainingAssignmentRow, CandidateRow } from "@workspace/db";
-import {
-  TRAINING_PROGRAMS,
-  defaultTrainerForProgram,
-  findProgramById,
-  findTrainerById,
-  type TrainingProgramDef,
-  type TrainerDef,
+import type {
+  TrainingProgramDef,
+  TrainerDef,
 } from "./training-catalog";
-
+import { recommendTrainingWithAI } from "./training-ai";
 // ---- Types that mirror the OpenAPI shapes ----
 
 export interface ModuleState {
@@ -36,13 +33,28 @@ export type TrainingStatus =
 
 // ---- Recommendation logic ----
 
+// export interface RecommendationResult {
+//   assessmentCategory: "needs_upskilling" | "needs_reskilling";
+//   trainingType: "upskilling" | "reskilling";
+//   recommendedPath: string;
+//   program: TrainingProgramDef;
+//   suggestedTrainer: TrainerDef;
+//   rationale: string;
+// }
+
 export interface RecommendationResult {
   assessmentCategory: "needs_upskilling" | "needs_reskilling";
   trainingType: "upskilling" | "reskilling";
-  recommendedPath: string;
-  program: TrainingProgramDef;
-  suggestedTrainer: TrainerDef;
+  learningPathId: string;
+  learningPathTitle: string;
   rationale: string;
+  confidence: number;
+}
+
+export async function recommendTraining(
+  candidate: MinCandidate,
+): Promise<RecommendationResult> {
+  return recommendTrainingWithAI(candidate);
 }
 
 interface MinCandidate {
@@ -51,32 +63,32 @@ interface MinCandidate {
   evaluation: unknown;
 }
 
-interface EvalScores {
-  overall: number;
-  englishReadiness: number;
-  technicalSkillMatch: number;
-  europeJobReadiness: number;
-  upskillingNeeds: number;
-}
+// interface EvalScores {
+//   overall: number;
+//   englishReadiness: number;
+//   technicalSkillMatch: number;
+//   europeJobReadiness: number;
+//   upskillingNeeds: number;
+// }
 
-function readScores(candidate: MinCandidate): EvalScores | null {
-  const e = candidate.evaluation as
-    | { scores?: Partial<EvalScores> }
-    | null
-    | undefined;
-  const s = e?.scores;
-  if (
-    !s ||
-    typeof s.overall !== "number" ||
-    typeof s.englishReadiness !== "number" ||
-    typeof s.technicalSkillMatch !== "number" ||
-    typeof s.europeJobReadiness !== "number" ||
-    typeof s.upskillingNeeds !== "number"
-  ) {
-    return null;
-  }
-  return s as EvalScores;
-}
+// function readScores(candidate: MinCandidate): EvalScores | null {
+//   const e = candidate.evaluation as
+//     | { scores?: Partial<EvalScores> }
+//     | null
+//     | undefined;
+//   const s = e?.scores;
+//   if (
+//     !s ||
+//     typeof s.overall !== "number" ||
+//     typeof s.englishReadiness !== "number" ||
+//     typeof s.technicalSkillMatch !== "number" ||
+//     typeof s.europeJobReadiness !== "number" ||
+//     typeof s.upskillingNeeds !== "number"
+//   ) {
+//     return null;
+//   }
+//   return s as EvalScores;
+// }
 
 /**
  * Decide what kind of transformation a candidate needs.
@@ -86,90 +98,90 @@ function readScores(candidate: MinCandidate): EvalScores | null {
  *    (low technical match + high upskilling need) — they need a track change.
  *  - upskilling: candidate is on the right track but has a specific gap.
  */
-export function recommendTraining(
-  candidate: MinCandidate,
-): RecommendationResult {
-  const scores = readScores(candidate);
-  const role = (candidate.targetRole ?? "").toLowerCase();
+// export function recommendTraining(
+//   candidate: MinCandidate,
+// ): RecommendationResult {
+//   const scores = readScores(candidate);
+//   const role = (candidate.targetRole ?? "").toLowerCase();
 
-  // Reskilling triggers: weak technical AND high upskilling need (career pivot).
-  const needsReskilling =
-    !!scores &&
-    scores.technicalSkillMatch < 60 &&
-    scores.upskillingNeeds > 55;
+//   // Reskilling triggers: weak technical AND high upskilling need (career pivot).
+//   const needsReskilling =
+//     !!scores &&
+//     scores.technicalSkillMatch < 60 &&
+//     scores.upskillingNeeds > 55;
 
-  let program: TrainingProgramDef;
-  let rationale: string;
+//   let program: TrainingProgramDef;
+//   let rationale: string;
 
-  if (needsReskilling) {
-    // Match a reskilling track from role hints; default to data engineering.
-    if (role.includes("data") || role.includes("analyst")) {
-      program = findProgramById("prog_data_engineering")!;
-      rationale =
-        "Strong analytical signal but limited stack depth — Data Engineering reskilling closes the production-engineering gap.";
-    } else if (role.includes("ml") || role.includes("ai") || role.includes("machine")) {
-      program = findProgramById("prog_ai_ml_bridge")!;
-      rationale =
-        "Aspirational AI/ML target with foundational gaps — the ML Practitioner Bridge is the canonical reskilling path.";
-    } else {
-      program = findProgramById("prog_data_engineering")!;
-      rationale =
-        "Career repositioning recommended: Data Engineering Bridge gives the highest EU placement uplift for this profile.";
-    }
-  } else if (scores && scores.englishReadiness < 65) {
-    program = findProgramById("prog_eu_workplace_english")!;
-    rationale =
-      "Technical fundamentals are in place; the binding constraint is workplace English for EU placement.";
-  } else if (scores && scores.europeJobReadiness < 65) {
-    program = findProgramById("prog_eu_compliance")!;
-    rationale =
-      "Strong technical and language profile; EU Workplace Readiness covers the remaining compliance & onboarding gap.";
-  } else if (
-    scores &&
-    scores.technicalSkillMatch < 75 &&
-    (role.includes("devops") ||
-      role.includes("cloud") ||
-      role.includes("backend") ||
-      role.includes("software") ||
-      role.includes("full"))
-  ) {
-    program = findProgramById("prog_cloud_devops")!;
-    rationale =
-      "Cloud-native gaps are the fastest closeable; this track typically lifts overall readiness by 18-25 points.";
-  } else if (
-    scores &&
-    scores.overall >= 75 &&
-    candidateIsSenior(candidate)
-  ) {
-    program = findProgramById("prog_leadership")!;
-    rationale =
-      "Recruiter-ready profile with senior signal — Leadership track maximizes placement comp band.";
-  } else {
-    program = findProgramById("prog_cloud_devops")!;
-    rationale =
-      "Default upskilling path for general engineering profiles with mid-tier readiness.";
-  }
+//   if (needsReskilling) {
+//     // Match a reskilling track from role hints; default to data engineering.
+//     if (role.includes("data") || role.includes("analyst")) {
+//       program = findProgramById("prog_data_engineering")!;
+//       rationale =
+//         "Strong analytical signal but limited stack depth — Data Engineering reskilling closes the production-engineering gap.";
+//     } else if (role.includes("ml") || role.includes("ai") || role.includes("machine")) {
+//       program = findProgramById("prog_ai_ml_bridge")!;
+//       rationale =
+//         "Aspirational AI/ML target with foundational gaps — the ML Practitioner Bridge is the canonical reskilling path.";
+//     } else {
+//       program = findProgramById("prog_data_engineering")!;
+//       rationale =
+//         "Career repositioning recommended: Data Engineering Bridge gives the highest EU placement uplift for this profile.";
+//     }
+//   } else if (scores && scores.englishReadiness < 65) {
+//     program = findProgramById("prog_eu_workplace_english")!;
+//     rationale =
+//       "Technical fundamentals are in place; the binding constraint is workplace English for EU placement.";
+//   } else if (scores && scores.europeJobReadiness < 65) {
+//     program = findProgramById("prog_eu_compliance")!;
+//     rationale =
+//       "Strong technical and language profile; EU Workplace Readiness covers the remaining compliance & onboarding gap.";
+//   } else if (
+//     scores &&
+//     scores.technicalSkillMatch < 75 &&
+//     (role.includes("devops") ||
+//       role.includes("cloud") ||
+//       role.includes("backend") ||
+//       role.includes("software") ||
+//       role.includes("full"))
+//   ) {
+//     program = findProgramById("prog_cloud_devops")!;
+//     rationale =
+//       "Cloud-native gaps are the fastest closeable; this track typically lifts overall readiness by 18-25 points.";
+//   } else if (
+//     scores &&
+//     scores.overall >= 75 &&
+//     candidateIsSenior(candidate)
+//   ) {
+//     program = findProgramById("prog_leadership")!;
+//     rationale =
+//       "Recruiter-ready profile with senior signal — Leadership track maximizes placement comp band.";
+//   } else {
+//     program = findProgramById("prog_cloud_devops")!;
+//     rationale =
+//       "Default upskilling path for general engineering profiles with mid-tier readiness.";
+//   }
 
-  const trainingType = program.trainingType;
-  const assessmentCategory =
-    trainingType === "reskilling" ? "needs_reskilling" : "needs_upskilling";
-  const trainer = defaultTrainerForProgram(program.id);
+//   const trainingType = program.trainingType;
+//   const assessmentCategory =
+//     trainingType === "reskilling" ? "needs_reskilling" : "needs_upskilling";
+//   const trainer = defaultTrainerForProgram(program.id);
 
-  return {
-    assessmentCategory,
-    trainingType,
-    recommendedPath: program.recommendedPath,
-    program,
-    suggestedTrainer: trainer,
-    rationale,
-  };
-}
+//   return {
+//     assessmentCategory,
+//     trainingType,
+//     recommendedPath: program.recommendedPath,
+//     program,
+//     suggestedTrainer: trainer,
+//     rationale,
+//   };
+// }
 
-function candidateIsSenior(c: MinCandidate): boolean {
-  // We don't have yearsExperience on MinCandidate; rely on role hint as a proxy.
-  const r = c.targetRole.toLowerCase();
-  return r.includes("senior") || r.includes("lead") || r.includes("architect");
-}
+// function candidateIsSenior(c: MinCandidate): boolean {
+//   // We don't have yearsExperience on MinCandidate; rely on role hint as a proxy.
+//   const r = c.targetRole.toLowerCase();
+//   return r.includes("senior") || r.includes("lead") || r.includes("architect");
+// }
 
 // ---- Build modules + live sessions from a program template ----
 

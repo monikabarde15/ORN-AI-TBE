@@ -97,11 +97,11 @@ router.get(
     // });
 
     // Legacy + AI RECOMENDATION
-   const trainingCandidate = {
-  id: candidate.id,
-  targetRole: candidate.targetRole,
-  evaluation: candidate.evaluation,
-};
+    const trainingCandidate = {
+      id: candidate.id,
+      targetRole: candidate.targetRole,
+      evaluation: candidate.evaluation,
+    };
 
     // ==========================================================
     // LEGACY RECOMMENDATION
@@ -130,25 +130,32 @@ router.get(
     //     );
     //   } catch {}
     // }
-    
-    const start = new Date();
-    start.setDate(start.getDate() + 7); // suggest a 7-day kickoff window
-    const target = new Date(start);
-    target.setDate(target.getDate() + rec.program.durationWeeks * 7);
 
-    res.json(
-      RecommendTrainingForCandidateResponse.parse({
-        candidateId: candidate.id,
-        assessmentCategory: rec.assessmentCategory,
-        trainingType: rec.trainingType,
-        recommendedPath: rec.recommendedPath,
-        program: rec.program,
-        suggestedTrainer: rec.suggestedTrainer,
-        suggestedStartDate: start.toISOString(),
-        suggestedTargetCompletionDate: target.toISOString(),
-        rationale: rec.rationale,
-      }),
-    );
+    const start = new Date();
+    start.setDate(start.getDate() + 7);
+
+    const target = new Date(start);
+    target.setMonth(target.getMonth() + 3);
+
+    res.json({
+      candidateId: candidate.id,
+
+      assessmentCategory: rec.assessmentCategory,
+
+      trainingType: rec.trainingType,
+
+      learningPathId: rec.learningPathId,
+
+      learningPathTitle: rec.learningPathTitle,
+
+      confidence: rec.confidence,
+
+      rationale: rec.rationale,
+
+      suggestedStartDate: start.toISOString(),
+
+      suggestedTargetCompletionDate: target.toISOString(),
+    });
   },
 );
 
@@ -185,9 +192,9 @@ router.get("/training/assignments", requireAuth, async (req, res): Promise<void>
   const ids = Array.from(new Set(rows.map((r) => r.candidateId)));
   const candidates = ids.length
     ? await db
-        .select()
-        .from(candidatesTable)
-        .where(inArray(candidatesTable.id, ids))
+      .select()
+      .from(candidatesTable)
+      .where(inArray(candidatesTable.id, ids))
     : [];
   const byId = new Map<string, CandidateRow>(candidates.map((c) => [c.id, c]));
 
@@ -447,9 +454,9 @@ router.get("/training/dashboard", requireAuth, requireRole("recruiter", "admin")
   const ids = Array.from(new Set(allRows.map((r) => r.candidateId)));
   const cands = ids.length
     ? await db
-        .select()
-        .from(candidatesTable)
-        .where(inArray(candidatesTable.id, ids))
+      .select()
+      .from(candidatesTable)
+      .where(inArray(candidatesTable.id, ids))
     : [];
   const candById = new Map(cands.map((c) => [c.id, c]));
 
@@ -517,8 +524,8 @@ router.get("/training/dashboard", requireAuth, requireRole("recruiter", "admin")
     allRows.length === 0
       ? 0
       : Math.round(
-          allRows.reduce((sum, r) => sum + r.progressPct, 0) / allRows.length,
-        );
+        allRows.reduce((sum, r) => sum + r.progressPct, 0) / allRows.length,
+      );
 
   res.json(
     TrainingDashboardResponse.parse({
@@ -590,32 +597,32 @@ router.post(
           whatYouWillLearn:
             body.whatYouWillLearn
               ? JSON.parse(
-                  body.whatYouWillLearn
-                )
+                body.whatYouWillLearn
+              )
               : [],
 
           // Prerequisites
           instructions:
             body.instructions
               ? JSON.parse(
-                  body.instructions
-                )
+                body.instructions
+              )
               : [],
 
           // FAQS
           faqs:
             body.faqs
               ? JSON.parse(
-                  body.faqs
-                )
+                body.faqs
+              )
               : [],
 
           // Tags
           tags:
             body.tag
               ? JSON.parse(
-                  body.tag
-                )
+                body.tag
+              )
               : [],
 
           // Media
@@ -791,8 +798,8 @@ router.post(
       if (!subsectionId) {
 
         res.status(400).json({
-          success:false,
-          message:"subsectionId missing",
+          success: false,
+          message: "subsectionId missing",
         })
 
         return
@@ -822,11 +829,11 @@ router.post(
 
 
       res.status(201).json({
-        success:true,
-        data:mcq,
+        success: true,
+        data: mcq,
       })
 
-    } catch (error:any) {
+    } catch (error: any) {
 
       console.log(
         "MCQ CREATE ERROR =>",
@@ -834,8 +841,8 @@ router.post(
       )
 
       res.status(500).json({
-        success:false,
-        message:error?.message,
+        success: false,
+        message: error?.message,
       })
     }
   }
@@ -1133,18 +1140,18 @@ router.get(
       // ==================================================
 
       const sections =
-  await db
-    .select()
-    .from(sectionsTable)
-    .where(
-      eq(
-        sectionsTable.courseId,
-        id
-      )
-    )
-    .orderBy(
-      asc(sectionsTable.createdAt)
-    );
+        await db
+          .select()
+          .from(sectionsTable)
+          .where(
+            eq(
+              sectionsTable.courseId,
+              id
+            )
+          )
+          .orderBy(
+            asc(sectionsTable.createdAt)
+          );
 
       // ==================================================
       // FINAL SECTIONS
@@ -1160,63 +1167,63 @@ router.get(
               // LESSONS
               // ============================================
 
-             const lessons =
-  await db
-    .select()
-    .from(subSectionsTable)
-    .where(
-      eq(
-        subSectionsTable.sectionId,
-        section.id
-      )
-    )
-    .orderBy(
-      asc(subSectionsTable.createdAt)
-    );
+              const lessons =
+                await db
+                  .select()
+                  .from(subSectionsTable)
+                  .where(
+                    eq(
+                      subSectionsTable.sectionId,
+                      section.id
+                    )
+                  )
+                  .orderBy(
+                    asc(subSectionsTable.createdAt)
+                  );
 
               // ============================================
               // FINAL LESSONS
               // ============================================
 
               const finalLessons =
-  await Promise.all(
-    lessons.map(async (lesson) => {
+                await Promise.all(
+                  lessons.map(async (lesson) => {
 
-      const quizzes =
-        await db
-          .select()
-          .from(mcqTable)
-          .where(
-            eq(
-              mcqTable.subsectionId,
-              lesson.id
-            )
-          )
+                    const quizzes =
+                      await db
+                        .select()
+                        .from(mcqTable)
+                        .where(
+                          eq(
+                            mcqTable.subsectionId,
+                            lesson.id
+                          )
+                        )
 
-      return {
+                    return {
 
-        id:
-          lesson.id,
+                      id:
+                        lesson.id,
 
-        title:
-          lesson.title,
+                      title:
+                        lesson.title,
 
-        description:
-          lesson.description,
+                      description:
+                        lesson.description,
 
-        timeDuration:
-          lesson.timeDuration,
+                      timeDuration:
+                        lesson.timeDuration,
 
-        videoUrl:
-          lesson.videoUrl,
+                      videoUrl:
+                        lesson.videoUrl,
 
-        pdfUrl:
-          lesson.pdfUrl,
+                      pdfUrl:
+                        lesson.pdfUrl,
 
-        quizzes,
-      }
-    })
-  )
+                      quizzes,
+                    }
+                  })
+                )
 
               return {
 
@@ -1287,88 +1294,88 @@ router.get(
       // RESPONSE
       // ==================================================
 
-res.json({
-  success: true,
+      res.json({
+        success: true,
 
-  data: {
-    // ==============================================
-    // COURSE
-    // ==============================================
+        data: {
+          // ==============================================
+          // COURSE
+          // ==============================================
 
-    id: course.id,
+          id: course.id,
 
-    title: course.title,
+          title: course.title,
 
-    subtitle: course.subtitle,
+          subtitle: course.subtitle,
 
-    description: course.description,
+          description: course.description,
 
-    category: course.category,
+          category: course.category,
 
-    difficulty: course.difficulty,
+          difficulty: course.difficulty,
 
-    duration: course.duration,
+          duration: course.duration,
 
-    instructor: course.instructor,
+          instructor: course.instructor,
 
-    subscriptionName:
-      course.subscriptionName,
+          subscriptionName:
+            course.subscriptionName,
 
-    price: course.price,
+          price: course.price,
 
-    // NEW JSON FIELDS
-    whatYouWillLearn:
-      course.whatYouWillLearn || [],
+          // NEW JSON FIELDS
+          whatYouWillLearn:
+            course.whatYouWillLearn || [],
 
-    instructions:
-      course.instructions || [],
+          instructions:
+            course.instructions || [],
 
-    faqs:
-      course.faqs || [],
+          faqs:
+            course.faqs || [],
 
-    tags:
-      course.tags || [],
+          tags:
+            course.tags || [],
 
-    thumbnail:
-      course.thumbnail,
+          thumbnail:
+            course.thumbnail,
 
-    promotionalVideo:
-      course.promotionalVideo,
+          promotionalVideo:
+            course.promotionalVideo,
 
-    ebook:
-      course.ebook,
+          ebook:
+            course.ebook,
 
-    status:
-      course.status,
+          status:
+            course.status,
 
-    createdAt:
-      course.createdAt,
+          createdAt:
+            course.createdAt,
 
-    updatedAt:
-      course.updatedAt,
+          updatedAt:
+            course.updatedAt,
 
-    // ==============================================
-    // COUNTS
-    // ==============================================
+          // ==============================================
+          // COUNTS
+          // ==============================================
 
-    totalModules,
+          totalModules,
 
-    totalLessons,
+          totalLessons,
 
-    totalQuizzes,
+          totalQuizzes,
 
-    totalVideos,
+          totalVideos,
 
-    totalPdfs,
+          totalPdfs,
 
-    // ==============================================
-    // SECTIONS
-    // ==============================================
+          // ==============================================
+          // SECTIONS
+          // ==============================================
 
-    sections:
-      finalSections,
-  },
-});
+          sections:
+            finalSections,
+        },
+      });
 
 
     } catch (error) {
@@ -1420,43 +1427,43 @@ router.post(
       const promoVideo =
         (req.files as any)?.promotionalVideo?.[0];
 
-     await db
-  .update(coursesTable)
-  .set({
-    title: body.courseName,
-    subtitle: body.subtitle,
-    description: body.courseDescription,
-    category: body.category,
-    difficulty: body.difficulty,
-    instructor: body.instructor,
-    price: body.price,
+      await db
+        .update(coursesTable)
+        .set({
+          title: body.courseName,
+          subtitle: body.subtitle,
+          description: body.courseDescription,
+          category: body.category,
+          difficulty: body.difficulty,
+          instructor: body.instructor,
+          price: body.price,
 
-    whatYouWillLearn: body.whatYouWillLearn
-      ? JSON.parse(body.whatYouWillLearn)
-      : [],
+          whatYouWillLearn: body.whatYouWillLearn
+            ? JSON.parse(body.whatYouWillLearn)
+            : [],
 
-    instructions: body.instructions
-      ? JSON.parse(body.instructions)
-      : [],
+          instructions: body.instructions
+            ? JSON.parse(body.instructions)
+            : [],
 
-    faqs: body.faqs
-      ? JSON.parse(body.faqs)
-      : [],
+          faqs: body.faqs
+            ? JSON.parse(body.faqs)
+            : [],
 
-    tags: body.tag
-      ? JSON.parse(body.tag)
-      : [],
+          tags: body.tag
+            ? JSON.parse(body.tag)
+            : [],
 
-    ...(thumbnail && {
-      thumbnail: thumbnail.location,
-    }),
+          ...(thumbnail && {
+            thumbnail: thumbnail.location,
+          }),
 
-    ...(promoVideo && {
-      promotionalVideo: promoVideo.location,
-    }),
-  })
-  .where(eq(coursesTable.id, courseId));
-  
+          ...(promoVideo && {
+            promotionalVideo: promoVideo.location,
+          }),
+        })
+        .where(eq(coursesTable.id, courseId));
+
       res.json({
         success: true,
         message: "Course updated",
@@ -2002,96 +2009,96 @@ router.get(
       // =========================
 
       const data = await Promise.all(
-          userLearningPaths.map(
-            async (lp) => {
+        userLearningPaths.map(
+          async (lp) => {
 
-              const lpCourses = await Promise.all(
-                courses
-                  .filter((course) =>
-                    lp.courseIds?.includes(course.id)
-                  )
-                  .map(async (course) => {
+            const lpCourses = await Promise.all(
+              courses
+                .filter((course) =>
+                  lp.courseIds?.includes(course.id)
+                )
+                .map(async (course) => {
 
-                    const sections = await db
-                      .select()
-                      .from(sectionsTable)
-                      .where(
-                        eq(
-                          sectionsTable.courseId,
-                          course.id
-                        )
-                      );
-
-                    const sectionIds = sections.map(
-                      (s) => s.id
+                  const sections = await db
+                    .select()
+                    .from(sectionsTable)
+                    .where(
+                      eq(
+                        sectionsTable.courseId,
+                        course.id
+                      )
                     );
 
-                    let lessons: any[] = [];
+                  const sectionIds = sections.map(
+                    (s) => s.id
+                  );
 
-                    if (sectionIds.length > 0) {
-                      lessons = await db
-                        .select()
-                        .from(subSectionsTable)
-                        .where(
-                          inArray(
-                            subSectionsTable.sectionId,
-                            sectionIds
-                          )
-                        );
-                    }
+                  let lessons: any[] = [];
 
-                    const quizzes = await db
+                  if (sectionIds.length > 0) {
+                    lessons = await db
                       .select()
-                      .from(mcqTable)
+                      .from(subSectionsTable)
                       .where(
-                        eq(
-                          mcqTable.courseId,
-                          course.id
+                        inArray(
+                          subSectionsTable.sectionId,
+                          sectionIds
                         )
                       );
+                  }
 
-                    return {
-                      ...course,
-                      lessonCount: lessons.length,
-                      quizCount: quizzes.length,
-                      videoCount: lessons.filter(
-                        (lesson) => lesson.videoUrl
-                      ).length,
-                    };
-                  })
-              );
+                  const quizzes = await db
+                    .select()
+                    .from(mcqTable)
+                    .where(
+                      eq(
+                        mcqTable.courseId,
+                        course.id
+                      )
+                    );
 
-              const lpSessions = sessions.filter(
-                (session) =>
-                  lp.courseIds?.includes(
-                    session.courseId
+                  return {
+                    ...course,
+                    lessonCount: lessons.length,
+                    quizCount: quizzes.length,
+                    videoCount: lessons.filter(
+                      (lesson) => lesson.videoUrl
+                    ).length,
+                  };
+                })
+            );
+
+            const lpSessions = sessions.filter(
+              (session) =>
+                lp.courseIds?.includes(
+                  session.courseId
+                )
+            );
+
+            return {
+              learningPath: {
+                id: lp.id,
+                title: lp.title,
+                description: lp.description,
+                thumbnail: lp.thumbnail,
+                introVideo: lp.introVideo,
+                paymentLink: lp.paymentLink,
+              },
+
+              courses: lpCourses,
+              sessions: lpSessions,
+
+              payments: paidPayments.filter(
+                (payment) =>
+                  payment.courseIds?.some(
+                    (id) =>
+                      lp.courseIds?.includes(id)
                   )
-              );
-
-              return {
-                learningPath: {
-                  id: lp.id,
-                  title: lp.title,
-                  description: lp.description,
-                  thumbnail: lp.thumbnail,
-                  introVideo: lp.introVideo,
-                  paymentLink: lp.paymentLink,
-                },
-
-                courses: lpCourses,
-                sessions: lpSessions,
-
-                payments: paidPayments.filter(
-                  (payment) =>
-                    payment.courseIds?.some(
-                      (id) =>
-                        lp.courseIds?.includes(id)
-                    )
-                ),
-              };
-            }
-          )
-        );
+              ),
+            };
+          }
+        )
+      );
 
       return res.json({
         success: true,

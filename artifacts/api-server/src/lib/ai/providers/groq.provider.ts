@@ -8,6 +8,7 @@ import type {
     CandidateInsights,
     TrainingRecommendationAnalysis,
     FullEvaluationAnalysis,
+    LearningPathAIInput,
 } from "../types";
 
 import type { CandidateLike } from "../../evaluation";
@@ -174,10 +175,12 @@ export class GroqProvider implements AIProvider {
 
     async generateTrainingRecommendation(
         candidate: unknown,
+        learningPaths: LearningPathAIInput[],
     ): Promise<TrainingRecommendationAnalysis> {
         const prompt =
             buildTrainingRecommendationPrompt(
                 candidate,
+                learningPaths,
             );
 
         const text =
@@ -189,7 +192,11 @@ export class GroqProvider implements AIProvider {
             );
 
         return {
-            programId: json.programId,
+            learningPathId:
+                json.learningPathId,
+
+            learningPathTitle:
+                json.learningPathTitle,
 
             trainingType:
                 json.trainingType,

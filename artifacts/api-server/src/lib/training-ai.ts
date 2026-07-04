@@ -1,11 +1,8 @@
-import {
-  defaultTrainerForProgram,
-  findProgramById,
-} from "./training-catalog";
+import { db, learningPathsTable, coursesTable } from "@workspace/db";
 
-import type {
-  RecommendationResult,
-} from "./training";
+import { eq } from "drizzle-orm";
+
+import type { RecommendationResult } from "./training";
 
 import { generateTrainingRecommendation } from "./ai-services/training-recommendation.service";
 
@@ -15,37 +12,40 @@ interface MinCandidate {
   evaluation: unknown;
 }
 
+async function getEnabledLearningPaths() {
+  const learningPaths = await db
+    .select()
+    .from(learningPathsTable)
+    .where(eq(learningPathsTable.isEnabled, true));
+
+  const allCourses = await db
+    .select()
+    .from(coursesTable);
+
+  return learningPaths.map((path) => ({
+    id: path.id,
+    title: path.title,
+    description: path.description,
+    courses: allCourses
+      .filter((course) =>
+        path.courseIds?.includes(course.id),
+      )
+      .map((course) => ({
+        id: course.id,
+        title: course.title,
+        description: course.description,
+      })),
+  }));
+}
+
 export async function recommendTrainingWithAI(
   candidate: MinCandidate,
 ): Promise<RecommendationResult> {
-  const ai = await generateTrainingRecommendation(candidate);
+  const learningPaths =
+    await getEnabledLearningPaths();
 
-  const program = findProgramById(ai.programId);
-
-  if (!program) {
-    throw new Error(
-      `Unknown AI program id: ${ai.programId}`,
-    );
-  }
-
-  const trainer =
-    defaultTrainerForProgram(program.id);
-
-  return {
-    assessmentCategory:
-      ai.assessmentCategory,
-
-    trainingType:
-      ai.trainingType,
-
-    recommendedPath:
-      program.recommendedPath,
-
-    program,
-
-    suggestedTrainer: trainer,
-
-    rationale:
-      ai.rationale,
-  };
+  return generateTrainingRecommendation(
+    candidate,
+    learningPaths,
+  );
 }

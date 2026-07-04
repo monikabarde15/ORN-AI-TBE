@@ -1,3 +1,4 @@
+// artifacts\api-server\src\routes\learning-paths.ts
 import { Router, type IRouter } from "express";
 import { upload } from "../lib/upload";
 
