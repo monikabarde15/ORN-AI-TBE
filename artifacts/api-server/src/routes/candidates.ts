@@ -63,7 +63,6 @@ router.get("/candidates", requireAuth, requireRole("recruiter", "admin"), async 
   res.json(data);
 });
 
-<<<<<<< HEAD
 router.post(
   "/candidates",
   requireAuth,
@@ -71,23 +70,9 @@ router.post(
   async (req, res): Promise<void> => {
     try {
       const parsed = RegisterCandidateBody.safeParse(req.body);
-=======
-router.post("/candidates", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
-  const parsed = RegisterCandidateBody.safeParse(req.body);
-  console.log("parsed=",parsed,"req=",req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const submittedSkills = parsed.data.skills?.filter((s) => s.trim().length > 0) ?? [];
-  const skills =
-    submittedSkills.length > 0
-      ? submittedSkills.slice(0, 20)
-      : pickSkillsFor(parsed.data.targetRole, Date.now());
-  const seed = Math.floor(Math.random() * 89) + 1;
-  const gender = seed % 2 === 0 ? "men" : "women";
-  const avatarUrl = `https://randomuser.me/api/portraits/${gender}/${seed}.jpg`;
->>>>>>> 68ea7e3a8f7e2ab6f1fd1e6ccfdc0bc433b48566
+
+      console.log("Parsed Request =", parsed);
+      console.log("Request Body =", req.body);
 
       if (!parsed.success) {
         res.status(400).json({
@@ -112,8 +97,11 @@ router.post("/candidates", requireAuth, requireRole("recruiter", "admin"), async
 
       const { skills: _ignored, ...rest } = parsed.data;
 
-      console.log("===== CANDIDATE INSERT =====");
-      console.log(rest);
+      console.log("Insert Payload =", {
+        ...rest,
+        skills,
+        avatarUrl,
+      });
 
       const [row] = await db
         .insert(candidatesTable)

@@ -75,7 +75,7 @@ export function AssignTrainingDialog({
   // const catalog = catalogQuery.data;
 
   const [learningPathId,setLearningPathId] = useState("");
-  const [trainerId, setTrainerId] = useState<string>("");
+  // const [trainerId, setTrainerId] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [targetDate, setTargetDate] = useState<string>("");
   const [learningPaths, setLearningPaths] = useState<any[]>([]);
@@ -163,12 +163,12 @@ export function AssignTrainingDialog({
   });
 
   const onSubmit = () => {
-    if (!learningPathId || !trainerId || !startDate || !targetDate) return;
+    if (!learningPathId || !startDate || !targetDate) return;
+
     createMut.mutate({
       data: {
         candidateId,
         learningPathId,
-        trainerId,
         startDate: new Date(startDate).toISOString(),
         targetCompletionDate: new Date(targetDate).toISOString(),
       },

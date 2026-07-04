@@ -1,3 +1,4 @@
+// artifacts\api-server\src\routes\training.ts
 import { upload } from "../lib/upload";
 import { Router, type IRouter } from "express";
 import {
@@ -210,11 +211,22 @@ router.get("/training/assignments", requireAuth, async (req, res): Promise<void>
 });
 // ----- Create assignment -----
 router.post("/training/assignments", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
+
+  console.log("========== CREATE TRAINING ASSIGNMENT ==========");
+  console.log("USER =", req.user);
+  console.log("BODY =", req.body);
   const body = CreateTrainingAssignmentBody.safeParse(req.body);
+
   if (!body.success) {
-    res.status(400).json({ error: body.error.message });
-    return;
+    console.log("========== ZOD ERROR ==========");
+    console.dir(body.error.flatten(), { depth: null });
+
+    return res.status(400).json({
+      success: false,
+      issues: body.error.flatten(),
+    });
   }
+  
   const program = findProgramById(body.data.programId);
   if (!program) {
     res.status(400).json({ error: "Unknown programId" });

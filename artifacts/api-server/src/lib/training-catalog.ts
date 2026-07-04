@@ -36,6 +36,42 @@ export interface TrainerDef {
   country: string;
 }
 
+export interface UserDef {
+  id: string;
+  name: string;
+}
+
+export const User: UserDef[] = [
+  {
+    id: "9f8130d6-b34c-475e-98bf-8ee2b407d1e4",
+    name: "Dr. Helena Brașov",
+    
+  },
+  {
+    id: "trn_cloud_devops",
+    name: "Marek Šimek",
+    
+  },
+  {
+    id: "trn_data_eng",
+    name: "Aleksandra Wójcik",
+    
+  },
+  {
+    id: "trn_ai_ml",
+    name: "Dr. Goran Petrović",
+    
+  },
+  {
+    id: "trn_leadership",
+    name: "Eszter Tóth",
+    
+  },
+  {
+    id: "trn_compliance",
+    name: "Pavel Krajčír",
+  },
+];
 export const TRAINERS: TrainerDef[] = [
   {
     id: "trn_eu_business_english",
@@ -186,6 +222,10 @@ export function findProgramById(id: string): TrainingProgramDef | undefined {
 }
 
 export function findTrainerById(id: string): TrainerDef | undefined {
+  return TRAINERS.find((t) => t.id === id);
+}
+
+export function findUserById(id: string): UserDef | undefined {
   return TRAINERS.find((t) => t.id === id);
 }
 
