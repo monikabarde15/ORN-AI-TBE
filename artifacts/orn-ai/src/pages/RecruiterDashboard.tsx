@@ -165,8 +165,9 @@ export default function RecruiterDashboard() {
     const res = await api.post("/api/recruiter/ai-search", {
       query: searchTerm,
     });
-
+console.log("AI DATA =", res.data.data);
     setAiCandidates(res.data.data);
+    
     setSearched(true);
   } finally {
     setSearching(false);
@@ -262,61 +263,67 @@ export default function RecruiterDashboard() {
     queryParams,
     { query: { queryKey: getListCandidatesQueryKey(queryParams) } },
   );
-
+console.log("NORMAL DATA =", candidates);
   // Apply status filter + sort client-side
-const displaySource = searched
-  ? aiCandidates
-  : [];
+const displaySource = useMemo(() => {
+  if (searched) {
+    return candidates?.length ? candidates : aiCandidates;
+  }
+
+  return candidates ?? [];
+}, [searched, candidates, aiCandidates]);
+  
 const filteredCandidates = useMemo(() => {
-  const filtered = displaySource.filter((c) => {
-    if (filters.statusFilter === "all") return true;
+  let data = [...displaySource];
 
-    const status = statuses[c.id];
+  if (filters.country) {
+    data = data.filter((c) => c.country === filters.country);
+  }
 
-    if (filters.statusFilter === "none") return !status;
+  if (filters.role) {
+    data = data.filter(
+      (c) =>
+        (c.targetRole ?? c.currentRole ?? "")
+          .toLowerCase()
+          .includes(filters.role.toLowerCase())
+    );
+  }
 
-    return status === filters.statusFilter;
-  });
+  if (filters.englishLevel) {
+    data = data.filter(
+      (c) => c.englishLevel === filters.englishLevel
+    );
+  }
 
-  const sorted = [...filtered].sort((a, b) => {
-    const dir = sort.dir === "asc" ? 1 : -1;
+  if (filters.minReadiness) {
+    data = data.filter(
+      (c) =>
+        (c.evaluation?.scores?.overall ?? 0) >=
+        Number(filters.minReadiness)
+    );
+  }
 
-    switch (sort.field) {
-      case "name":
-        return a.fullName.localeCompare(b.fullName) * dir;
+  if (experience[0] > 0) {
+    data = data.filter(
+      (c) => c.yearsExperience >= experience[0]
+    );
+  }
 
-      case "score":
-        return (
-          ((a.evaluation?.scores.overall ?? 0) -
-            (b.evaluation?.scores.overall ?? 0)) * dir
-        );
-
-      case "experience":
-        return (a.yearsExperience - b.yearsExperience) * dir;
-
-      case "country":
-        return a.country.localeCompare(b.country) * dir;
-
-      case "status": {
-        const aStatus = statuses[a.id] ?? "zzz";
-        const bStatus = statuses[b.id] ?? "zzz";
-        return aStatus.localeCompare(bStatus) * dir;
-      }
-
-      default:
-        return 0;
-    }
-  });
-
-  return sorted;
-}, [displaySource, statuses, filters.statusFilter, sort]);
-
-
-  const selectedCandidate = useMemo(
-    () => candidates?.find((c) => c.id === selectedId) ?? null,
-    [candidates, selectedId],
+  // Highest experience first
+  data.sort(
+    (a, b) => b.yearsExperience - a.yearsExperience
   );
 
+  return data;
+}, [displaySource, filters, experience]);
+
+  const selectedCandidate = useMemo(
+  () =>
+    filteredCandidates.find((c) => c.id === selectedId) ??
+    displaySource.find((c) => c.id === selectedId) ??
+    null,
+  [filteredCandidates, displaySource, selectedId]
+);
   const allCountries = useMemo(
     () => (regions ? [...regions.phase1, ...regions.phase2] : []),
     [regions],
@@ -407,61 +414,10 @@ const filteredCandidates = useMemo(() => {
             </div>
           )}
         <br/>
-        {/* <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-1">
-              Recruiter Workspace
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight">Talent Search</h1>
-            <p className="text-muted-foreground mt-1">
-              Source AI-evaluated tech talent across CEE — filter, shortlist, and route.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" className="gap-2" onClick={() => toast("Saved search created")}>
-              <Star className="size-4" /> Save Search
-            </Button>
-            <Button className="gap-2" onClick={() => setLocation("/admin")}>
-              Open Admin Pipeline <ArrowRight className="size-4" />
-            </Button>
-          </div>
-        </div> */}
-
-        {/* ====== Summary Metrics ====== */}
-        {/* {isLoadingSummary ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            {Array(4).fill(0).map((_, i) => (
-              <Card key={i} className="h-24 animate-pulse bg-muted/50" />
-            ))}
-          </div>
-        ) : summary ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <SummaryStat
-              label="Total Pool"
-              value={summary.totalCandidates.toLocaleString()}
-              icon={Users}
-            />
-            <SummaryStat
-              label="Recruiter Ready"
-              value={summary.readyCandidates.toLocaleString()}
-              icon={Star}
-              accent
-            />
-            <SummaryStat
-              label="Avg Readiness"
-              value={`${summary.avgReadiness}/100`}
-              icon={TrendingUp}
-            />
-            <SummaryStat
-              label="New This Week"
-              value={`+${summary.newThisWeek}`}
-              icon={Clock}
-            />
-          </div>
-        ) : null} */}
+      
 
         {/* ====== Status pipeline chips ====== */}
-        {searched && (
+        {/* {searched && (
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">
             Pipeline:
@@ -501,7 +457,7 @@ const filteredCandidates = useMemo(() => {
             dotClass="bg-muted-foreground/40"
           />
         </div>
-        )}
+        )} */}
 
 
         {/* ====== Filters ====== */}
@@ -533,7 +489,7 @@ const filteredCandidates = useMemo(() => {
               <span className="font-semibold">{filteredCandidates.length}</span>
               <span className="text-muted-foreground"> candidate{filteredCandidates.length !== 1 ? "s" : ""}</span>
               {candidates && filteredCandidates.length !== candidates.length && (
-                <span className="text-muted-foreground"> of {candidates.length}</span>
+                <span className="text-muted-foreground"> of {displaySource.length}</span>
               )}
             </div>
             {isLoadingCandidates && (
@@ -576,102 +532,66 @@ const filteredCandidates = useMemo(() => {
 
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/10 hover:bg-muted/10">
-                   <TableHead>Image</TableHead>
-                    <TableHead>Candidate ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Experience</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-               <TableBody>
-                {filteredCandidates.map((c) => {
-                  const status = statuses[c.id];
-
-                  return (
-                    <TableRow
-                      key={c.id}
-                      className="hover:bg-muted/40 transition-colors"
-                    >
-                      {/* Image */}
-                      <TableCell>
-                        <div className="h-10 w-10 rounded-full overflow-hidden border bg-muted flex items-center justify-center">
-                          {c.avatarUrl ? (
-                            <img
-                              src={c.avatarUrl}
-                              alt={c.fullName}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span className="font-semibold text-sm">
-                              {c.fullName.charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Candidate ID */}
-                      <TableCell>
-                        <span className="font-medium">
+              <TableHeader>
+                    <TableRow className="bg-muted/10 hover:bg-muted/10">
+                      <TableHead>Candidate ID</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Experience</TableHead>
+                        <TableHead>Readiness</TableHead>
+                        <TableHead>Salary Expectation</TableHead>
+                        <TableHead>Availability</TableHead>
+                        <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCandidates.map((c) => (
+                      <TableRow key={c.id}>
+                       <TableCell className="font-medium">
                           {c.id.slice(0, 8).toUpperCase()}
-                        </span>
-                      </TableCell>
+                        </TableCell>
 
-                      {/* Name */}
-                      <TableCell>
-                        <div>
-                          <div className="font-semibold">
-                            {c.fullName}
-                          </div>
+                        <TableCell>
+                          {c.targetRole || c.currentRole || "-"}
+                        </TableCell>
 
-                          {/* <div className="text-xs text-muted-foreground">
-                            {c.email}
-                          </div> */}
-                        </div>
-                      </TableCell>
+                        <TableCell>
+                          {c.yearsExperience} Years
+                        </TableCell>
 
-                      {/* Role */}
-                      <TableCell>
-                        {c.targetRole}
-                      </TableCell>
-
-                      {/* Experience */}
-                      <TableCell>
-                        {c.yearsExperience} Years
-                      </TableCell>
-
-                      {/* Status */}
-                      <TableCell>
-                        {status ? (
+                        <TableCell>
                           <Badge
                             variant="outline"
-                            className={STATUS_META[status].className}
+                            className={
+                              (c.evaluation?.scores?.overall ?? 0) >= 80
+                                ? "bg-green-100 text-green-700 border-green-300"
+                                : (c.evaluation?.scores?.overall ?? 0) >= 60
+                                ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                                : "bg-red-100 text-red-700 border-red-300"
+                            }
                           >
-                            {STATUS_META[status].label}
+                            {c.evaluation?.scores?.overall ?? 0}/100
                           </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            New
-                          </Badge>
-                        )}
-                      </TableCell>
+                        </TableCell>
 
-                      {/* Action */}
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          onClick={() => setSelectedId(c.id)}
-                        >
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
+                        <TableCell>
+                          {c.expectedSalary || "-"}
+                        </TableCell>
+
+                        <TableCell>
+                          {c.availability || "-"}
+                        </TableCell>
+
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            onClick={() => setSelectedId(c.id)}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
               </Table>
             </div>
           )}
@@ -866,7 +786,9 @@ function CandidateDetailSheet({
               <h2 className="text-2xl font-bold tracking-tight">{candidate.fullName}</h2>
               <p className="text-muted-foreground text-sm flex items-center gap-1.5 mt-0.5">
                 <Briefcase className="size-3.5" />
-                {candidate.targetRole}
+               {candidate.targetRole ||
+ candidate.currentRole ||
+ candidate.preferredRole}
                 <span className="text-muted-foreground/50">•</span>
                 {candidate.yearsExperience} yrs
               </p>

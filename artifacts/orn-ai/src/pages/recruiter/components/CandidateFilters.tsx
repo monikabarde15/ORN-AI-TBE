@@ -6,7 +6,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Slider } from "@/components/ui/slider";
 
 import { Button } from "@/components/ui/button";
 
@@ -51,7 +50,7 @@ export default function CandidateFilters({
 
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
 
         {/* Country */}
 
@@ -214,40 +213,33 @@ export default function CandidateFilters({
 
         </Select>
 
-      </div>
+        {/* Experience */}
+        <Select
+          value={String(experience[0])}
+          onValueChange={(value) => {
+            onExperienceChange([Number(value), 20]);
+          }}
+        >
+          <SelectTrigger className="w-full xl:w-[220px]">
+            <SelectValue placeholder="Experience" />
+          </SelectTrigger>
 
-      <div className="mt-8">
-
-        <div className="flex justify-between mb-3">
-
-          <span className="font-medium">
-
-            Experience
-
-          </span>
-
-          <span className="text-primary font-semibold">
-
-            {experience[0]} - {experience[1]} Years
-
-          </span>
-
-        </div>
-
-        <Slider
-          min={0}
-          max={20}
-          step={1}
-          value={experience}
-          onValueChange={(value) =>
-            onExperienceChange([
-              value[0]!,
-              value[1]!,
-            ])
-          }
-        />
+          <SelectContent>
+            <SelectItem value="0">Any Experience</SelectItem>
+            <SelectItem value="1">1+ Years</SelectItem>
+            <SelectItem value="2">2+ Years</SelectItem>
+            <SelectItem value="3">3+ Years</SelectItem>
+            <SelectItem value="5">5+ Years</SelectItem>
+            <SelectItem value="7">7+ Years</SelectItem>
+            <SelectItem value="10">10+ Years</SelectItem>
+            <SelectItem value="15">15+ Years</SelectItem>
+            <SelectItem value="20">20+ Years</SelectItem>
+          </SelectContent>
+        </Select>
 
       </div>
+
+
 
     </div>
   );

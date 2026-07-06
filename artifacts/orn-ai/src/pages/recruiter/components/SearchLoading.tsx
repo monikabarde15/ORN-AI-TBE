@@ -2,9 +2,7 @@ import { Loader2, Sparkles } from "lucide-react";
 
 export default function SearchLoading() {
   return (
-    <div className="rounded-3xl border bg-background shadow-lg p-12 mt-8">
-
-      <div className="flex flex-col items-center">
+   <div className="flex flex-col items-center">
 
         <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
 
@@ -45,7 +43,5 @@ export default function SearchLoading() {
         </div>
 
       </div>
-
-    </div>
   );
 }

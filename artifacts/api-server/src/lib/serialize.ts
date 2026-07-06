@@ -99,6 +99,8 @@ export function serializeCandidate(row: CandidateRow) {
   isClientReady: row.isClientReady ?? false,
   isIndustryReady: row.isIndustryReady ?? false,
   hasCvFile: !!row.cvFileBytes,
+  expectedSalary: row.expectedSalary,
+  availability: row.availability,
 };
 }
 

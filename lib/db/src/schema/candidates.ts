@@ -33,6 +33,14 @@ export const candidatesTable = pgTable("candidates", {
   linkedinUrl: text("linkedin_url").notNull(),
   avatarUrl: text("avatar_url").notNull(),
   skills: text("skills").array().notNull().default([]),
+
+  expectedSalary: text("expected_salary"),
+  availability: text("availability"),
+  noticePeriod: text("notice_period"),
+  careerPreference: text("career_preference"),
+  preferredWorkMode: text("preferred_work_mode"),
+  languagesKnown: text("languages_known").array().default([]),
+
   cv: jsonb("cv"),
   cvFileBytes: bytea("cv_file_bytes"),
   cvFileName: text("cv_file_name"),

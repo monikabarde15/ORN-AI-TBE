@@ -194,6 +194,9 @@ router.post("/auth/register", async (req, res) => {
             "Unknown",
 
           yearsExperience,
+          expectedSalary:cp.expectedSalary??"",
+          availability:cp.availability??"",
+
 
           visaStatus: cp.visaStatus ?? "requires_sponsorship",
 
