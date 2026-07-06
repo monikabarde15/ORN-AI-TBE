@@ -12,6 +12,7 @@ import Login from "@/pages/Login";
 import CandidateUpload from "@/pages/CandidateUpload";
 import CandidateEvaluation from "@/pages/CandidateEvaluation";
 import RecruiterDashboard from "@/pages/RecruiterDashboard";
+import RecruiterHistoryDashboard from "@/pages/RecruiterHistoryDashboard";
 import RecruiterAddCandidate from "@/pages/RecruiterAddCandidate";
 import BlogAdd from "@/pages/BlogAdd";
 
@@ -218,6 +219,11 @@ function Router() {
       <Route path="/recruiter">
         <ProtectedRoute roles={["recruiter", "admin"]}>
           <RecruiterDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/recruiter-history">
+        <ProtectedRoute roles={["recruiter", "admin"]}>
+          <RecruiterHistoryDashboard />
         </ProtectedRoute>
       </Route>
       <Route path="/admin">

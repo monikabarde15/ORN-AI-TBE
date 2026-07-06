@@ -146,7 +146,7 @@ type StatusFilter = CandidateStatus | "all" | "none";
 // ============================================================
 // MAIN
 // ============================================================
-export default function RecruiterDashboard() {
+export default function RecruiterHistoryDashboard() {
   const [, setLocation] = useLocation();
 
   const [searchTerm, setSearchTerm] = useState("");

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import AIHeroSearch from "./recruiter/components/AIHeroSearch";
 import SearchLoading from "./recruiter/components/SearchLoading";
 import CandidateFilters from "./recruiter/components/CandidateFilters";
+import { History } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -152,27 +153,23 @@ type StatusFilter = CandidateStatus | "all" | "none";
 // ============================================================
 export default function RecruiterDashboard() {
   const [, setLocation] = useLocation();
+  const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [aiCandidates, setAiCandidates] = useState<Candidate[]>([]);
 
-  const handleAISearch = async () => {
+ const handleAISearch = async () => {
   try {
-    setLoading(true);
+    setSearching(true);
 
-    const res = await api.post(
-      "/api/recruiter/ai-search",
-      {
-        query: searchTerm,
-      }
-    );
+    const res = await api.post("/api/recruiter/ai-search", {
+      query: searchTerm,
+    });
 
     setAiCandidates(res.data.data);
-
     setSearched(true);
-
   } finally {
-    setLoading(false);
+    setSearching(false);
   }
 };
 
@@ -269,8 +266,7 @@ export default function RecruiterDashboard() {
   // Apply status filter + sort client-side
 const displaySource = searched
   ? aiCandidates
-  : (candidates || []);
-
+  : [];
 const filteredCandidates = useMemo(() => {
   const filtered = displaySource.filter((c) => {
     if (filters.statusFilter === "all") return true;
@@ -402,7 +398,14 @@ const filteredCandidates = useMemo(() => {
           onChange={setSearchTerm}
           onSearch={handleAISearch}
         />
-          {loading && <SearchLoading />}
+          {/* {loading && <SearchLoading />} */}
+          {searching && (
+            <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+              <div className="bg-white rounded-xl p-8 w-[500px]">
+                <SearchLoading />
+              </div>
+            </div>
+          )}
         <br/>
         {/* <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
@@ -458,6 +461,7 @@ const filteredCandidates = useMemo(() => {
         ) : null} */}
 
         {/* ====== Status pipeline chips ====== */}
+        {searched && (
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">
             Pipeline:
@@ -497,10 +501,13 @@ const filteredCandidates = useMemo(() => {
             dotClass="bg-muted-foreground/40"
           />
         </div>
+        )}
+
 
         {/* ====== Filters ====== */}
+         {searched && (
         <Card className="mb-6 border shadow-sm">
-          {searched && (
+         
             <CandidateFilters
               filters={filters}
               experience={experience}
@@ -514,10 +521,12 @@ const filteredCandidates = useMemo(() => {
               }
               onExperienceChange={setExperience}
             />
-          )}
+          
         </Card>
+        )}
 
         {/* ====== Table ====== */}
+        {searched && (
         <Card className="border shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/20">
             <div className="text-sm">
@@ -532,26 +541,39 @@ const filteredCandidates = useMemo(() => {
             )}
           </div>
 
-          {isLoadingCandidates ? (
-            <div className="p-4 space-y-2">
-              {Array(6).fill(0).map((_, i) => (
-                <div key={i} className="h-14 bg-muted/30 rounded animate-pulse" />
-              ))}
-            </div>
-          ) : filteredCandidates.length === 0 ? (
-            <div className="text-center py-20">
-              <Search className="size-10 text-muted-foreground/50 mx-auto mb-4" />
-              <h3 className="text-lg font-medium">No candidates found</h3>
-              <p className="text-muted-foreground text-sm mt-1">
-                Adjust your filters to broaden the search.
+         {!searched ? (
+          <div className="py-20 text-center">
+            <Search className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+            <h3 className="text-lg font-semibold">
+              Search Candidates
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+                Enter your requirement and click Search to view candidates.
               </p>
-              {hasActiveFilters && (
-                <Button variant="outline" size="sm" className="mt-4" onClick={clearFilters}>
-                  Clear filters
+
+              <div className="mt-4 flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setLocation("/recruiter-history")}
+                  className="gap-2"
+                >
+                  <History className="h-4 w-4" />
+                  View History
                 </Button>
-              )}
-            </div>
-          ) : (
+              </div>
+          </div>
+        ) : filteredCandidates.length === 0 ? (
+          <div className="py-20 text-center">
+            <Search className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+            <h3 className="text-lg font-semibold">
+              No candidates found
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Try another search.
+            </p>
+          </div>
+        ) : (
+
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -605,9 +627,9 @@ const filteredCandidates = useMemo(() => {
                             {c.fullName}
                           </div>
 
-                          <div className="text-xs text-muted-foreground">
+                          {/* <div className="text-xs text-muted-foreground">
                             {c.email}
-                          </div>
+                          </div> */}
                         </div>
                       </TableCell>
 
@@ -654,6 +676,7 @@ const filteredCandidates = useMemo(() => {
             </div>
           )}
         </Card>
+        )}
       </div>
 
       {/* ====== Detail sheet ====== */}

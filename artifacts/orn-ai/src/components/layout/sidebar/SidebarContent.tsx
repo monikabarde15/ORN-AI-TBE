@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import { History } from "lucide-react";
 import {
   Search,
   UserPlus,
@@ -167,17 +168,14 @@ export default function SidebarContent({
                 Talent Search
               </Link>
             )}
-            {hasPermission("Blogs") && (
               <Link
-                href="/admin/blog/add"
+                href="/recruiter-history"
                 onClick={onNavigate}
-                className={linkClass(location === "/blog/add")}
+                className={linkClass(location === "/recruiter-history")}
               >
-                <GraduationCap className="size-4" />
-                Blogs
+                <History className="size-4" />
+                History
               </Link>
-            )}
-
 
             {hasPermission("Add Candidate") && (
               <Link
@@ -189,6 +187,20 @@ export default function SidebarContent({
                 Add Candidate
               </Link>
             )}
+            <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Containt Management
+            </div>
+            {hasPermission("Blogs") && (
+              <Link
+                href="/admin/blog/add"
+                onClick={onNavigate}
+                className={linkClass(location === "/blog/add")}
+              >
+                <GraduationCap className="size-4" />
+                Blogs
+              </Link>
+            )}
+
 
             {(
               hasPermission("Course Categories") ||
