@@ -36,7 +36,6 @@ router.get("/users", async (_req, res) => {
         city: usersTable.city,
 
         candidateId: usersTable.candidateId,
-        candidateCode: usersTable.candidateCode,
 
         createdAt: usersTable.createdAt,
       })
