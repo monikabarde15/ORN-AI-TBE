@@ -131,7 +131,7 @@ export default function CandidateMaskedCV() {
   { label: "Full Address", value: "Hidden", masked: true },
   { label: "LinkedIn URL", value: "Hidden", masked: true },
   { label: "GitHub URL", value: "Hidden", masked: true },
-  { label: "Employer History", value: "Hidden", masked: true },
+  // { label: "Employer History", value: "Hidden", masked: true },
 ];
 const careerPrefs = useMemo(() => {
   if (!candidate?.careerPreference) return [];
