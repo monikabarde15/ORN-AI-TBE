@@ -67,6 +67,7 @@ import LearningPathStudentViewManage from "./pages/LearningPathStudentViewManage
 import LearningPathCourses from "./pages/LearningPathCourses";
 import LearningPathSessions from "./pages/LearningPathSessions";
 import { MCQAdminPanel } from "./pages/MCQAdminPanel";
+import CandidateMaskedCV from "@/pages/CandidateMaskedCV";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -120,6 +121,10 @@ function Router() {
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-and-conditions" component={TermsCondition} />
       <Route path="/refund-policy" component={RefoundPolicy} />
+      <Route
+          path="/candidate/:id/masked-cv"
+          component={CandidateMaskedCV}
+      />
 
       <Route path="/support" component={Support} />
       <Route path="/blogs/:id" component={BlogDetail} />

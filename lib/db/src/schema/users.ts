@@ -26,7 +26,7 @@ export const usersTable = pgTable("users", {
 
   mobile: text("mobile"),
   username: text("username").unique(),
-  employeeId: text("employee_id"),
+  employeeId: text("employee_id").unique(),
 
   role: text("role").notNull(),
   status: text("status").default("Active"),
@@ -55,4 +55,11 @@ export const usersTable = pgTable("users", {
 });
 export type UserRow = typeof usersTable.$inferSelect;
 export type InsertUserRow = typeof usersTable.$inferInsert;
-export type UserRole = "candidate" | "recruiter" | "admin";
+export type UserRole =
+  | "candidate"
+  | "recruiter"
+  | "instructor"
+  | "mentor"
+  | "content_manager"
+  | "admin"
+  | "super_admin";

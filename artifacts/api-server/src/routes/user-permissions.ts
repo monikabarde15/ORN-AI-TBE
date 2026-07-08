@@ -12,21 +12,45 @@ router.get("/users", async (_req, res) => {
     const users = await db
       .select({
         id: usersTable.id,
+
         fullName: usersTable.fullName,
+        firstName: usersTable.firstName,
+        middleName: usersTable.middleName,
+        lastName: usersTable.lastName,
+
         email: usersTable.email,
+        mobile: usersTable.mobile,
+
+        username: usersTable.username,
+        employeeId: usersTable.employeeId,
+
         role: usersTable.role,
+        status: usersTable.status,
+
+        company: usersTable.company,
+        department: usersTable.department,
+        designation: usersTable.designation,
+
+        country: usersTable.country,
+        state: usersTable.state,
+        city: usersTable.city,
+
+        candidateId: usersTable.candidateId,
+        candidateCode: usersTable.candidateCode,
+
         createdAt: usersTable.createdAt,
       })
       .from(usersTable);
 
-    res.json({
+    return res.status(200).json({
       success: true,
+      count: users.length,
       users,
     });
   } catch (error) {
     console.error("Get Users Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch users",
     });

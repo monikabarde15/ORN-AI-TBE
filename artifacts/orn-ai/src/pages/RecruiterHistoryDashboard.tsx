@@ -778,12 +778,10 @@ export default function RecruiterHistoryDashboard() {
                                 {c.isClientReady ? "Unmark client-ready" : "Mark client-ready"}
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() =>
-                                  window.open(getDownloadMaskedCvUrl(c.id), "_blank")
-                                }
+                                onClick={() => setLocation(`/candidate/${c.id}/masked-cv`)}
                                 data-testid={`menu-masked-cv-${c.id}`}
                               >
-                                <FileText className="size-4 text-primary" /> Download masked CV
+                                <FileText className="size-4 text-primary" /> View masked CV
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleStatusChange(c.id, "needs_training", c.fullName)}
@@ -1086,17 +1084,17 @@ function CandidateDetailSheet({
                 <X className="size-4" /> Clear status
               </Button>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 col-span-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
-              data-testid={`btn-download-masked-cv-${candidate.id}`}
-              onClick={() =>
-                window.open(getDownloadMaskedCvUrl(candidate.id), "_blank")
-              }
-            >
-              <FileText className="size-4" /> Download masked CV
-            </Button>
+             <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 col-span-2"
+            onClick={() =>
+                setLocation(`/candidate/${candidate.id}/masked-cv`)
+            }
+        >
+            <FileText className="size-4" />
+            View Masked CV
+        </Button>
           </div>
         </div>
 

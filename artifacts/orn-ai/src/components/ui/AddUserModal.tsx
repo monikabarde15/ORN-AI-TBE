@@ -159,7 +159,7 @@ export default function AddUserModal({
             confirmPassword: password,
         }));
     };
-
+const role = formData.role;
 const handleSubmit = async () => {
   try {
     if (
@@ -187,39 +187,37 @@ const handleSubmit = async () => {
       "Super Admin": "admin",
     };
 
-    const role = roleMap[formData.role] ?? "candidate";
-
     const payload: any = {
-      email: formData.email,
-      password: formData.password,
-      fullName: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email,
+        password: formData.password,
+        fullName: `${formData.firstName} ${formData.lastName}`.trim(),
 
-      firstName: formData.firstName,
-      middleName: formData.middleName,
-      lastName: formData.lastName,
+        firstName: formData.firstName,
+        middleName: formData.middleName,
+        lastName: formData.lastName,
 
-      mobile: formData.mobile,
-      username: formData.username,
-      employeeId: formData.employeeId,
+        mobile: formData.mobile,
+        username: formData.username,
+        employeeId: formData.employeeId,
 
-      company: formData.company,
-      department: formData.department,
-      designation: formData.designation,
+        company: formData.company,
+        department: formData.department,
+        designation: formData.designation,
 
-      country: formData.country,
-      state: formData.state,
-      city: formData.city,
+        country: formData.country,
+        state: formData.state,
+        city: formData.city,
 
-      status: formData.status,
+        status: formData.status,
 
-      sendWelcomeEmail: formData.sendWelcomeEmail,
-      forcePasswordChange: formData.forcePasswordReset,
-      emailCredentials: formData.emailCredentials,
+        sendWelcomeEmail: formData.sendWelcomeEmail,
+        forcePasswordChange: formData.forcePasswordReset,
+        emailCredentials: formData.emailCredentials,
 
-      role,
-      gdprConsent: true,
+        role: formData.role, // ✅ direct save
+        gdprConsent: true,
         createdByAdmin: true,
-    };
+        };
 
     // Candidate/Student only
     if (role === "candidate") {
@@ -438,12 +436,12 @@ const handleSubmit = async () => {
                                     onChange={handleChange}
                                 />
 
-                                <Input
+                                {/* <Input
                                     label="Employee / Student ID"
                                     name="employeeId"
                                     value={formData.employeeId}
                                     onChange={handleChange}
-                                />
+                                /> */}
                             </div>
                         </section>
 
@@ -570,13 +568,13 @@ const handleSubmit = async () => {
                                     value={formData.role}
                                     onChange={handleChange}
                                 >
-                                    <option>Student</option>
-                                    <option>Recruiter</option>
-                                    <option>Instructor</option>
-                                    <option>Mentor</option>
-                                    <option>Content Manager</option>
-                                    <option>Admin</option>
-                                    <option>Super Admin</option>
+                                    {/* <option>Student</option> */}
+                                    <option value="recruiter">Recruiter</option>
+                                    <option value="instructor">Instructor</option>
+                                    <option value="mentor">Mentor</option>
+                                    <option value="content_manager">Content Manager</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="super_admin">Super Admin</option>
                                 </Select>
 
                                 <Select

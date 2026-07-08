@@ -130,76 +130,43 @@ router.post(
         .from(candidatesTable);
 
       const result = candidates.filter((candidate) => {
-        const overall =
-          (candidate.evaluation as any)?.scores?.overall ?? "";
+          const role = (
+            candidate.targetRole ||
+            candidate.currentRole ||
+            candidate.preferredRole ||
+            ""
+          ).toLowerCase();
 
-        const searchable = [
-          candidate.fullName,
-          candidate.email,
-          candidate.phone,
-          candidate.country,
-          candidate.currentLocation,
-          candidate.currentRole,
-          candidate.preferredRole,
-          candidate.targetRole,
-          candidate.visaStatus,
-          candidate.englishLevel,
-          candidate.linkedinUrl,
-          candidate.lastRole ?? "",
-          candidate.domain ?? "",
-          String(candidate.yearsExperience),
-          String(candidate.careerGapMonths),
-          String(overall),
-          ...(candidate.skills ?? []),
-        ]
-          .join(" ")
-          .toLowerCase();
+          const experience = candidate.yearsExperience ?? 0;
 
-        if (keywords.length === 0) return true;
+          let roleMatch = true;
+          let expMatch = true;
 
-        let score = 0;
+          // Role detection
+          if (text.includes("full stack")) {
+            roleMatch = role.includes("full stack");
+          } else if (text.includes("react")) {
+            roleMatch = role.includes("react");
+          } else if (text.includes("frontend")) {
+            roleMatch = role.includes("front");
+          } else if (text.includes("backend")) {
+            roleMatch = role.includes("back");
+          } else if (text.includes("devops")) {
+            roleMatch = role.includes("devops");
+          } else if (text.includes("java")) {
+            roleMatch = role.includes("java");
+          } else if (text.includes("python")) {
+            roleMatch = role.includes("python");
+          }
 
-        keywords.forEach((word) => {
-          if (candidate.fullName.toLowerCase().includes(word))
-            score += 10;
+          // Experience detection
+          const exp = text.match(/(\d+)\s*year/);
 
-          if (candidate.targetRole.toLowerCase().includes(word))
-            score += 8;
+          if (exp) {
+            expMatch = experience === Number(exp[1]);
+          }
 
-          if (candidate.currentRole.toLowerCase().includes(word))
-            score += 7;
-
-          if (candidate.preferredRole.toLowerCase().includes(word))
-            score += 7;
-
-          if (candidate.country.toLowerCase().includes(word))
-            score += 6;
-
-          if (candidate.currentLocation.toLowerCase().includes(word))
-            score += 6;
-
-          if (candidate.englishLevel.toLowerCase().includes(word))
-            score += 5;
-
-          if (
-            candidate.skills.some((skill) =>
-              skill.toLowerCase().includes(word)
-            )
-          )
-            score += 8;
-
-          if (
-            String(candidate.yearsExperience).includes(word)
-          )
-            score += 5;
-
-          if (searchable.includes(word))
-            score += 2;
-        });
-
-        (candidate as any).__score = score;
-
-        return score > 0;
+          return roleMatch && expMatch;
       });
 
       result.sort(
@@ -207,10 +174,27 @@ router.post(
           (b.__score ?? 0) - (a.__score ?? 0)
       );
 
+      const response = result.map((candidate: any) => ({
+          id: candidate.id,
+          fullName: candidate.fullName,
+          email: candidate.email,
+          phone: candidate.phone,
+          currentRole: candidate.currentRole,
+          preferredRole: candidate.preferredRole,
+          targetRole: candidate.targetRole,
+          yearsExperience: candidate.yearsExperience,
+          skills: candidate.skills,
+          country: candidate.country,
+          currentLocation: candidate.currentLocation,
+          evaluation: candidate.evaluation,
+          availability: candidate.availability,
+          expectedSalary: candidate.expectedSalary,
+        }));
+
       res.json({
         success: true,
-        total: result.length,
-        data: result,
+        total: response.length,
+        data: response,
       });
 
     } catch (error) {

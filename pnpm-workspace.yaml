@@ -163,5 +163,6 @@ overrides:
 
 allowBuilds:
   '@google/genai': true
+  core-js: true
   esbuild: false
   protobufjs: true

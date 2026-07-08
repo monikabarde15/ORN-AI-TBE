@@ -743,16 +743,11 @@ export default function CandidateEvaluation() {
                   <Download className="size-4" /> Full CV
                 </Button>
               </a>
-              <a
-                href={getDownloadMaskedCvUrl(candidate.id)}
-                target="_blank"
-                rel="noreferrer"
-                download
-              >
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Download className="size-4" /> Masked CV
-                </Button>
-              </a>
+             <Link href={`/candidate/${candidate.id}/masked-cv`}>
+  <Button variant="outline" size="sm" className="gap-2">
+    <FileText className="size-4" /> Masked CV
+  </Button>
+</Link>
             </CardContent>
           </Card>
         </div>

@@ -158,16 +158,18 @@ export default function RecruiterDashboard() {
   const [loading, setLoading] = useState(false);
   const [aiCandidates, setAiCandidates] = useState<Candidate[]>([]);
 
- const handleAISearch = async () => {
+const handleAISearch = async () => {
   try {
     setSearching(true);
 
     const res = await api.post("/api/recruiter/ai-search", {
       query: searchTerm,
     });
-console.log("AI DATA =", res.data.data);
+
+    console.log("AI RESPONSE =", res.data);
+    console.log("AI LENGTH =", res.data.data.length);
+
     setAiCandidates(res.data.data);
-    
     setSearched(true);
   } finally {
     setSearching(false);
@@ -266,12 +268,16 @@ console.log("AI DATA =", res.data.data);
 console.log("NORMAL DATA =", candidates);
   // Apply status filter + sort client-side
 const displaySource = useMemo(() => {
-  if (searched) {
-    return candidates?.length ? candidates : aiCandidates;
+  console.log("searched =", searched);
+  console.log("aiCandidates =", aiCandidates.length);
+  console.log("normalCandidates =", candidates?.length);
+
+  if (searched && aiCandidates.length > 0) {
+    return aiCandidates;
   }
 
   return candidates ?? [];
-}, [searched, candidates, aiCandidates]);
+}, [searched, aiCandidates, candidates]);
   
 const filteredCandidates = useMemo(() => {
   let data = [...displaySource];
@@ -359,7 +365,7 @@ const filteredCandidates = useMemo(() => {
     });
     setExperience([0, 20]);
   };
-
+console.log("filteredCandidates===",filteredCandidates);
   const hasActiveFilters =
     !!searchTerm ||
     !!filters.country ||
@@ -870,16 +876,16 @@ function CandidateDetailSheet({
               </Button>
             )}
             <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 col-span-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
-              data-testid={`btn-download-masked-cv-${candidate.id}`}
-              onClick={() =>
-                window.open(getDownloadMaskedCvUrl(candidate.id), "_blank")
-              }
-            >
-              <FileText className="size-4" /> Download masked CV
-            </Button>
+            variant="outline"
+            size="sm"
+            className="gap-2 col-span-2"
+            onClick={() =>
+                setLocation(`/candidate/${candidate.id}/masked-cv`)
+            }
+        >
+            <FileText className="size-4" />
+            View Masked CV
+        </Button>
           </div>
         </div>
 
@@ -910,7 +916,9 @@ function CandidateDetailSheet({
               {candidate.country}
             </DetailRow>
             <DetailRow icon={Globe2} label="Visa">
-              <span className="capitalize">{candidate.visaStatus.replace(/_/g, " ")}</span>
+             <span className="capitalize">
+  {candidate.visaStatus?.replace(/_/g, " ") || "-"}
+</span>
               {candidate.euWorkEligible && (
                 <Badge className="ml-2 text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/15">
                   EU Work Eligible

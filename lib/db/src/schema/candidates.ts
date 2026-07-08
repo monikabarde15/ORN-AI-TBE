@@ -18,6 +18,7 @@ const bytea = customType<{ data: Buffer; default: false }>({
 
 export const candidatesTable = pgTable("candidates", {
   id: uuid("id").primaryKey().defaultRandom(),
+    candidateCode: text("candidate_code").unique(),
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone").notNull(),

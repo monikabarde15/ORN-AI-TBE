@@ -1079,6 +1079,8 @@ export const RegisterCandidateBody = zod.object({
 
   // NEW
  currentRole: zod.string(),
+ careerPreference:zod.string(),
+ preferredWorkMode:zod.string(),
 
   // NEW
   preferredRole: zod.string(),

@@ -27,7 +27,60 @@ function avatarFor(_name: string): string {
 }
 
 const router: IRouter = Router();
+async function generateCandidateCode(): Promise<string> {
+  const lastCandidate = await db
+    .select({
+      candidateCode: candidatesTable.candidateCode,
+    })
+    .from(candidatesTable)
+    .where(sql`candidate_code IS NOT NULL`)
+    .orderBy(sql`candidate_code DESC`)
+    .limit(1);
 
+  let nextNumber = 1;
+
+  if (
+    lastCandidate.length &&
+    lastCandidate[0].candidateCode
+  ) {
+    const match =
+      lastCandidate[0].candidateCode.match(/(\d+)$/);
+
+    if (match) {
+      nextNumber =
+        parseInt(match[1], 10) + 1;
+    }
+  }
+
+  return `ORN-AI-C-${String(nextNumber).padStart(3, "0")}`;
+}
+async function generateEmployeeId(): Promise<string> {
+  const lastEmployee = await db
+    .select({
+      employeeId: usersTable.employeeId,
+    })
+    .from(usersTable)
+    .where(sql`employee_id IS NOT NULL`)
+    .orderBy(sql`employee_id DESC`)
+    .limit(1);
+
+  let nextNumber = 1;
+
+  if (
+    lastEmployee.length &&
+    lastEmployee[0].employeeId
+  ) {
+    const match =
+      lastEmployee[0].employeeId.match(/(\d+)$/);
+
+    if (match) {
+      nextNumber =
+        parseInt(match[1], 10) + 1;
+    }
+  }
+
+  return `ORN-AI-E-${String(nextNumber).padStart(3, "0")}`;
+}
 interface RegisterBody {
   createdByAdmin: boolean;
   email: string;
@@ -123,7 +176,11 @@ router.post("/auth/register", async (req, res) => {
     const allowedRoles: UserRole[] = [
       "candidate",
       "recruiter",
+      "instructor",
+      "mentor",
+      "content_manager",
       "admin",
+      "super_admin",
     ];
 
     const role: UserRole =
@@ -140,6 +197,7 @@ router.post("/auth/register", async (req, res) => {
     }
 
     let candidateId: string | null = null;
+    let candidateCode: string | null = null;  
 
     if (role === "candidate" && body.candidateProfile) {
       const cp = body.candidateProfile;
@@ -170,10 +228,12 @@ router.post("/auth/register", async (req, res) => {
         yearsExperience =
           parseInt(cp.yearsOfExperience.split("-")[0], 10) || 0;
       }
-
+        candidateCode= await generateCandidateCode();
+      //  console.log("Generated Candidate Code =", candidateCode);
       const [created] = await db
         .insert(candidatesTable)
         .values({
+          candidateCode,
           fullName: cp.fullName ?? fullName,
           email: cp.email ?? email,
           phone: cp.phone ?? "",
@@ -196,8 +256,9 @@ router.post("/auth/register", async (req, res) => {
           yearsExperience,
           expectedSalary:cp.expectedSalary??"",
           availability:cp.availability??"",
-
-
+          careerPreference:cp.careerPreference??"",
+          preferredWorkMode:cp.preferredWorkMode??"",
+          
           visaStatus: cp.visaStatus ?? "requires_sponsorship",
 
           englishLevel:
@@ -221,6 +282,12 @@ router.post("/auth/register", async (req, res) => {
     }
 
     const passwordHash = await hashPassword(password);
+    let employeeId: string | null = null;
+
+if (role !== "candidate") {
+  employeeId = await generateEmployeeId();
+}
+
 
     /* const [user] = await db
        .insert(usersTable)
@@ -248,40 +315,44 @@ router.post("/auth/register", async (req, res) => {
       }
     }
     const [user] = await db
-      .insert(usersTable)
-      .values({
-        email,
-        passwordHash,
+  .insert(usersTable)
+  .values({
+    email,
+    passwordHash,
+    fullName,
+    candidateId,
 
-        fullName,
+    firstName: body.firstName ?? null,
+    middleName: body.middleName ?? null,
+    lastName: body.lastName ?? null,
 
-        firstName: body.firstName ?? null,
-        middleName: body.middleName ?? null,
-        lastName: body.lastName ?? null,
+    mobile: body.mobile ?? null,
+    username: body.username ?? null,
+    employeeId,
 
-        mobile: body.mobile ?? null,
-        username: body.username ?? null,
-        employeeId: body.employeeId ?? null,
+    role,
+    status: body.status ?? "Active",
 
-        role,
-        status: body.status ?? "Active",
+    company: body.company ?? null,
+    department: body.department ?? null,
+    designation: body.designation ?? null,
 
-        company: body.company ?? null,
-        department: body.department ?? null,
-        designation: body.designation ?? null,
+    country: body.country ?? null,
+    state: body.state ?? null,
+    city: body.city ?? null,
 
-        country: body.country ?? null,
-        state: body.state ?? null,
-        city: body.city ?? null,
+    forcePasswordChange:
+      body.forcePasswordChange ?? false,
 
-        forcePasswordChange: body.forcePasswordChange ?? false,
-        sendWelcomeEmail: body.sendWelcomeEmail ?? false,
-        emailCredentials: body.emailCredentials ?? false,
+    sendWelcomeEmail:
+      body.sendWelcomeEmail ?? false,
 
-        candidateId,
-        gdprConsentAt: new Date(),
-      })
-      .returning();
+    emailCredentials:
+      body.emailCredentials ?? false,
+
+    gdprConsentAt: new Date(),
+  })
+  .returning();
     if (!user) {
       return res.status(500).json({
         error: "Failed to create account",
@@ -311,83 +382,32 @@ router.post("/auth/register", async (req, res) => {
       },
     });
 
-    console.log("ROLE =>", role);
-    console.log("USER =>", user);
+    // console.log("ROLE =>", role);
+    // console.log("USER =>", user);
 
     return res.status(201).json({
-      user: {
-        ...publicUser(user),
-        role,
-      },
-    });
-  } catch (err: any) {
-    console.error("=========== REGISTER ERROR ===========");
-    console.error(err);
+        user: {
+          ...publicUser(user),
+          role,
+          candidateId,
+          candidateCode,
+        },
+      });
+  }catch (err: any) {
+      console.error("=========== REGISTER ERROR ===========");
+      console.dir(err, { depth: null });
 
-    // PostgreSQL duplicate username
-    if (
-      err?.code === "23505" &&
-      err?.detail?.includes("(username)")
-    ) {
-      return res.status(409).json({
-        error: "Username already exists",
+      const pg = err?.cause ?? err;
+
+      return res.status(500).json({
+        error: pg?.message || "Failed to create account",
+        code: pg?.code,
+        detail: pg?.detail,
+        constraint: pg?.constraint,
+        table: pg?.table,
+        column: pg?.column,
       });
     }
-
-  // PostgreSQL duplicate email
-  if (
-    err?.code === "23505" &&
-    err?.detail?.includes("(email)")
-  ) {
-    return res.status(409).json({
-      error: "Email already exists",
-    });
-  }
-
-
-//   const token = signToken(user);
-//   setAuthCookie(res, token);
-//   req.user = publicUser(user);
-//   await recordAudit(req, {
-//     action: "auth.register",
-//     entityType: "user",
-//     entityId: user.id,
-//     metadata: { role: user.role, hasCandidate: !!candidateId },
-//   });
-//   // console.log("ROLE =>", role);
-// // console.log("USER =>", user);
-//   res.status(201).json({
-//     user: {
-//       ...publicUser(user),
-//       role,
-//     },
-
-  // Drizzle wraps PG error in cause
-  if (
-    err?.cause?.code === "23505" &&
-    err?.cause?.detail?.includes("(username)")
-  ) {
-    return res.status(409).json({
-      error: "Username already exists",
-    });
-  }
-
-  if (
-    err?.cause?.code === "23505" &&
-    err?.cause?.detail?.includes("(email)")
-  ) {
-    return res.status(409).json({
-      error: "Email already exists",
-    });
-  }
-
-  return res.status(500).json({
-    error:
-      err?.message ||
-      err?.cause?.message ||
-      "Failed to create account",
-  });
-}
 });
 router.post("/auth/login", async (req, res) => {
   const body = (req.body ?? {}) as Partial<{
