@@ -3,6 +3,8 @@ import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import api from "../../services/api";
+import { Shell } from "@/components/layout/Shell";
+
 import jsPDF from "jspdf";
 import {
   AlertCircle,
@@ -357,40 +359,88 @@ const isEmploymentActive = (type: string) =>
   };
 
   return (
+    <Shell>
     <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-8">
       <style>
-        {`
-          @media print {
-            * {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
+  {`
+    @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
 
-            body {
-              background: #f8fafc !important;
-            }
+      html,
+      body {
+        background: #f8fafc !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
 
-            .no-print {
-              display: none !important;
-            }
+      /* Hide buttons, sidebar, navbar, header */
+      .no-print,
+      aside,
+      nav,
+      header,
+      .sidebar {
+        display: none !important;
+        visibility: hidden !important;
+      }
 
-            .print-page {
-              max-width: 100% !important;
-              padding: 0 !important;
-            }
+      /* Shell layout fix */
+      main,
+      .main-content,
+      .content-wrapper {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
 
-            .print-card {
-              box-shadow: none !important;
-              border: 1px solid #e2e8f0 !important;
-            }
+      .print-page {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
 
-            @page {
-              margin: 14mm;
-              size: A4;
-            }
-          }
-        `}
-      </style>
+      .print-card {
+        box-shadow: none !important;
+        border: 1px solid #e2e8f0 !important;
+        margin: 0 !important;
+      }
+
+      /* Remove unnecessary spacing */
+      .container,
+      .wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+
+      /* Hide everything except CV document */
+      body * {
+        visibility: hidden;
+      }
+
+      #masked-cv-document,
+      #masked-cv-document * {
+        visibility: visible;
+      }
+
+      #masked-cv-document {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+    }
+  `}
+</style>
+
 
       <div className="print-page mx-auto max-w-5xl">
         <div className="no-print mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -475,6 +525,7 @@ const isEmploymentActive = (type: string) =>
           )}
 
           {!loading && !error && (
+            
             <div className="grid gap-6 p-6 md:grid-cols-[1.15fr_0.85fr] md:p-8">
               <div className="space-y-6">
                 <section className="rounded-lg border border-slate-200 bg-white p-5">
@@ -575,41 +626,41 @@ const isEmploymentActive = (type: string) =>
                   </section>
                 )}
                <section className="rounded-lg border border-slate-200 bg-white p-5">
-  <SectionTitle
-    icon={<BadgeCheck className="h-5 w-5" />}
-    title="Employment Interests"
-    subtitle="Consultant preferred engagement types"
-  />
+                    <SectionTitle
+                      icon={<BadgeCheck className="h-5 w-5" />}
+                      title="Employment Interests"
+                      subtitle="Consultant preferred engagement types"
+                    />
 
-  <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div className="mt-5 grid grid-cols-2 gap-3">
 
-    <EmploymentBadge
-      label="Freelance"
-      active={isEmploymentActive("Freelance")}
-    />
+                      <EmploymentBadge
+                        label="Freelance"
+                        active={isEmploymentActive("Freelance")}
+                      />
 
-    <EmploymentBadge
-      label="Permanent"
-      active={isEmploymentActive("Permanent")}
-    />
+                      <EmploymentBadge
+                        label="Permanent"
+                        active={isEmploymentActive("Permanent")}
+                      />
 
-    <EmploymentBadge
-      label="Contract"
-      active={isEmploymentActive("Contract")}
-    />
+                      <EmploymentBadge
+                        label="Contract"
+                        active={isEmploymentActive("Contract")}
+                      />
 
-    <EmploymentBadge
-      label="Fixed Term"
-      active={isEmploymentActive("Fixed Term")}
-    />
+                      <EmploymentBadge
+                        label="Fixed Term"
+                        active={isEmploymentActive("Fixed Term")}
+                      />
 
-    <EmploymentBadge
-      label="C2H"
-      active={isEmploymentActive("C2H")}
-    />
+                      <EmploymentBadge
+                        label="C2H"
+                        active={isEmploymentActive("C2H")}
+                      />
 
-  </div>
-</section>
+                    </div>
+                  </section>
 
                 <section className="rounded-lg border border-slate-200 bg-slate-50 p-5">
                   <div className="flex items-start gap-3">
@@ -632,6 +683,7 @@ const isEmploymentActive = (type: string) =>
         </Card>
       </div>
     </div>
+    </Shell>
   );
 }
 
