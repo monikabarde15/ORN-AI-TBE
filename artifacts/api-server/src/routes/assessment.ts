@@ -1402,6 +1402,7 @@ router.get("/student/assessments", async (_req, res) => {
           durationMinutes: assessment.durationMinutes,
           passingPercentage: assessment.passingPercentage,
           difficulty:assessment.difficulty,
+          instructions:assessment.instructions,
           totalQuestions: questions.filter(
             (q) => q.status === "Published"
           ).length,
@@ -1419,6 +1420,98 @@ router.get("/student/assessments", async (_req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to load assessments",
+    });
+  }
+});
+router.post("/student/assessment/submit", async (req, res) => {
+  try {
+    const { assessmentId, answers } = req.body;
+
+    if (!assessmentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Assessment ID is required",
+      });
+    }
+
+    const questions = await db
+      .select()
+      .from(assessmentQuestionsTable)
+      .where(eq(assessmentQuestionsTable.assessmentId, assessmentId));
+
+    let correct = 0;
+    let wrong = 0;
+    let skipped = 0;
+
+    const review = questions.map((q) => {
+      const answer = answers.find(
+        (a: any) => a.questionId === q.id
+      );
+
+      if (!answer || answer.selectedOption === null || answer.selectedOption === undefined) {
+        skipped++;
+
+        return {
+          questionId: q.id,
+          correct: false,
+          skipped: true,
+          selectedOption: null,
+          correctOption: q.correctAnswer,
+        };
+      }
+
+      const isCorrect =
+        Number(answer.selectedOption) ===
+        Number(q.correctAnswer);
+
+      if (isCorrect) {
+        correct++;
+      } else {
+        wrong++;
+      }
+
+      return {
+        questionId: q.id,
+        correct: isCorrect,
+        skipped: false,
+        selectedOption: answer.selectedOption,
+        correctOption: q.correctAnswer,
+      };
+    });
+
+    const total = questions.length;
+
+    const percentage =
+      total === 0
+        ? 0
+        : Math.round((correct / total) * 100);
+
+    const [assessment] = await db
+      .select()
+      .from(assessmentsTable)
+      .where(eq(assessmentsTable.id, assessmentId));
+
+    const passed =
+      percentage >= assessment.passingPercentage;
+
+    res.json({
+      success: true,
+      data: {
+        total,
+        correct,
+        wrong,
+        skipped,
+        percentage,
+        passed,
+        review,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Submit failed",
     });
   }
 });

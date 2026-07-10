@@ -20,6 +20,9 @@ export const MCQExamPortal: React.FC<StudentMCQPortalProps> = ({
   onSubmit,
   onExit,
 }) => {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [assessmentId, setAssessmentId] = useState("");
+  const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
 const [config, setConfig] = useState({
@@ -27,7 +30,6 @@ const [config, setConfig] = useState({
     durationMinutes: 0,
 });
 
-const [questions, setQuestions] = useState<Question[]>([]);
   // --- Portal Phase Step ---
   const [step, setStep] = useState<'landing' | 'skeleton' | 'testing' | 'results'>('landing');
 
@@ -91,10 +93,8 @@ const loadAssessments = async () => {
   }
 };
   // --- Start Assessment with Loading Transition ---
-const handleStartAssessment = async () => {
+const handleStartAssessment = async (assessment: StudentAssessment) => {
   try {
-    const assessment = assessments[0] as any;
-
     if (!assessment) {
       alert("No Assessment Found");
       return;
@@ -106,6 +106,8 @@ const handleStartAssessment = async () => {
 
     const data = res.data.data;
 
+    setAssessmentId(data.id);
+
     const publishedQuestions = (data.questions || []).filter(
       (q: any) => q.status === "Published"
     );
@@ -116,12 +118,15 @@ const handleStartAssessment = async () => {
     });
 
     setQuestions(publishedQuestions);
+
     setTimeLeft(data.durationMinutes * 60);
 
+    // Reset exam state
     setCurrentIndex(0);
     setSelectedAnswers({});
     setMarkedForReview(new Set());
     setVisitedQuestions(new Set([0]));
+    setResult(null); // Previous result clear
 
     setStep("skeleton");
 
@@ -225,16 +230,33 @@ const handleStartAssessment = async () => {
     });
   };
 
-  const handleFinalSubmit = () => {
+  const handleFinalSubmit = async () => {
+  try {
     setIsSubmitModalOpen(false);
-    setStep('results');
-    if (onSubmit) {
-      onSubmit({
-        answers: selectedAnswers,
-        timeTakenSeconds: config.durationMinutes * 60 - timeLeft
-      });
-    }
-  };
+
+    const payload = {
+      assessmentId,
+      answers: questions.map((q, index) => ({
+        questionId: q.id,
+        selectedOption: selectedAnswers[index] ?? null,
+      })),
+      timeTakenSeconds:
+        config.durationMinutes * 60 - timeLeft,
+    };
+
+    const res = await api.post(
+      "/api/student/assessment/submit",
+      payload
+    );
+
+    console.log(res.data);
+    setResult(res.data.data);
+    setStep("results");
+  } catch (err) {
+    console.error(err);
+    alert("Submit failed");
+  }
+};
 
   // --- Keyboard Shortcuts Listener ---
   useEffect(() => {
@@ -318,80 +340,134 @@ if (loading) {
   if (step === 'landing') {
     return (
       <Shell>
-      <div className="max-w-3xl mx-auto p-4 md:p-8 animate-in fade-in duration-300">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-900 to-slate-950 p-8 text-white">
-            <span className="text-[10px] font-bold tracking-widest uppercase text-indigo-300">Examination Entrance</span>
-            <h1 className="text-2xl md:text-3xl font-extrabold mt-1">{config.title}</h1>
-            <p className="text-slate-300 text-sm mt-2">Ready to verify your skills? Read the assessment blueprint parameters before launching.</p>
+     <div className="max-w-3xl mx-auto p-4 md:p-8 animate-in fade-in duration-300">
+  {assessments.length === 0 ? (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center">
+      <h2 className="text-2xl font-bold text-slate-800">
+        No Assessments Assigned
+      </h2>
+      <p className="text-slate-500 mt-2">
+        There are currently no assessments assigned to you.
+      </p>
+    </div>
+  ) : (
+    assessments.map((assessment) => (
+      <div
+        key={assessment.id}
+        className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-8"
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-indigo-900 to-slate-950 p-8 text-white">
+          <span className="text-[10px] font-bold tracking-widest uppercase text-indigo-300">
+            Examination Entrance
+          </span>
+
+          <h1 className="text-2xl md:text-3xl font-extrabold mt-2">
+            {assessment.assessmentName}
+          </h1>
+
+          <p className="text-slate-300 text-sm mt-2">
+            Ready to verify your skills? Read the assessment instructions
+            before launching.
+          </p>
+        </div>
+
+        {/* Body */}
+        <div className="p-8">
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+            <div className="bg-slate-50 p-4 rounded-xl border text-center">
+              <span className="text-xs text-slate-500 block">
+                Duration
+              </span>
+
+              <span className="text-xl font-bold text-slate-800">
+                {assessment.durationMinutes} Minutes
+              </span>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-xl border text-center">
+              <span className="text-xs text-slate-500 block">
+                Questions
+              </span>
+
+              <span className="text-xl font-bold text-slate-800">
+                {assessment.totalQuestions}
+              </span>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-xl border text-center">
+              <span className="text-xs text-slate-500 block">
+                Difficulty
+              </span>
+
+              <span className="text-xl font-bold text-slate-800">
+                {assessment.difficulty}
+              </span>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-xl border text-center">
+              <span className="text-xs text-slate-500 block">
+                Passing Threshold
+              </span>
+
+              <span className="text-xl font-bold text-slate-800">
+                {assessment.passingPercentage}%
+              </span>
+            </div>
+
           </div>
 
-          <div className="p-8 space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
-                <span className="text-slate-400 text-xs block font-medium">Duration</span>
-                <span className="text-lg font-bold text-slate-800 mt-1 block">{assessments.length > 0
-                ? assessments[0].durationMinutes
-                : 0} Minutes</span>
-              </div>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
-                <span className="text-slate-400 text-xs block font-medium">Questions</span>
-                <span className="text-lg font-bold text-slate-800 mt-1 block">{assessments.length > 0
-                ? assessments[0].totalQuestions
-                : 0} Items</span>
-              </div>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
-                <span className="text-slate-400 text-xs block font-medium">Difficulty</span>
-               <span className="text-lg font-bold text-slate-800 mt-1 block">
-                  {assessments.length > 0
-                    ? assessments[0].difficulty
-                    : "N/A"}
-                </span>
-              </div>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
-                <span className="text-slate-400 text-xs block font-medium">Passing Threshold</span>
-                <span className="text-lg font-bold text-slate-800 mt-1 block">{assessments.length > 0
-                ? assessments[0].passingPercentage
-                : 0}%</span>
-              </div>
-            </div>
+          {/* Instructions */}
+          <div className="mt-8">
 
-            <div className="space-y-3">
-              <h3 className="font-bold text-sm text-slate-800 uppercase tracking-wider border-b pb-2">Assessment Instructions</h3>
-              <ul className="space-y-2.5 text-xs text-slate-600 list-disc pl-5">
-                <li>Read each question completely before choosing your response card.</li>
-                <li>The evaluation timer runs continuously once started and <span className="font-semibold text-rose-600">cannot be paused</span>.</li>
-                <li>You can flag or mark questions for subsequent review using the palette system.</li>
-                <li>Your selection state is automatically saved instantly on answer choice clicks.</li>
-              </ul>
-            </div>
+            <h3 className="font-bold text-sm uppercase tracking-wider border-b pb-2 text-slate-800">
+              Assessment Instructions
+            </h3>
 
-            <div className="pt-4 flex justify-end">
-              <button
-                onClick={handleStartAssessment}
-                className="w-full md:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-sm transition"
-              >
-                Start Assessment
-              </button>
-            </div>
+            <ul className="mt-4 space-y-2 text-sm text-slate-600 list-disc pl-5">
+              {assessment.instructions
+                ?.split("\n")
+                .filter((line) => line.trim())
+                .map((instruction, index) => (
+                  <li key={index}>
+                    {instruction.replace(/^\d+\.\s*/, "")}
+                  </li>
+                ))}
+            </ul>
+
           </div>
+
+          {/* Button */}
+          <div className="flex justify-end mt-8">
+
+            <button
+              onClick={() => handleStartAssessment(assessment)}
+              className="px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-sm transition"
+            >
+              Start Assessment
+            </button>
+
+          </div>
+
         </div>
       </div>
+    ))
+  )}
+</div>
       </Shell>
     );
   }
 
   // --- 3. RESULTS PAGE SUMMARY ---
   if (step === 'results') {
-    const totalQuestions = questions.length;
-    const correctCount = questions.reduce((acc, current, idx) => {
-      return selectedAnswers[idx] === current.correctOptionIndex ? acc + 1 : acc;
-    }, 0);
-    const scorePct =
-  totalQuestions === 0
-    ? 0
-    : Math.round((correctCount / totalQuestions) * 100);
-    const isPassed = scorePct >= 70;
+   const totalQuestions = result?.total || 0;
+
+    const scorePct = result?.percentage || 0;
+
+    const isPassed = result?.passed;
 
     return (
       <div className="max-w-4xl mx-auto p-4 md:p-8 animate-in fade-in duration-300 space-y-6">
@@ -427,9 +503,16 @@ if (loading) {
           
           {questions.map((question, idx) => {
             const userAnswerIdx = selectedAnswers[idx];
-            const isCorrect = userAnswerIdx === question.correctOptionIndex;
-            const isSkipped = userAnswerIdx === undefined;
+            const review =
+              result?.review?.find(
+              r=>r.questionId===question.id
+              );
 
+              const isCorrect =
+              review?.correct;
+
+              const isSkipped =
+              review?.skipped;
             return (
               <div
                 key={question.id}
@@ -456,7 +539,7 @@ if (loading) {
                 <div className="grid grid-cols-1 gap-2">
                   {question.options.map((opt, optIdx) => {
                     const isUserChoice = userAnswerIdx === optIdx;
-                    const isCorrectAnswer = question.correctOptionIndex === optIdx;
+                    const isCorrectAnswer = review?.correctOption===optIdx;
 
                     let cardStyle = "border-slate-200 bg-white";
                     if (isCorrectAnswer) {
@@ -478,7 +561,7 @@ if (loading) {
                   })}
                 </div>
 
-                {question.explanation && (
+                {result && question.explanation && (
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs text-slate-600 mt-2">
                     <span className="font-bold text-slate-700 block mb-1">Explanation:</span>
                     {question.explanation}
