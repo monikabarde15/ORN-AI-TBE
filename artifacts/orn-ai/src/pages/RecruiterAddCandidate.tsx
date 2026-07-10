@@ -52,6 +52,8 @@ export default function RecruiterAddCandidate() {
   const [visaStatus, setVisaStatus] = useState("eu_citizen");
   const [currentRole, setCurrentRole] = useState("");
   const [preferredRole, setPreferredRole] = useState("");
+  const [password, setPassword] = useState("");
+const [confirmPassword, setConfirmPassword] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,22 +94,40 @@ export default function RecruiterAddCandidate() {
     }
 
     if (
-      !fullName.trim() ||
-      !email.trim() ||
-      !currentLocation ||
-      !country ||
-      !visaStatus ||
-      !currentRole.trim() ||
-      !preferredRole.trim()
-    ) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required candidate details.",
-        variant: "destructive",
-      });
-      return;
-    }
+    !fullName.trim() ||
+    !email.trim() ||
+    !password.trim() ||
+    !confirmPassword.trim() ||
+    !currentLocation ||
+    !country ||
+    !visaStatus ||
+    !currentRole.trim() ||
+    !preferredRole.trim()
+  ) {
+    toast({
+      title: "Missing information",
+      description: "Please fill in all required candidate details.",
+      variant: "destructive",
+    });
+    return;
+  }
+if (password !== confirmPassword) {
+  toast({
+    title: "Password mismatch",
+    description: "Password and Confirm Password must be the same.",
+    variant: "destructive",
+  });
+  return;
+}
 
+if (password.length < 8) {
+  toast({
+    title: "Weak password",
+    description: "Password must be at least 8 characters long.",
+    variant: "destructive",
+  });
+  return;
+}
     /* ---------- Normalize Inputs ---------- */
 
     const normalizedFullName = fullName.trim();
@@ -121,6 +141,7 @@ export default function RecruiterAddCandidate() {
       fullName: normalizedFullName,
       email: normalizedEmail,
       phone: "",
+      password,
 
       currentLocation,
       country,
@@ -130,6 +151,8 @@ export default function RecruiterAddCandidate() {
       currentRole: normalizedCurrentRole,
 
       preferredRole: normalizedPreferredRole,
+        "role": "candidate",
+
 
       // Preferred Role becomes Target Role
       targetRole: normalizedPreferredRole,
@@ -243,7 +266,29 @@ export default function RecruiterAddCandidate() {
                     required
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    required
+                  />
+                </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm password"
+                    required
+                  />
+                </div>
               </div>
 
               {/* ================= Location ================= */}

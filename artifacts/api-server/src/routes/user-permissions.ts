@@ -155,4 +155,99 @@ router.post(
     }
   }
 );
+router.put("/users/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      firstName,
+      middleName,
+      lastName,
+      email,
+      mobile,
+      username,
+      employeeId,
+      role,
+      status,
+      company,
+      department,
+      designation,
+      country,
+      state,
+      city,
+    } = req.body;
+
+    const fullName = `${firstName ?? ""} ${middleName ?? ""} ${lastName ?? ""}`
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const [updatedUser] = await db
+      .update(usersTable)
+      .set({
+        firstName,
+        middleName,
+        lastName,
+        fullName,
+
+        email,
+        mobile,
+
+        username,
+        employeeId,
+
+        role,
+        status,
+
+        company,
+        department,
+        designation,
+
+        country,
+        state,
+        city,
+      })
+      .where(eq(usersTable.id, id))
+      .returning();
+
+    return res.json({
+      success: true,
+      message: "User updated successfully",
+      user: updatedUser,
+    });
+  } catch (error: any) {
+    console.error("UPDATE USER ERROR", error);
+
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+router.delete("/users/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Delete permissions first
+    await db
+      .delete(userPermissionsTable)
+      .where(eq(userPermissionsTable.userId, id));
+
+    // Delete user
+    await db
+      .delete(usersTable)
+      .where(eq(usersTable.id, id));
+
+    return res.json({
+      success: true,
+      message: "User deleted successfully",
+    });
+  } catch (error: any) {
+    console.error("DELETE USER ERROR", error);
+
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 export default router;

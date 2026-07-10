@@ -205,65 +205,66 @@ const [videoPreview, setVideoPreview] = useState("");
 
 
     // Generate Payment Link
-    const generatePaymentLink =
-        async () => {
-            try {
-                if (!learningPathId) {
-                    toast.error(
-                        "Create Learning Path First"
-                    );
-                    return;
-                }
+    const generatePaymentLink = async () => {
+  try {
+    if (!learningPathId) {
+      toast.error("Create Learning Path First");
+      return;
+    }
 
-                const res =
-                    await api.post(
-                        "/api/payment/generate-link",
-                        {
-                            learningPathId,
-                            courseIds:
-                                selectedCourses.map(
-                                    (c: any) =>
-                                        c.id || c._id
-                                ),
-                            amount: total,
-                        }
-                    );
+    const courseIds = selectedCourses.map(
+      (c: any) => c.id || c._id
+    );
 
+    // FREE LEARNING PATH
+    if (Number(total) <= 0) {
+      // Direct Join Page
+      const joinLink = `${window.location.origin}/join/${learningPathId}`;
 
-                // Frontend Payment Page URL
-                const paymentPageUrl = `${window.location.origin}/payment/${res.data.paymentId}`;
+      setPaymentLink(joinLink);
 
-                setPaymentLink(
-                    paymentPageUrl
-                );
+      await api.put(
+        `/api/learning-paths/${learningPathId}`,
+        {
+          paymentLink: joinLink,
+          courseIds,
+          isFree: true,
+        }
+      );
 
-                // Save URL in Learning Path
-                await api.put(
-                    `/api/learning-paths/${learningPathId}`,
-                    {
-                        paymentLink:
-                            paymentPageUrl,
+      toast.success("Free Learning Path Join Link Generated");
+      return;
+    }
 
-                        courseIds:
-                            selectedCourses.map(
-                                (c: any) =>
-                                    c.id || c._id
-                            ),
-                    }
-                );
+    // PAID LEARNING PATH
+    const res = await api.post(
+      "/api/payment/generate-link",
+      {
+        learningPathId,
+        courseIds,
+        amount: total,
+      }
+    );
 
-                toast.success(
-                    "Payment Link Generated"
-                );
+    const paymentLink = `${window.location.origin}/payment/${res.data.paymentId}`;
 
-            } catch (error) {
-                console.error(error);
+    setPaymentLink(paymentLink);
 
-                toast.error(
-                    "Failed to generate payment link"
-                );
-            }
-        };
+    await api.put(
+      `/api/learning-paths/${learningPathId}`,
+      {
+        paymentLink,
+        courseIds,
+        isFree: false,
+      }
+    );
+
+    toast.success("Payment Link Generated");
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to generate payment link");
+  }
+};
 
     const loadSessions = async () => {
         const res = await api.get(

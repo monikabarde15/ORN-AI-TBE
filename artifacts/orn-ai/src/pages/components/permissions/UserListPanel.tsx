@@ -2,12 +2,37 @@
 import React, { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import api from "../../../../services/api";
-
+import AddUserModal from "@/components/ui/AddUserModal";
+import { Toaster, toast } from "react-hot-toast";
+import {
+  ShieldCheck,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 interface User {
   id: string;
+  employeeId?: string;
+
   fullName: string;
   email: string;
   role: string;
+
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+
+  mobile?: string;
+  username?: string;
+
+  company?: string;
+  department?: string;
+  designation?: string;
+
+  country?: string;
+  state?: string;
+  city?: string;
+
+  status?: string;
 }
 
 interface Props {
@@ -19,6 +44,8 @@ export default function UserListPanel({
   selectedUser,
   onSelectUser,
 }: Props) {
+  const [showEditModal, setShowEditModal] = useState(false);
+const [editUser, setEditUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,7 +89,25 @@ export default function UserListPanel({
       setLoading(false);
     }
   };
+const handleEdit = (user: User) => {
+  setEditUser(user);
+  setShowEditModal(true);
+};
 
+const handleDelete = async (id: string) => {
+  if (!window.confirm("Are you sure you want to delete this user?")) {
+    return;
+  }
+
+  try {
+    await api.delete(`/api/users/${id}`);
+
+    setUsers((prev) => prev.filter((u) => u.id !== id));
+    toast.success("User deleted successfully");
+  } catch (err) {
+    console.error(err);
+  }
+};
   const filteredUsers = users.filter(
     (user) =>
       user.fullName
@@ -281,27 +326,42 @@ export default function UserListPanel({
 
                 {/* Action */}
 
-                <td className="px-6 py-5 text-center">
+                <td className="px-6 py-5">
+  <div className="flex items-center justify-center gap-2">
 
-                  <button
-                    onClick={() => onSelectUser(user)}
-                    className={`
-                    rounded-lg
-                    px-4
-                    py-2
-                    text-sm
-                    font-medium
-                    transition-all
-                    ${selectedUser?.id === user.id
-                        ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                        : "border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
-                      }
-                  `}
-                  >
-                    Access Control
-                  </button>
+    {/* Access Control */}
+    <button
+      onClick={() => onSelectUser(user)}
+      title="Access Control"
+      className={`flex h-10 w-10 items-center justify-center rounded-lg transition-all ${
+        selectedUser?.id === user.id
+          ? "bg-indigo-600 text-white"
+          : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
+      }`}
+    >
+      <ShieldCheck size={18} />
+    </button>
 
-                </td>
+    {/* Edit */}
+    <button
+      onClick={() => handleEdit(user)}
+      title="Edit User"
+      className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100"
+    >
+      <Pencil size={18} />
+    </button>
+
+    {/* Delete */}
+    <button
+      onClick={() => handleDelete(user.id)}
+      title="Delete User"
+      className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100"
+    >
+      <Trash2 size={18} />
+    </button>
+
+  </div>
+</td>
 
               </tr>
 
@@ -363,7 +423,20 @@ export default function UserListPanel({
         </div>
 
       </div>
-
+<AddUserModal
+  open={showEditModal}
+  onClose={() => {
+    setShowEditModal(false);
+    setEditUser(null);
+  }}
+  mode="edit"
+  initialData={editUser}
+  onSubmit={() => {
+    setShowEditModal(false);
+    loadUsers();
+  }}
+/>
     </div>
+    
   );
 }

@@ -114,7 +114,7 @@ export default function SidebarContent({
              Learning Path
             </Link>
             <Link
-              href="/test-assignment"
+              href="/recruiter/test-assignment"
               onClick={onNavigate}
               className={linkClass(location === "/recruiter/learning-student-path-list")}
             >

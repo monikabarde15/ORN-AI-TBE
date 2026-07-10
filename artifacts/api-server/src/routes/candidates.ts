@@ -1,7 +1,13 @@
 // artifacts\api-server\src\routes\candidates.ts
 import { Router, type IRouter } from "express";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
-import { db, candidatesTable, activityTable } from "@workspace/db";
+import {
+  db,
+  candidatesTable,
+  activityTable,
+  usersTable,
+} from "@workspace/db";
+import { hashPassword, findUserByEmail } from "../lib/auth";
 import {
   ListCandidatesQueryParams,
   ListCandidatesResponse,
@@ -119,8 +125,12 @@ router.post(
 
       const seed = Math.floor(Math.random() * 89) + 1;
       const gender = seed % 2 === 0 ? "men" : "women";
+      const avatarUrl =
+        gender === "women"
+          ? "https://api.dicebear.com/10.x/personas/svg?seed=female"
+          : "https://api.dicebear.com/10.x/personas/svg?seed=male";
 
-      const avatarUrl = `https://randomuser.me/api/portraits/${gender}/${seed}.jpg`;
+      // const avatarUrl = `https://randomuser.me/api/portraits/${gender}/${seed}.jpg`;
 
       const { skills: _ignored, ...rest } = parsed.data;
 
@@ -145,6 +155,31 @@ router.post(
           avatarUrl,
         })
         .returning();
+        await db.insert(activityTable).values({
+        kind: "registration",
+        candidateName: row.fullName,
+        country: row.country,
+        message: `${row.fullName} registered as ${row.targetRole}`,
+      });
+      const passwordHash = await hashPassword(parsed.data.password);
+
+          const existingUser = await findUserByEmail(row.email);
+
+          if (!existingUser) {
+            await db.insert(usersTable).values({
+              email: row.email.toLowerCase(),
+              passwordHash,
+              fullName: row.fullName,
+
+              role: "candidate",
+              candidateId: row.id,
+
+              country: row.country ?? null,
+              status: "Active",
+
+              gdprConsentAt: new Date(),
+            });
+          }
 
       if (!row) {
         res.status(500).json({

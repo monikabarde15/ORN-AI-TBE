@@ -106,13 +106,19 @@ function pick<T>(arr: T[], i: number): T {
   return arr[Math.abs(i) % arr.length]!;
 }
 
+// function avatarFor(seed: number): string {
+//   // Deterministic neutral portrait illustrations from a stable open API.
+//   const id = (seed % 90) + 1;
+//   const gender = seed % 2 === 0 ? "men" : "women";
+//   return `https://randomuser.me/api/portraits/${gender}/${id}.jpg`;
+// }
 function avatarFor(seed: number): string {
-  // Deterministic neutral portrait illustrations from a stable open API.
-  const id = (seed % 90) + 1;
   const gender = seed % 2 === 0 ? "men" : "women";
-  return `https://randomuser.me/api/portraits/${gender}/${id}.jpg`;
-}
 
+  return gender === "women"
+    ? `https://api.dicebear.com/10.x/personas/svg?seed=female-${seed}`
+    : `https://api.dicebear.com/10.x/personas/svg?seed=male-${seed}`;
+}
 async function ensureTrainingSeed(): Promise<void> {
   const [{ count: trainingCount }] = await db
     .select({ count: sql<number>`count(*)::int` })

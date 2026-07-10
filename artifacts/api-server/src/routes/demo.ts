@@ -42,7 +42,12 @@ router.post("/demo/seed", async (_req, res): Promise<void> => {
   const skills = pickSkillsFor(role, Date.now());
   const seed = Math.floor(Math.random() * 89) + 1;
   const gender = seed % 2 === 0 ? "men" : "women";
-  const avatarUrl = `https://randomuser.me/api/portraits/${gender}/${seed}.jpg`;
+  const aurl =
+  gender === "women"
+    ? "https://api.dicebear.com/10.x/personas/svg?seed=female"
+    : "https://api.dicebear.com/10.x/personas/svg?seed=male";
+    
+  const avatarUrl = aurl;//`https://randomuser.me/api/portraits/${gender}/${seed}.jpg`;
   const slug = fullName.toLowerCase().replace(/[^a-z]/g, "");
 
   const [row] = await db

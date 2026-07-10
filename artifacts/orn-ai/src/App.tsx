@@ -31,7 +31,9 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import TrainingDashboard from "@/pages/TrainingDashboard";
 import CandidateTraining from "@/pages/CandidateTraining";
 import Pricing from "@/pages/Pricing"; 
+import JoinLearningPath from "@/pages/JoinLearningPath ";
 import LearningPath from "@/pages/LearningPath";
+
 import PaymentPage from "@/pages/PaymentPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import LiveSessionCourses from "@/pages/LiveSessionCourses";
@@ -132,7 +134,7 @@ function Router() {
       <Route path="/lab/:id" component={LabDetail} />
       <Route path="/courses" component={MyFeed} />
 
-      <Route path="/test-assignment" component={MCQExamPortal}/>
+      <Route path="/recruiter/test-assignment" component={MCQExamPortal}/>
       <Route path="/admin-test-assignment" component={MCQAdminPanel}/>
 
 
@@ -140,6 +142,9 @@ function Router() {
         <ProtectedRoute roles={["recruiter", "admin"]}>
           <RecruiterAddCandidate />
         </ProtectedRoute>
+      </Route>
+      <Route path="/join/:learningPathId">
+        <JoinLearningPath />
       </Route>
       <Route path="/recruiter/learning-path">
         <ProtectedRoute roles={["recruiter", "admin"]}>

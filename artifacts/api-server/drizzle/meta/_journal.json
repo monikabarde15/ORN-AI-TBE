@@ -162,6 +162,20 @@
       "when": 1783495242752,
       "tag": "0022_serious_lily_hollister",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1783579208665,
+      "tag": "0023_slim_wildside",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1783591016376,
+      "tag": "0024_large_puma",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import  { useEffect } from "react";
 
 import { Toaster, toast } from "react-hot-toast";
 import api from "../../../services/api";
@@ -15,11 +16,13 @@ import {
 } from "lucide-react";
 
 interface AddUserModalProps {
-    open: boolean;
-    onClose: () => void;
-    onSubmit?: (data: any) => void;
-}
+  open: boolean;
+  onClose: () => void;
+  onSubmit?: (data: any) => void;
 
+  mode?: "create" | "edit";
+  initialData?: any;
+}
 
 const Input = ({
     label,
@@ -89,9 +92,11 @@ const Select = ({
 
 
 export default function AddUserModal({
-    open,
-    onClose,
-    onSubmit,
+  open,
+  onClose,
+  onSubmit,
+  mode = "create",
+  initialData,
 }: AddUserModalProps) {
     const [generatedPassword, setGeneratedPassword] = useState("");
     const [formData, setFormData] = useState({
@@ -121,6 +126,37 @@ export default function AddUserModal({
         forcePasswordReset: true,
         emailCredentials: true,
     });
+    useEffect(() => {
+  if (mode === "edit" && initialData) {
+    setFormData((prev) => ({
+      ...prev,
+
+      firstName: initialData.firstName || "",
+      middleName: initialData.middleName || "",
+      lastName: initialData.lastName || "",
+
+      email: initialData.email || "",
+      mobile: initialData.mobile || "",
+
+      username: initialData.username || "",
+      employeeId: initialData.employeeId || "",
+
+      company: initialData.company || "",
+      department: initialData.department || "",
+      designation: initialData.designation || "",
+
+      country: initialData.country || "",
+      state: initialData.state || "",
+      city: initialData.city || "",
+
+      role: initialData.role || "recruiter",
+      status: initialData.status || "Active",
+
+      password: "",
+      confirmPassword: "",
+    }));
+  }
+}, [mode, initialData]);
 
     if (!open) return null;
 
@@ -162,20 +198,29 @@ export default function AddUserModal({
 const role = formData.role;
 const handleSubmit = async () => {
   try {
-    if (
-      !formData.firstName ||
-      !formData.lastName ||
-      !formData.email ||
-      !formData.password
-    ) {
-      toast.error("Please fill all required fields");
-      return;
-    }
+        if (
+        !formData.firstName ||
+        !formData.lastName ||
+        !formData.email
+        ) {
+        toast.error("Please fill all required fields");
+        return;
+        }
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
+        if (
+        mode === "create" &&
+        !formData.password
+        ) {
+        toast.error("Password is required");
+        return;
+        }
+    if (
+  mode === "create" &&
+  formData.password !== formData.confirmPassword
+) {
+  toast.error("Passwords do not match");
+  return;
+}
 
     const roleMap: Record<string, "candidate" | "recruiter" | "admin"> = {
       Student: "candidate",
@@ -243,16 +288,27 @@ const handleSubmit = async () => {
       };
     }
 
-    const { data } = await api.post("/api/auth/register", payload);
+    let data;
 
-    // Generate evaluation only for Student/Candidate
-    if (role === "candidate" && data?.user?.candidateId) {
-      await api.post(
-        `/api/candidates/${data.user.candidateId}/evaluation`
-      );
-    }
+if (mode === "edit") {
+  const response = await api.put(
+    `/api/users/${initialData.id}`,
+    payload
+  );
 
-    toast.success("User created successfully");
+  data = response.data;
+
+  toast.success("User updated successfully");
+} else {
+  const response = await api.post(
+    "/api/auth/register",
+    payload
+  );
+
+  data = response.data;
+
+  toast.success("User created successfully");
+}
 
     onSubmit?.(data);
    setTimeout(() => {
@@ -335,7 +391,7 @@ const handleSubmit = async () => {
 
                             <div>
                                 <h2 className="text-2xl font-bold text-slate-900">
-                                    Add New User
+                                     {mode === "edit" ? "Edit User" : "Add New User"}
                                 </h2>
 
                                 <p className="mt-1 text-sm text-slate-500">
@@ -428,7 +484,7 @@ const handleSubmit = async () => {
                                 />
                             </div>
 
-                            <div className="mt-5 grid gap-5 md:grid-cols-2">
+                            <div className="mt-5 grid gap-5 md:grid-cols-1">
                                 <Input
                                     label="Username"
                                     name="username"
@@ -780,7 +836,8 @@ const handleSubmit = async () => {
               hover:bg-blue-800
             "
                     >
-                        Create User
+  {mode === "edit" ? "Update User" : "Create User"}
+
                     </button>
                 </div>
             </div>

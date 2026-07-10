@@ -23,7 +23,10 @@ import { logger } from "../lib/logger";
 function avatarFor(_name: string): string {
   const seed = Math.floor(Math.random() * 89) + 1;
   const gender = seed % 2 === 0 ? "men" : "women";
-  return `https://randomuser.me/api/portraits/${gender}/${seed}.jpg`;
+   return gender === "women"
+          ? "https://api.dicebear.com/10.x/personas/svg?seed=female"
+          : "https://api.dicebear.com/10.x/personas/svg?seed=male";
+  // return `https://randomuser.me/api/portraits/${gender}/${seed}.jpg`;
 }
 
 const router: IRouter = Router();

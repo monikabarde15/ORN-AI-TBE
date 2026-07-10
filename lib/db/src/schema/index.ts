@@ -9,3 +9,6 @@ export * from "./paymentLinks";
 export * from "./liveSessionsTable";
 export * from "./learningpathTable";
 export * from "./userPermissionsTable";
+export * from "./learningPathEnrollmentsTable";
+export * from "./assessmentQuestionsTable";
+export * from "./assessmentsTable";

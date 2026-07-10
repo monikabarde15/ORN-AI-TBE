@@ -1071,6 +1071,7 @@ export const RegisterCandidateBody = zod.object({
   fullName: zod.string().min(registerCandidateBodyFullNameMin),
 
   email: zod.string().email(),
+  password: zod.string().min(8),
 
   phone: zod.string(),
 

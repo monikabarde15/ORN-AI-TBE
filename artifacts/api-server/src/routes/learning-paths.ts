@@ -7,6 +7,7 @@ import {
   learningPathsTable,
   coursesTable,
   paymentLinksTable,
+  learningPathEnrollmentsTable,
 } from "@workspace/db";
 import { requireAuth, requireRole } from "../lib/auth";
 import {
@@ -526,6 +527,7 @@ router.patch(
     }
   }
 );
+
 /* =========================================
 GET STUDENT LEARNING PATHS
 ========================================= */
@@ -536,16 +538,28 @@ router.get(
   requireRole("candidate"),
   async (req: any, res) => {
     try {
-      const studentEmail = req.user.email.trim().toLowerCase();
+      const studentEmail = req.user.email
+        .trim()
+        .toLowerCase();
 
-      // Student ke paid payments
+      const userId = req.user.id;
+
+      // ===========================
+      // Paid Learning Paths
+      // ===========================
       const payments = await db
         .select()
         .from(paymentLinksTable)
         .where(
           and(
-            eq(paymentLinksTable.studentEmail, studentEmail),
-            eq(paymentLinksTable.status, "paid")
+            eq(
+              paymentLinksTable.studentEmail,
+              studentEmail
+            ),
+            eq(
+              paymentLinksTable.status,
+              "paid"
+            )
           )
         );
 
@@ -557,12 +571,37 @@ router.get(
         ),
       ];
 
-      // Sab Learning Paths
+      // ===========================
+      // Joined Learning Paths
+      // ===========================
+      const joinedLearningPaths = await db
+        .select()
+        .from(learningPathEnrollmentsTable)
+        .where(
+          eq(
+            learningPathEnrollmentsTable.userId,
+            userId
+          )
+        );
+
+      const joinedLearningPathIds = [
+        ...new Set(
+          joinedLearningPaths
+            .map((item) => item.learningPathId)
+            .filter(Boolean)
+        ),
+      ];
+
+      // ===========================
+      // All Learning Paths
+      // ===========================
       const learningPaths = await db
         .select()
         .from(learningPathsTable);
 
-      // Sab Courses
+      // ===========================
+      // All Courses
+      // ===========================
       const allCourses = await db
         .select()
         .from(coursesTable);
@@ -570,28 +609,29 @@ router.get(
       const result: any[] = [];
 
       for (const path of learningPaths) {
+
         const courses = allCourses.filter((course) =>
           path.courseIds?.includes(course.id)
         );
 
-        // Agar sab courses free hain
-        const isFree =
-          courses.length > 0 &&
-          courses.every(
-            (course) => Number(course.price || 0) === 0
-          );
+        // Paid?
+        const isPurchased =
+          paidLearningPathIds.includes(path.id);
 
-        // Agar purchase kiya hua hai
-        const isPurchased = paidLearningPathIds.includes(
-          path.id
-        );
+        // Joined?
+        const isJoined =
+          joinedLearningPathIds.includes(path.id);
 
-        // Free ya Purchased dono me dikhao
-        if (isFree || isPurchased) {
+        // Only show Purchased OR Joined Learning Paths
+        if (isPurchased || isJoined) {
+
           result.push({
             ...path,
             courses,
+            isPurchased,
+            isJoined,
           });
+
         }
       }
 
@@ -600,12 +640,133 @@ router.get(
         count: result.length,
         data: result,
       });
+
     } catch (error) {
-      console.error("Student Learning Path Error:", error);
+
+      console.error(
+        "Student Learning Path Error:",
+        error
+      );
 
       return res.status(500).json({
         success: false,
         error: "Failed to fetch learning paths",
+      });
+    }
+  }
+);
+/* =========================================
+JOIN LEARNING PATH
+========================================= */
+
+router.post(
+  "/learning-paths/:id/join",
+  requireAuth,
+  requireRole("candidate"),
+  async (req: any, res) => {
+    try {
+      const { id } = req.params;
+
+      // Learning Path Exists
+      const [learningPath] = await db
+        .select()
+        .from(learningPathsTable)
+        .where(eq(learningPathsTable.id, id));
+
+      if (!learningPath) {
+        return res.status(404).json({
+          success: false,
+          error: "Learning Path not found",
+        });
+      }
+
+      // Already Joined
+      const [alreadyJoined] = await db
+        .select()
+        .from(learningPathEnrollmentsTable)
+        .where(
+          and(
+            eq(
+              learningPathEnrollmentsTable.learningPathId,
+              id
+            ),
+            eq(
+              learningPathEnrollmentsTable.userId,
+              req.user.id
+            )
+          )
+        );
+
+      if (alreadyJoined) {
+        return res.json({
+          success: true,
+          alreadyJoined: true,
+          message: "Learning Path already joined",
+        });
+      }
+
+      // Join
+      await db.insert(learningPathEnrollmentsTable).values({
+        learningPathId: id,
+        userId: req.user.id,
+        userName: req.user.fullName,
+        userEmail: req.user.email,
+        status: "joined",
+      });
+
+      return res.json({
+        success: true,
+        alreadyJoined: false,
+        message: "Learning Path joined successfully",
+      });
+
+    } catch (error: any) {
+      console.error("JOIN ERROR =>", error);
+
+      return res.status(500).json({
+        success: false,
+        error: error?.message || "Failed to join learning path",
+      });
+    }
+  }
+);
+/* =========================================
+CHECK JOIN STATUS
+========================================= */
+
+router.get(
+  "/learning-paths/:id/join-status",
+  requireAuth,
+  requireRole("candidate"),
+  async (req: any, res) => {
+    try {
+      const { id } = req.params;
+
+      const [joined] = await db
+        .select()
+        .from(learningPathEnrollmentsTable)
+        .where(
+          and(
+            eq(
+              learningPathEnrollmentsTable.learningPathId,
+              id
+            ),
+            eq(
+              learningPathEnrollmentsTable.userId,
+              req.user.id
+            )
+          )
+        );
+
+      return res.json({
+        success: true,
+        alreadyJoined: !!joined,
+      });
+
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        error: error?.message,
       });
     }
   }

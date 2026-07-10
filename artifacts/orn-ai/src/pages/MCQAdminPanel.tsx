@@ -2,82 +2,18 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Question, Assessment } from '../lib/MCQTypes';
 import { Shell } from '@/components/layout/Shell';
+import { toast } from "sonner";
+import api from "../../services/api";
 
-// --- MOCK INITIAL DATA ---
-const INITIAL_ASSESSMENTS: Assessment[] = [
-    {
-        id: 'ai-dev-1',
-        name: 'AI Developer Screening',
-        role: 'AI Developer',
-        category: 'Technical Screening',
-        difficulty: 'Medium',
-        durationMinutes: 30,
-        passingPercentage: 70,
-        instructions: 'Answer all multiple choice questions. No negative marking is applicable.',
-        description: 'Pre-employment screening for mid-level AI development roles covering basic deep learning and fine-tuning.',
-        isPublished: true,
-        questions: [
-            {
-                id: 'q1',
-                text: 'Which activation function is most commonly used in the hidden layers of modern deep neural networks to prevent vanishing gradients?',
-                options: ['Sigmoid', 'Tanh', 'ReLU (Rectified Linear Unit)', 'Linear'],
-                correctOptionIndex: 2,
-                explanation: 'ReLU helps avoid vanishing gradients during backpropagation because its derivative is 1 for any positive input.',
-                difficulty: 'Easy',
-                marks: 2,
-                timeLimitSeconds: 60,
-                status: 'Published'
-            },
-            {
-                id: 'q2',
-                text: 'What is the primary objective of applying L1 (Lasso) regularization to model weights?',
-                options: [
-                    'To encourage weight values to go to exactly zero, facilitating feature selection.',
-                    'To bound weight values uniformly without producing structural sparsity.',
-                    'To increase the learning rate dynamically over multiple training steps.',
-                    'To alter input features into normal distributions automatically.'
-                ],
-                correctOptionIndex: 0,
-                explanation: 'L1 regularization introduces a penalty term proportional to the absolute values of weights, encouraging sparse solutions.',
-                difficulty: 'Medium',
-                marks: 3,
-                timeLimitSeconds: 90,
-                status: 'Published'
-            }
-        ]
-    },
-    {
-        id: 'backend-dev-1',
-        name: 'Backend Developer Assessment',
-        role: 'Backend Developer',
-        category: 'Technical Screening',
-        difficulty: 'Medium',
-        durationMinutes: 45,
-        passingPercentage: 75,
-        instructions: 'Requires working knowledge of REST APIs, database scaling, and caching architectures.',
-        description: 'Practical knowledge evaluation covering indexes, cache-invalidation strategies, and system designs.',
-        isPublished: false,
-        questions: []
-    },
-    {
-        id: 'devops-1',
-        name: 'DevOps Engineer Assessment',
-        role: 'DevOps Engineer',
-        category: 'Infrastructure',
-        difficulty: 'Hard',
-        durationMinutes: 40,
-        passingPercentage: 70,
-        instructions: 'Focus areas: Containerization, CI/CD pipelines, and secure cloud resource structures.',
-        description: 'Detailed technical check focusing on Kubernetes orchestration and Terraform workflows.',
-        isPublished: false,
-        questions: []
-    }
-];
 
 export const MCQAdminPanel: React.FC = () => {
     // --- View states ---
+    const [loading, setLoading] = useState(false);
+    const [draftAssessment, setDraftAssessment] =
+    useState<Assessment | null>(null);
+    const [creating, setCreating] = useState(false);
     const [view, setView] = useState<'library' | 'builder' | 'preview'>('library');
-    const [assessments, setAssessments] = useState<Assessment[]>(INITIAL_ASSESSMENTS);
+    const [assessments, setAssessments] = useState<Assessment[]>([]);
     const [selectedAssessmentId, setSelectedAssessmentId] = useState<string | null>(null);
 
     // --- Active Builder States ---
@@ -93,14 +29,66 @@ export const MCQAdminPanel: React.FC = () => {
 
     // --- Active Selection Helpers ---
     const activeAssessment = useMemo(() => {
-        return assessments.find((a) => a.id === selectedAssessmentId) || null;
-    }, [assessments, selectedAssessmentId]);
+
+    if (selectedAssessmentId === "new")
+        return draftAssessment;
+
+    return assessments.find(
+        a => a.id === selectedAssessmentId
+    ) || null;
+
+}, [
+    assessments,
+    selectedAssessmentId,
+    draftAssessment
+]);
 
     const activeQuestion = useMemo(() => {
         if (!activeAssessment) return null;
         return activeAssessment.questions.find((q) => q.id === activeQuestionId) || null;
     }, [activeAssessment, activeQuestionId]);
 
+   const loadAssessments = async () => {
+    setLoading(true);
+
+    try {
+        const res = await api.get("/api/assessments");
+
+        setAssessments(
+            (res.data.data || []).map((item: any) => ({
+                id: item.id,
+                name: item.assessmentName,
+                role: item.targetRole,
+                category: item.category,
+                difficulty: item.difficulty,
+                durationMinutes: item.durationMinutes,
+                passingPercentage: item.passingPercentage,
+                instructions: item.instructions,
+                description: item.description,
+                isPublished: item.status === "Published",
+                questions: (item.questions || []).map((q: any) => ({
+                    id: q.id,
+                    text: q.question,
+                    options: q.options,
+                    correctOptionIndex: q.correctAnswer,
+                    explanation: q.explanation,
+                    difficulty: q.difficulty,
+                    marks: q.marks,
+                    timeLimitSeconds: q.timeLimitSeconds,
+                    status: q.status,
+                })),
+            }))
+        );
+    } catch (err) {
+        console.error(err);
+        toast.error("Failed to load assessments");
+    } finally {
+        setLoading(false);
+    }
+};
+    useEffect(() => {
+            loadAssessments();
+        }, []);
     // Set default active question when entering builder
     useEffect(() => {
         if (activeAssessment && !activeQuestionId && activeAssessment.questions.length > 0) {
@@ -109,83 +97,216 @@ export const MCQAdminPanel: React.FC = () => {
     }, [activeAssessment, activeQuestionId]);
 
     // --- Library Actions ---
-    const handleSelectAssessment = (id: string) => {
-        setSelectedAssessmentId(id);
-        setActiveQuestionId(null);
-        setView('builder');
-    };
+   const handleSelectAssessment = async (id: string) => {
+    try {
+        const res = await api.get(`/api/assessments/${id}`);
 
-    const handleCreateNewAssessment = () => {
-        const newId = `assessment-${Date.now()}`;
-        const newAssessment: Assessment = {
-            id: newId,
-            name: 'New Custom Assessment',
-            role: 'Software Engineer',
-            category: 'General Technical',
-            difficulty: 'Easy',
-            durationMinutes: 45,
-            passingPercentage: 70,
-            instructions: 'Answer all multiple choice options carefully.',
-            description: 'Enter a clear description of the assessment goals here.',
-            isPublished: false,
-            questions: []
-        };
-        setAssessments((prev) => [...prev, newAssessment]);
-        handleSelectAssessment(newId);
-    };
+        const item = res.data.data;
 
+            const assessment = {
+            id: item.id,
+            name: item.assessmentName,
+            role: item.targetRole,
+            category: item.category,
+            difficulty: item.difficulty,
+            durationMinutes: item.durationMinutes,
+            passingPercentage: item.passingPercentage,
+            instructions: item.instructions,
+            description: item.description,
+            isPublished: item.status === "Published",
+            questions: (item.questions || []).map((q: any) => ({
+                    id: q.id,
+                    text: q.question,
+                    options: q.options,
+                    correctOptionIndex: q.correctAnswer,
+                    explanation: q.explanation,
+                    difficulty: q.difficulty,
+                    marks: q.marks,
+                    timeLimitSeconds: q.timeLimitSeconds,
+                    status: q.status,
+                })),
+            };
 
-    const handleEditAssessment = (assessment: Assessment, e: React.MouseEvent) => {
-        e.stopPropagation();
-        setSelectedAssessmentId(assessment.id);
-        setActiveQuestionId(null);
-        setView('builder');
-    };
+        setAssessments(prev => {
+            const index = prev.findIndex(a => a.id === id);
 
-    const handleDeleteAssessment = (assessmentId: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (window.confirm('Are you sure you want to delete this assessment?')) {
-            setAssessments((prev) => prev.filter((a) => a.id !== assessmentId));
-            if (selectedAssessmentId === assessmentId) {
-                setSelectedAssessmentId(null);
-                setActiveQuestionId(null);
+            if (index === -1) {
+                return [...prev, assessment];
             }
-        }
-    };
 
-    const handleDuplicateAssessment = (assessment: Assessment, e: React.MouseEvent) => {
+            const updated = [...prev];
+            updated[index] = assessment;
+            return updated;
+        });
+
+        setSelectedAssessmentId(id);
+        setActiveQuestionId(
+            assessment.questions?.[0]?.id || null
+        );
+
+        setView("builder");
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+const handleCreateNewAssessment = () => {
+  const draft: Assessment = {
+    id: "new",
+    name: "",
+    role: "",
+    category: "",
+    difficulty: "Easy",
+    durationMinutes: 45,
+    passingPercentage: 70,
+    instructions: "",
+    description: "",
+    isPublished: false,
+    questions: [],
+};
+
+setDraftAssessment(draft);
+setSelectedAssessmentId("new");
+setActiveQuestionId(null);
+setView("builder");
+};
+    const handleEditAssessment = async (
+        assessment: Assessment,
+        e: React.MouseEvent
+        ) => {
         e.stopPropagation();
-        const duplicated: Assessment = {
-            ...assessment,
-            id: `assessment-dup-${Date.now()}`,
-            name: `${assessment.name} (Copy)`,
-            isPublished: false,
-            questions: assessment.questions.map((q) => ({ ...q, id: `q-dup-${Math.random()}` }))
-        };
-        setAssessments((prev) => [...prev, duplicated]);
-    };
 
+        await handleSelectAssessment(assessment.id);
+        };
+
+    const handleDeleteAssessment = async (
+    assessmentId: string,
+    e: React.MouseEvent
+) => {
+try{
+    e.stopPropagation();
+
+    if (!window.confirm("Delete?")) return;
+
+    await api.delete(
+        `/api/assessments/${assessmentId}`
+    );
+
+    await loadAssessments();
+    setSelectedAssessmentId(null);
+    setActiveQuestionId(null);
+    setView("library");
+}catch(error){
+
+console.error(error);
+
+}
+};
+
+    const handleDuplicateAssessment = async (
+  assessment: Assessment,
+  e: React.MouseEvent
+) => {
+  e.stopPropagation();
+
+  try {
+    const res = await api.post(
+      `/api/assessments/${assessment.id}/duplicate`
+    );
+
+   if (res.data.success) {
+
+    await loadAssessments();
+
+        if (res.data.data?.id) {
+            await handleSelectAssessment(
+                res.data.data.id
+            );
+        }
+    }
+  } catch (error) {
+    console.error("Duplicate Assessment Error:", error);
+  }
+};
+
+const handleSave = async () => {
+  if (!activeQuestion) return;
+
+  try {
+    await api.put(`/api/questions/${activeQuestion.id}`, {
+      question: activeQuestion.text,
+      options: activeQuestion.options,
+      correctAnswer: activeQuestion.correctOptionIndex,
+      explanation: activeQuestion.explanation,
+      difficulty: activeQuestion.difficulty,
+      marks: activeQuestion.marks,
+      timeLimitSeconds: activeQuestion.timeLimitSeconds,
+      status: activeQuestion.status,
+    });
+
+    triggerSaveNotification();
+
+    if (selectedAssessmentId) {
+      await handleSelectAssessment(selectedAssessmentId);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
     // --- Builder Actions (Assessment Metadata updates) ---
     const handleUpdateAssessmentMetadata = (field: keyof Assessment, value: any) => {
         if (!selectedAssessmentId) return;
-        setAssessments((prev) =>
-            prev.map((a) => (a.id === selectedAssessmentId ? { ...a, [field]: value } : a))
-        );
+            if (selectedAssessmentId === "new") {
+                setDraftAssessment(prev =>
+                    prev ? { ...prev, [field]: value } : null
+                );
+                return;
+            }
+
+            setAssessments(prev =>
+                prev.map(a =>
+                    a.id === selectedAssessmentId
+                        ? { ...a, [field]: value }
+                        : a
+                )
+            );
     };
 
     // --- Question Item Actions ---
     const handleUpdateQuestionField = (field: keyof Question, value: any) => {
-        if (!selectedAssessmentId || !activeQuestionId) return;
-        setAssessments((prev) =>
-            prev.map((a) => {
-                if (a.id !== selectedAssessmentId) return a;
-                return {
-                    ...a,
-                    questions: a.questions.map((q) => (q.id === activeQuestionId ? { ...q, [field]: value } : q))
-                };
-            })
+    if (!selectedAssessmentId || !activeQuestionId) return;
+
+    if (selectedAssessmentId === "new") {
+        setDraftAssessment(prev =>
+            prev
+                ? {
+                      ...prev,
+                      questions: prev.questions.map(q =>
+                          q.id === activeQuestionId
+                              ? { ...q, [field]: value }
+                              : q
+                      ),
+                  }
+                : null
         );
-    };
+        return;
+    }
+
+    setAssessments(prev =>
+        prev.map(a =>
+            a.id === selectedAssessmentId
+                ? {
+                      ...a,
+                      questions: a.questions.map(q =>
+                          q.id === activeQuestionId
+                              ? { ...q, [field]: value }
+                              : q
+                      ),
+                  }
+                : a
+        )
+    );
+};
 
     const handleUpdateOptionText = (index: number, text: string) => {
         if (!activeQuestion) return;
@@ -199,84 +320,195 @@ export const MCQAdminPanel: React.FC = () => {
         handleUpdateQuestionField('options', [...activeQuestion.options, 'New Option']);
     };
 
-    const handleRemoveOption = (index: number) => {
-        if (!activeQuestion || activeQuestion.options.length <= 2) return;
-        const updated = activeQuestion.options.filter((_, idx) => idx !== index);
-        let correctIdx = activeQuestion.correctOptionIndex;
-        if (correctIdx >= updated.length) {
-            correctIdx = updated.length - 1;
-        }
-        setAssessments((prev) =>
-            prev.map((a) => {
-                if (a.id !== selectedAssessmentId) return a;
-                return {
-                    ...a,
-                    questions: a.questions.map((q) =>
-                        q.id === activeQuestionId
-                            ? { ...q, options: updated, correctOptionIndex: correctIdx }
-                            : q
-                    )
-                };
-            })
+  const handleRemoveOption = (
+    index: number
+) => {
+
+    if (!activeQuestion) return;
+
+    if (activeQuestion.options.length <= 2)
+        return;
+
+    const updated =
+        activeQuestion.options.filter(
+            (_, i) => i !== index
         );
-    };
 
-    // --- Validation & Create New Question ---
-    const handleAddQuestion = () => {
-        if (!activeAssessment) return;
+    handleUpdateQuestionField(
+        "options",
+        updated
+    );
 
-        // Validate the current active question first
-        if (activeQuestion) {
-            if (!activeQuestion.text.trim() || activeQuestion.text === 'Enter your question here') {
-                setValidationError('Complete the current question prompt before adding a new one.');
-                return;
-            }
-            const hasEmptyOptions = activeQuestion.options.some((opt) => !opt.trim() || opt === 'New Option');
-            if (hasEmptyOptions) {
-                setValidationError('Complete all option fields of the current question first.');
-                return;
-            }
+    if (
+        activeQuestion.correctOptionIndex >=
+        updated.length
+    ) {
+        handleUpdateQuestionField(
+            "correctOptionIndex",
+            updated.length - 1
+        );
+    }
+};
+const saveAssessment = async () => {
+    console.log("saveAssessment called");
+    if (!activeAssessment) return null;
+
+    try {
+        // ==========================
+        // NEW ASSESSMENT
+        // ==========================
+        if (activeAssessment.id === "new") {
+            const res = await api.post("/api/assessment/create", {
+                assessmentName: activeAssessment.name,
+                targetRole: activeAssessment.role,
+                category: activeAssessment.category,
+                difficulty: activeAssessment.difficulty,
+                durationMinutes: activeAssessment.durationMinutes,
+                passingPercentage: activeAssessment.passingPercentage,
+                instructions: activeAssessment.instructions,
+                description: activeAssessment.description,
+                status: "Draft",
+
+                // Save local questions also
+                questions: activeAssessment.questions.map((q) => ({
+                    question: q.text,
+                    options: q.options,
+                    correctAnswer: q.correctOptionIndex,
+                    explanation: q.explanation,
+                    difficulty: q.difficulty,
+                    marks: q.marks,
+                    timeLimitSeconds: q.timeLimitSeconds,
+                    status: q.status,
+                })),
+            });
+
+                const created = res.data.data;
+
+                // remove local draft
+                setAssessments(prev =>
+                    prev.filter(a => a.id !== "new")
+                );
+
+                setSelectedAssessmentId(created.id);
+
+                await loadAssessments();
+
+                await handleSelectAssessment(created.id);
+
+                toast.success("Assessment Created");
+                setDraftAssessment(null);
+
+            return created;
         }
 
-        setValidationError(null);
-        const newId = `q-${Date.now()}`;
+        // ==========================
+        // UPDATE ASSESSMENT
+        // ==========================
+        await api.put(`/api/assessments/${activeAssessment.id}`, {
+            assessmentName: activeAssessment.name,
+            targetRole: activeAssessment.role,
+            category: activeAssessment.category,
+            difficulty: activeAssessment.difficulty,
+            durationMinutes: activeAssessment.durationMinutes,
+            passingPercentage: activeAssessment.passingPercentage,
+            instructions: activeAssessment.instructions,
+            description: activeAssessment.description,
+        });
+
+        toast.success("Assessment Updated");
+
+        return activeAssessment;
+    } catch (err) {
+        console.error(err);
+        toast.error("Failed to save assessment");
+        return null;
+    }
+};
+    // --- Validation & Create New Question ---
+    const handleAddQuestion = async () => {
+    if (!selectedAssessmentId) return;
+
+    // New Assessment (API call nahi)
+    if (selectedAssessmentId === "new") {
         const newQuestion: Question = {
-            id: newId,
-            text: 'Enter your question here',  // <-- Better default text
-            options: ['Option A', 'Option B', 'Option C', 'Option D'],
+            id: crypto.randomUUID(),
+            text: "Enter your question here",
+            options: [
+                "Option A",
+                "Option B",
+                "Option C",
+                "Option D",
+            ],
             correctOptionIndex: 0,
-            explanation: '',
-            difficulty: 'Easy',
+            explanation: "",
+            difficulty: "Easy",
             marks: 1,
             timeLimitSeconds: 60,
-            status: 'Draft'
+            status: "Draft",
         };
 
-        setAssessments((prev) =>
-            prev.map((a) => {
-                if (a.id !== selectedAssessmentId) return a;
-                return { ...a, questions: [...a.questions, newQuestion] };
-            })
+       setDraftAssessment(prev =>
+            prev
+                ? {
+                    ...prev,
+                    questions: [...prev.questions, newQuestion],
+                }
+                : null
         );
-        setActiveQuestionId(newId);
-    };
 
-    const handleDeleteQuestion = (qId: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (!selectedAssessmentId) return;
-        setAssessments((prev) =>
-            prev.map((a) => {
-                if (a.id !== selectedAssessmentId) return a;
-                const filtered = a.questions.filter((q) => q.id !== qId);
-                return { ...a, questions: filtered };
-            })
+        setActiveQuestionId(newQuestion.id);
+        return;
+    }
+
+    // Existing Assessment (API call)
+    try {
+        await api.post(
+            `/api/assessments/${selectedAssessmentId}/questions`,
+            {
+                question: "Enter your question here",
+                options: [
+                    "Option A",
+                    "Option B",
+                    "Option C",
+                    "Option D",
+                ],
+                correctAnswer: 0,
+                explanation: "",
+                difficulty: "Easy",
+                marks: 1,
+                timeLimitSeconds: 60,
+                status: "Draft",
+            }
         );
-        if (activeQuestionId === qId) {
-            const remaining = activeAssessment?.questions.filter((q) => q.id !== qId) || [];
-            setActiveQuestionId(remaining[0]?.id || null);
-        }
-    };
 
+        await handleSelectAssessment(selectedAssessmentId);
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+const handleDeleteQuestion = async (
+  qId: string,
+  e: React.MouseEvent
+) => {
+  e.stopPropagation();
+
+  if (!window.confirm("Delete Question?")) return;
+
+  try {
+    await api.delete(`/api/questions/${qId}`);
+
+    if (selectedAssessmentId) {
+      await handleSelectAssessment(selectedAssessmentId);
+    }
+
+    triggerSaveNotification();
+  } catch (error) {
+    console.error("Delete Question Error:", error);
+  }
+};
+const isAssessmentSaved =
+    activeAssessment && activeAssessment.id !== "new";
     // --- Filtered Questions for Sidebar ---
     const filteredQuestions = useMemo(() => {
         if (!activeAssessment) return [];
@@ -311,13 +543,25 @@ export const MCQAdminPanel: React.FC = () => {
             hasPublishedQuestion
         );
     }, [activeAssessment]);
+const handleConfirmPublish = async () => {
+    if (!selectedAssessmentId) return;
 
-    const handleConfirmPublish = () => {
-        if (!activeAssessment) return;
-        handleUpdateAssessmentMetadata('isPublished', true);
+    try {
+        await api.put(
+            `/api/assessments/${selectedAssessmentId}/publish`
+        );
+
+        await loadAssessments();
+
+        await handleSelectAssessment(selectedAssessmentId);
+
         setIsPublishModalOpen(false);
+
         triggerSaveNotification();
-    };
+    } catch (error) {
+        console.error(error);
+    }
+};
 
     const triggerSaveNotification = () => {
         setIsSavedNotification(true);
@@ -330,7 +574,20 @@ export const MCQAdminPanel: React.FC = () => {
     const previewQuestions = useMemo(() => {
         return activeAssessment?.questions.filter((q) => q.status === 'Published') || [];
     }, [activeAssessment]);
-
+if (loading) {
+    return (
+        <Shell>
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="h-10 w-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="mt-4 text-sm text-slate-500">
+                        Loading Assessments...
+                    </p>
+                </div>
+            </div>
+        </Shell>
+    );
+}
     return (
         <Shell>
         <div className="bg-slate-50 min-h-screen text-slate-800 font-sans">
@@ -355,7 +612,9 @@ export const MCQAdminPanel: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {assessments.map((assessment) => {
+                        {assessments
+                            .filter(assessment => assessment.id !== "new")
+                            .map((assessment) => {
                             const pubCount = assessment.questions.filter((q) => q.status === 'Published').length;
                             return (
                                 <div
@@ -474,40 +733,42 @@ export const MCQAdminPanel: React.FC = () => {
                         </div>
 
                         <div className="flex items-center space-x-2">
-                            <button
-                                onClick={() => {
-                                    setPreviewIndex(0);
-                                    setPreviewAnswers({});
-                                    setView('preview');
-                                }}
-                                disabled={previewQuestions.length === 0}
-                                className="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-semibold transition flex items-center space-x-1.5 disabled:opacity-50"
-                                title={previewQuestions.length === 0 ? "No published questions found to preview." : ""}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                <span>Preview Portal</span>
-                            </button>
+                           <button
+                                    onClick={() => {
+                                        setPreviewIndex(0);
+                                        setPreviewAnswers({});
+                                        setView("preview");
+                                    }}
+                                    disabled={!isAssessmentSaved || previewQuestions.length === 0}
+                                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                                        !isAssessmentSaved || previewQuestions.length === 0
+                                            ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                            : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                                    }`}
+                                >
+                                    Preview Portal
+                                </button>
 
                             <button
                                 onClick={() => {
                                     if (isPublishAllowed) {
                                         setIsPublishModalOpen(true);
-                                    } else {
-                                        setValidationError('Cannot publish: Provide title, duration, passing percentage, and at least 1 published question.');
                                     }
                                 }}
-                                disabled={activeAssessment.isPublished}
-                                className={`px-5 py-2 text-sm font-semibold rounded-lg shadow-sm transition ${activeAssessment.isPublished
-                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
+                                disabled={!isAssessmentSaved || activeAssessment.isPublished || !isPublishAllowed}
+                                className={`px-5 py-2 text-sm font-semibold rounded-lg ${
+                                    !isAssessmentSaved
+                                        ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                        : activeAssessment.isPublished
+                                        ? "bg-emerald-50 text-emerald-700"
                                         : isPublishAllowed
-                                            ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                                            : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                                    }`}
+                                        ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                                        : "bg-slate-100 text-slate-400"
+                                }`}
                             >
-                                {activeAssessment.isPublished ? 'Published Live' : 'Publish Assessment'}
+                                {activeAssessment.isPublished
+                                    ? "Published Live"
+                                    : "Publish Assessment"}
                             </button>
                         </div>
                     </header>
@@ -768,16 +1029,49 @@ export const MCQAdminPanel: React.FC = () => {
                                                 <span className="text-xs text-emerald-600 font-semibold animate-pulse">Changes Saved!</span>
                                             )}
                                             <button
-                                                onClick={() => handleSave()}
+                                              onClick={async () => {
+                                                const savedAssessment = await saveAssessment();
+
+                                                if (!savedAssessment) return;
+
+                                                if (activeQuestion) {
+                                                    await handleSave();
+                                                }
+                                            }}
                                                 className="px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-semibold hover:bg-slate-700 transition"
                                             >
                                                 Save Draft Code
                                             </button>
                                             <button
-                                                onClick={() => {
-                                                    handleUpdateQuestionField('status', 'Published');
-                                                    handleSave();
-                                                }}
+                                              onClick={async () => {
+                                                if (!activeQuestion || !selectedAssessmentId) return;
+
+                                                try {
+                                                    await api.put(
+                                                        `/api/questions/${activeQuestion.id}`,
+                                                        {
+                                                            question: activeQuestion.text,
+                                                            options: activeQuestion.options,
+                                                            correctAnswer: activeQuestion.correctOptionIndex,
+                                                            difficulty: activeQuestion.difficulty,
+                                                            marks: activeQuestion.marks,
+                                                            timeLimitSeconds: activeQuestion.timeLimitSeconds,
+                                                            status: "Published",
+                                                            explanation: activeQuestion.explanation,
+                                                        }
+                                                    );
+
+                                                    // Local state update after successful API
+                                                   // handleUpdateQuestionField("status", "Published");
+
+                                                    toast.success("Question Published");
+
+                                                    await handleSelectAssessment(selectedAssessmentId);
+                                                } catch (error) {
+                                                    console.error(error);
+                                                    toast.error("Failed to publish question");
+                                                }
+                                            }}
                                                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition"
                                             >
                                                 Publish Question
@@ -809,7 +1103,14 @@ export const MCQAdminPanel: React.FC = () => {
                             {/* Assessment Meta Form */}
                             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
                                 <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">Assessment Parameters</h3>
-
+                                <div className="pt-4 border-t mt-4">
+                                    <button
+                                        onClick={saveAssessment}
+                                        className="w-full bg-indigo-600 text-white py-2 rounded-lg"
+                                    >
+                                        Save Assessment
+                                    </button>
+                                </div>
                                 <div className="space-y-3 text-xs">
                                     <div>
                                         <label className="block font-semibold text-slate-500 mb-1">Assessment Name *</label>
@@ -927,7 +1228,17 @@ export const MCQAdminPanel: React.FC = () => {
                         </button>
                         <div className="flex space-x-2">
                             <button
-                                onClick={() => handleSave()}
+                               onClick={async () => {
+
+                                const saved = await saveAssessment();
+
+                                if (!saved) return;
+
+                                if (activeQuestion) {
+                                    await handleSave();
+                                }
+
+                            }}
                                 className="px-5 py-2 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition"
                             >
                                 Save Changes Draft

@@ -1,6 +1,8 @@
 // artifacts\orn-ai\src\pages\MCQExamPortal.tsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Question, Assessment } from '../lib/MCQTypes';
+import api from "../../services/api";
+import { Shell } from '@/components/layout/Shell';
 
 // --- Types ---
 export interface StudentMCQPortalProps {
@@ -13,64 +15,19 @@ export interface StudentMCQPortalProps {
   onExit?: () => void;
 }
 
-// --- High-Quality Mock Data ---
-const DEFAULT_CONFIG: Assessment = {
-  title: "AI Developer Screening Assessment",
-  durationMinutes: 30,
-};
-
-const DEFAULT_QUESTIONS: Question[] = [
-  {
-    id: 'q1',
-    text: "Which of the following activation functions is most commonly applied in hidden layers of deep neural networks to mitigate vanishing gradients?",
-    options: ["Sigmoid Function", "Tanh Function", "ReLU (Rectified Linear Unit)", "Linear Identity Function"],
-    correctOptionIndex: 2,
-    explanation: "ReLU is widely chosen because its derivative remains 1 for all positive values, preventing vanishing gradients during backpropagation.",
-    difficulty: "Easy",
-    marks: 1,
-    timeLimitSeconds: 60,
-    status: "Published"
-  },
-  {
-    id: 'q2',
-    text: "In machine learning regularization, how does L1 (Lasso) regularization fundamentally differ from L2 (Ridge) regularization?",
-    options: [
-      "L1 introduces a penalty based on absolute weight values, driving some weight factors to exactly zero.",
-      "L2 restricts learning rates exponentially over epochs.",
-      "L1 alters input features into perfectly normal distributions.",
-      "L2 completely prevents weights from adapting during the first epoch."
-    ],
-    correctOptionIndex: 0,
-    explanation: "L1 regularization uses absolute weight values which can drive weights to zero, effectively acting as an automated feature selector.",
-    difficulty: "Medium",
-    marks: 2,
-    timeLimitSeconds: 90,
-    status: "Published"
-  },
-  {
-    id: 'q3',
-    text: "What does temperature sampling control when generating responses with large language models?",
-    options: [
-      "The physical GPU core temperature thresholds.",
-      "The randomness and creativity of the output probability distributions.",
-      "The maximum token count allowed during generative sequences.",
-      "The absolute learning rate utilized during training steps."
-    ],
-    correctOptionIndex: 1,
-    explanation: "Lower temperatures focus probabilities onto peak choices making outputs predictable, while higher temperatures spread out likelihoods for varied generation.",
-    difficulty: "Hard",
-    marks: 3,
-    timeLimitSeconds: 120,
-    status: "Published"
-  }
-];
 
 export const MCQExamPortal: React.FC<StudentMCQPortalProps> = ({
-  config = DEFAULT_CONFIG,
-  questions = DEFAULT_QUESTIONS,
   onSubmit,
   onExit,
 }) => {
+  const [loading, setLoading] = useState(true);
+
+const [config, setConfig] = useState({
+    title: "",
+    durationMinutes: 0,
+});
+
+const [questions, setQuestions] = useState<Question[]>([]);
   // --- Portal Phase Step ---
   const [step, setStep] = useState<'landing' | 'skeleton' | 'testing' | 'results'>('landing');
 
@@ -80,20 +37,104 @@ export const MCQExamPortal: React.FC<StudentMCQPortalProps> = ({
   const [markedForReview, setMarkedForReview] = useState<Set<number>>(new Set());
   const [visitedQuestions, setVisitedQuestions] = useState<Set<number>>(new Set([0]));
   const [timeLeft, setTimeLeft] = useState<number>(config.durationMinutes * 60);
-  
+interface StudentAssessment {
+  id: string;
+  assessmentName: string;
+  targetRole: string;
+  durationMinutes: number;
+  passingPercentage: number;
+  totalQuestions: number;
+  difficulty: string;
+}
+
+const [assessments, setAssessments] = useState<StudentAssessment[]>([]);
+  useEffect(() => {
+    if (config.durationMinutes > 0) {
+        setTimeLeft(config.durationMinutes * 60);
+    }
+}, [config.durationMinutes]);
   // --- UI Filter & Save States ---
   const [paletteFilter, setPaletteFilter] = useState<'All' | 'Answered' | 'Not Answered' | 'Marked' | 'Not Visited'>('All');
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState<boolean>(false);
 
-  // --- Start Assessment with Loading Transition ---
-  const handleStartAssessment = () => {
-    setStep('skeleton');
-    setTimeout(() => {
-      setStep('testing');
-    }, 1500); // Simulate network/initialization skeleton delay
-  };
+useEffect(() => {
+  loadAssessments();
+}, []);
 
+const loadAssessments = async () => {
+  try {
+    setLoading(true);
+
+    const res = await api.get("/api/student/assessments");
+
+    const list = res.data.data || [];
+
+    setAssessments(list);
+
+    if (list.length > 0) {
+      const first = list[0];
+
+      setConfig({
+        title: first.assessmentName,
+        durationMinutes: first.durationMinutes,
+      });
+
+      setQuestions(
+        Array.from({ length: first.totalQuestions }, () => ({} as Question))
+      );
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+  // --- Start Assessment with Loading Transition ---
+const handleStartAssessment = async () => {
+  try {
+    const assessment = assessments[0] as any;
+
+    if (!assessment) {
+      alert("No Assessment Found");
+      return;
+    }
+
+    setLoading(true);
+
+    const res = await api.get(`/api/assessments/${assessment.id}`);
+
+    const data = res.data.data;
+
+    const publishedQuestions = (data.questions || []).filter(
+      (q: any) => q.status === "Published"
+    );
+
+    setConfig({
+      title: data.assessmentName,
+      durationMinutes: data.durationMinutes,
+    });
+
+    setQuestions(publishedQuestions);
+    setTimeLeft(data.durationMinutes * 60);
+
+    setCurrentIndex(0);
+    setSelectedAnswers({});
+    setMarkedForReview(new Set());
+    setVisitedQuestions(new Set([0]));
+
+    setStep("skeleton");
+
+    setTimeout(() => {
+      setStep("testing");
+    }, 1500);
+  } catch (err) {
+    console.error(err);
+    alert("Unable to load assessment");
+  } finally {
+    setLoading(false);
+  }
+};
   // --- Simulated Progress Auto-Save effect ---
   useEffect(() => {
     if (step !== 'testing') return;
@@ -250,7 +291,13 @@ export const MCQExamPortal: React.FC<StudentMCQPortalProps> = ({
   }, [questions, selectedAnswers, markedForReview, visitedQuestions, paletteFilter]);
 
   const currentQuestion = questions[currentIndex];
-
+if (loading) {
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+            <div className="h-10 w-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+    );
+}
   // --- 1. SKELETON LOADING VIEW ---
   if (step === 'skeleton') {
     return (
@@ -270,6 +317,7 @@ export const MCQExamPortal: React.FC<StudentMCQPortalProps> = ({
   // --- 2. LANDING / INTRODUCTION PAGE ---
   if (step === 'landing') {
     return (
+      <Shell>
       <div className="max-w-3xl mx-auto p-4 md:p-8 animate-in fade-in duration-300">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="bg-gradient-to-r from-indigo-900 to-slate-950 p-8 text-white">
@@ -282,19 +330,29 @@ export const MCQExamPortal: React.FC<StudentMCQPortalProps> = ({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
                 <span className="text-slate-400 text-xs block font-medium">Duration</span>
-                <span className="text-lg font-bold text-slate-800 mt-1 block">{config.durationMinutes} Minutes</span>
+                <span className="text-lg font-bold text-slate-800 mt-1 block">{assessments.length > 0
+                ? assessments[0].durationMinutes
+                : 0} Minutes</span>
               </div>
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
                 <span className="text-slate-400 text-xs block font-medium">Questions</span>
-                <span className="text-lg font-bold text-slate-800 mt-1 block">{questions.length} Items</span>
+                <span className="text-lg font-bold text-slate-800 mt-1 block">{assessments.length > 0
+                ? assessments[0].totalQuestions
+                : 0} Items</span>
               </div>
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
                 <span className="text-slate-400 text-xs block font-medium">Difficulty</span>
-                <span className="text-lg font-bold text-slate-800 mt-1 block">Medium</span>
+               <span className="text-lg font-bold text-slate-800 mt-1 block">
+                  {assessments.length > 0
+                    ? assessments[0].difficulty
+                    : "N/A"}
+                </span>
               </div>
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
                 <span className="text-slate-400 text-xs block font-medium">Passing Threshold</span>
-                <span className="text-lg font-bold text-slate-800 mt-1 block">70%</span>
+                <span className="text-lg font-bold text-slate-800 mt-1 block">{assessments.length > 0
+                ? assessments[0].passingPercentage
+                : 0}%</span>
               </div>
             </div>
 
@@ -319,6 +377,7 @@ export const MCQExamPortal: React.FC<StudentMCQPortalProps> = ({
           </div>
         </div>
       </div>
+      </Shell>
     );
   }
 
@@ -328,7 +387,10 @@ export const MCQExamPortal: React.FC<StudentMCQPortalProps> = ({
     const correctCount = questions.reduce((acc, current, idx) => {
       return selectedAnswers[idx] === current.correctOptionIndex ? acc + 1 : acc;
     }, 0);
-    const scorePct = Math.round((correctCount / totalQuestions) * 100);
+    const scorePct =
+  totalQuestions === 0
+    ? 0
+    : Math.round((correctCount / totalQuestions) * 100);
     const isPassed = scorePct >= 70;
 
     return (
@@ -443,6 +505,7 @@ export const MCQExamPortal: React.FC<StudentMCQPortalProps> = ({
 
   // --- 4. TESTING VIEW (CANDIDATE INTERACTIVE EXPERIENCE) ---
   return (
+    <Shell>
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 flex flex-col min-h-screen pb-28 animate-in fade-in duration-300">
       
       {/* Dynamic Header */}
@@ -715,5 +778,6 @@ export const MCQExamPortal: React.FC<StudentMCQPortalProps> = ({
       )}
 
     </div>
+    </Shell>
   );
 };

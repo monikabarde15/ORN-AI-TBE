@@ -16,11 +16,13 @@ import liveSessions from "./live-sessions";
 import learningPaths from "./learning-paths";
 import courseCategoryRoutes from "./course-category";
 import userPermissionsRoutes from "./user-permissions";
+import assessment from "./assessment";
 
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(assessment);
 router.use(metaRouter);
 router.use(authRouter);
 router.use(candidatesRouter);
