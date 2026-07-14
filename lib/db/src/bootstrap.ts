@@ -95,6 +95,51 @@ ALTER TABLE candidates
 ADD COLUMN IF NOT EXISTS preferred_role text NOT NULL DEFAULT '';
 `));
 
+await db.execute(sql.raw(`
+ALTER TABLE candidates
+ADD COLUMN IF NOT EXISTS candidate_code text;
+`));
+
+await db.execute(sql.raw(`
+ALTER TABLE candidates
+ADD COLUMN IF NOT EXISTS city text;
+`));
+
+await db.execute(sql.raw(`
+ALTER TABLE candidates
+ADD COLUMN IF NOT EXISTS expected_salary text;
+`));
+
+await db.execute(sql.raw(`
+ALTER TABLE candidates
+ADD COLUMN IF NOT EXISTS availability text;
+`));
+
+await db.execute(sql.raw(`
+ALTER TABLE candidates
+ADD COLUMN IF NOT EXISTS notice_period text;
+`));
+
+await db.execute(sql.raw(`
+ALTER TABLE candidates
+ADD COLUMN IF NOT EXISTS career_preference text[] NOT NULL DEFAULT '{}';
+`));
+
+await db.execute(sql.raw(`
+ALTER TABLE candidates
+ADD COLUMN IF NOT EXISTS preferred_work_mode text[] NOT NULL DEFAULT '{}';
+`));
+
+await db.execute(sql.raw(`
+ALTER TABLE candidates
+ADD COLUMN IF NOT EXISTS interested_skills text[] NOT NULL DEFAULT '{}';
+`));
+
+await db.execute(sql.raw(`
+ALTER TABLE candidates
+ADD COLUMN IF NOT EXISTS languages_known text[] NOT NULL DEFAULT '{}';
+`));
+
   await db.execute(sql`ALTER TABLE candidates
 
     ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'direct',

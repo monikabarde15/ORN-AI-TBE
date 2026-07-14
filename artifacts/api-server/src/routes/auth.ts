@@ -118,6 +118,8 @@ interface RegisterBody {
     fullName: string;
     email: string;
     phone: string;
+    currentLocation?: string;
+    city?: string;
     country: string;
 
     targetRole?: string;
@@ -136,12 +138,13 @@ interface RegisterBody {
     linkedinUrl?: string;
 
     skills?: string[];
+    languagesKnown?: string[];
+    interestedSkills?: string[];
 
     availability?: string;
-    careerPreference?: string;
+    careerPreference?: string | string[];
     expectedSalary?: string;
-    preferredWorkMode?: string;
-    languagesKnown?: string[];
+    preferredWorkMode?: string | string[];
 
     // Future compatibility
     [key: string]: unknown;
@@ -154,15 +157,10 @@ router.post("/auth/register", async (req, res) => {
     const createdByAdmin = body.createdByAdmin === true;
     const email = (body.email ?? "").trim().toLowerCase();
     const password = body.password ?? "";
-    const fullName = (body.fullName ?? "").trim();
-    const requestedRole = body.role;
-    const gdprConsent = body.gdprConsent === true;
 
-    if (!email || !password || !fullName) {
-      return res.status(400).json({
-        error: "Missing required fields",
-      });
-    }
+    const fullName = (body.fullName ?? "").trim();
+    const gdprConsent = body.gdprConsent === true;
+    const requestedRole = body.role as unknown as UserRole | undefined;
 
     if (password.length < 8) {
       return res.status(400).json({
@@ -202,86 +200,114 @@ router.post("/auth/register", async (req, res) => {
     let candidateId: string | null = null;
     let candidateCode: string | null = null;  
 
-    if (role === "candidate" && body.candidateProfile) {
-      const cp = body.candidateProfile;
-      const englishLevelMap: Record<
-        string,
-        "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
-      > = {
-        Beginner: "A1",
-        Elementary: "A2",
-        Intermediate: "B1",
-        UpperIntermediate: "B2",
-        Advanced: "C1",
-        Fluent: "C2",
+    if (role === "candidate") {
+      const rawProfile = body.candidateProfile;
+      const cp = rawProfile
+        ? rawProfile
+        : {
+            fullName: body.fullName ?? fullName,
+            email: body.email ?? email,
+            phone: body.phone ?? "",
+            currentLocation: body.currentLocation,
+            city: body.city,
+            currentRole: body.currentRole,
+            preferredRole: body.preferredRole,
+            country: body.country,
+            targetRole: body.targetRole,
+            yearsExperience: body.yearsExperience,
+            yearsOfExperience: body.yearsOfExperience,
+            visaStatus: body.visaStatus,
+            englishLevel: body.englishLevel,
+            euWorkEligible: body.euWorkEligible,
+            linkedinUrl: body.linkedinUrl,
+            skills: body.skills,
+            languagesKnown: body.languagesKnown,
+            interestedSkills: body.interestedSkills,
+            availability: body.availability,
+            careerPreference: body.careerPreference,
+            expectedSalary: body.expectedSalary,
+            preferredWorkMode: body.preferredWorkMode,
+          };
 
-        A1: "A1",
-        A2: "A2",
-        B1: "B1",
-        B2: "B2",
-        C1: "C1",
-        C2: "C2",
-      };
+      if (cp) {
+        const englishLevelMap: Record<
+          string,
+          "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+        > = {
+          Beginner: "A1",
+          Elementary: "A2",
+          Intermediate: "B1",
+          UpperIntermediate: "B2",
+          Advanced: "C1",
+          Fluent: "C2",
+          A1: "A1",
+          A2: "A2",
+          B1: "B1",
+          B2: "B2",
+          C1: "C1",
+          C2: "C2",
+        };
 
-      let yearsExperience = 0;
+        let yearsExperience = 0;
 
-      if (typeof cp.yearsExperience === "number") {
-        yearsExperience = cp.yearsExperience;
-      } else if (cp.yearsOfExperience) {
-        yearsExperience =
-          parseInt(cp.yearsOfExperience.split("-")[0], 10) || 0;
+        if (typeof cp.yearsExperience === "number") {
+          yearsExperience = cp.yearsExperience;
+        } else if (cp.yearsOfExperience) {
+          yearsExperience =
+            parseInt(String(cp.yearsOfExperience).split("-")[0], 10) || 0;
+        }
+
+        candidateCode = await generateCandidateCode();
+
+        const [created] = await db
+          .insert(candidatesTable)
+          .values({
+            candidateCode,
+            fullName: cp.fullName ?? fullName,
+            email: cp.email ?? email,
+            phone: cp.phone ?? "",
+            currentLocation: (cp.currentLocation as string) ?? "",
+            city: (cp as any).city ?? "",
+            currentRole: cp.currentRole ?? "",
+            preferredRole: cp.preferredRole ?? "",
+            country: cp.country ?? "",
+            targetRole:
+              cp.targetRole ??
+              cp.currentRole ??
+              cp.preferredRole ??
+              "Unknown",
+            yearsExperience,
+            expectedSalary: cp.expectedSalary ?? "",
+            availability: cp.availability ?? "",
+            careerPreference: Array.isArray(cp.careerPreference)
+              ? (cp.careerPreference as string[])
+              : cp.careerPreference
+              ? [String(cp.careerPreference)]
+              : [],
+            preferredWorkMode: Array.isArray(cp.preferredWorkMode)
+              ? (cp.preferredWorkMode as string[])
+              : cp.preferredWorkMode
+              ? [String(cp.preferredWorkMode)]
+              : [],
+            interestedSkills: Array.isArray((cp as any).interestedSkills)
+              ? (cp as any).interestedSkills
+              : [],
+            visaStatus: cp.visaStatus ?? "requires_sponsorship",
+            englishLevel:
+              englishLevelMap[cp.englishLevel ?? ""] ?? "B1",
+            euWorkEligible: cp.euWorkEligible ?? false,
+            linkedinUrl: cp.linkedinUrl ?? "",
+            languagesKnown: Array.isArray((cp as any).languagesKnown)
+              ? (cp as any).languagesKnown
+              : [],
+            avatarUrl: avatarFor(cp.fullName ?? fullName),
+            skills: cp.skills ?? [],
+            source: "direct",
+          })
+          .returning();
+
+        candidateId = created.id;
       }
-        candidateCode= await generateCandidateCode();
-      //  console.log("Generated Candidate Code =", candidateCode);
-      const [created] = await db
-        .insert(candidatesTable)
-        .values({
-          candidateCode,
-          fullName: cp.fullName ?? fullName,
-          email: cp.email ?? email,
-          phone: cp.phone ?? "",
-          currentLocation:
-            (cp.currentLocation as string) ?? "",
-
-          currentRole:
-            cp.currentRole ?? "",
-
-          preferredRole:
-            cp.preferredRole ?? "",
-          country: cp.country ?? "",
-
-          targetRole:
-            cp.targetRole ??
-            cp.currentRole ??
-            cp.preferredRole ??
-            "Unknown",
-
-          yearsExperience,
-          expectedSalary:cp.expectedSalary??"",
-          availability:cp.availability??"",
-          careerPreference:cp.careerPreference??"",
-          preferredWorkMode:cp.preferredWorkMode??"",
-          
-          visaStatus: cp.visaStatus ?? "requires_sponsorship",
-
-          englishLevel:
-            englishLevelMap[cp.englishLevel ?? ""] ?? "B1",
-
-          euWorkEligible:
-            cp.euWorkEligible ?? false,
-
-          linkedinUrl:
-            cp.linkedinUrl ?? "",
-
-          avatarUrl: avatarFor(cp.fullName ?? fullName),
-
-          skills: cp.skills ?? [],
-
-          source: "direct",
-        })
-        .returning();
-
-      candidateId = created.id;
     }
 
     const passwordHash = await hashPassword(password);

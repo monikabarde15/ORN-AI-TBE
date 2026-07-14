@@ -446,11 +446,11 @@ export default function CandidateEvaluation() {
                 <div className="text-2xl font-bold tracking-tight">{readiness.label}</div>
                 <div className="text-sm opacity-90 mt-0.5 max-w-2xl">{readiness.description}</div>
               </div>
-              {readiness.label === "Recruiter Ready" ? (
+                  {readiness.label === "Recruiter Ready" ? (
                 <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-                  <Link href={`/candidate/${candidate.id}/training`}>
+                  <Link href={`/recruiter/learning-student-path-list`}>
                     <Button variant="outline" className="gap-2 w-full">
-                      Training plan
+                      Learning path
                     </Button>
                   </Link>
                   <Link href="/recruiter">
@@ -460,11 +460,13 @@ export default function CandidateEvaluation() {
                   </Link>
                 </div>
               ) : (
-                <Link href={`/candidate/${candidate.id}/training`}>
-                  <Button variant="secondary" className="gap-2 shrink-0">
-                    Route to training <ArrowRight className="size-4" />
-                  </Button>
-                </Link>
+                <div>
+                  <Link href={`/recruiter/learning-student-path-list`}>
+                    <Button variant="secondary" className="gap-2 shrink-0">
+                      Route to learning path <ArrowRight className="size-4" />
+                    </Button>
+                  </Link>
+                </div>
               )}
             </motion.div>
           </div>

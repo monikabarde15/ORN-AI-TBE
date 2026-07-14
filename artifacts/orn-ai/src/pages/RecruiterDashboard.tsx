@@ -1,6 +1,7 @@
 // artifacts\orn-ai\src\pages\RecruiterDashboard.tsx
 import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import { Shell } from "@/components/layout/Shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -741,6 +742,7 @@ function CandidateDetailSheet({
   onStatusChange: (id: string, next: CandidateStatus | null, name?: string) => void;
   countryFlag: string;
 }) {
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
 
   if (!candidate) {
@@ -755,6 +757,20 @@ function CandidateDetailSheet({
   const readiness = getReadinessLabel(score);
   const skills = candidate.skills ?? [];
   const evalScores = candidate.evaluation?.scores;
+  const shouldHideContactDetails = user?.role === "recruiter";
+
+  const hiddenValue = "Hidden";
+  const emailValue = shouldHideContactDetails ? hiddenValue : candidate.email;
+  const phoneValue = shouldHideContactDetails ? hiddenValue : candidate.phone;
+  const linkedinValue = shouldHideContactDetails ? hiddenValue : candidate.linkedinUrl;
+  const countryValue = shouldHideContactDetails ? hiddenValue : candidate.country;
+  const visaValue = shouldHideContactDetails ? hiddenValue : candidate.visaStatus?.replace(/_/g, " ") || "-";
+  const englishValue = shouldHideContactDetails ? hiddenValue : candidate.englishLevel;
+  const joinedValue = shouldHideContactDetails
+    ? hiddenValue
+    : new Date(candidate.createdAt).toLocaleDateString(undefined, {
+        dateStyle: "medium",
+      });
 
   return (
     <Sheet open={!!candidate} onOpenChange={(o) => !o && onClose()}>
@@ -891,16 +907,21 @@ function CandidateDetailSheet({
 
         {/* ----- Body ----- */}
         <div className="px-6 py-6 space-y-6">
-          {/* Contact */}
           <DetailSection title="Contact & Eligibility">
             <DetailRow icon={Mail} label="Email">
-              <a href={`mailto:${candidate.email}`} className="hover:text-primary truncate">
-                {candidate.email}
-              </a>
+              {shouldHideContactDetails ? (
+                <span className="text-muted-foreground">{emailValue}</span>
+              ) : (
+                <a href={`mailto:${candidate.email}`} className="hover:text-primary truncate">
+                  {candidate.email}
+                </a>
+              )}
             </DetailRow>
-            <DetailRow icon={Phone} label="Phone">{candidate.phone}</DetailRow>
-            {candidate.linkedinUrl && (
-              <DetailRow icon={Linkedin} label="LinkedIn">
+            <DetailRow icon={Phone} label="Phone">{phoneValue}</DetailRow>
+            <DetailRow icon={Linkedin} label="LinkedIn">
+              {shouldHideContactDetails ? (
+                <span className="text-muted-foreground">{linkedinValue}</span>
+              ) : (
                 <a
                   href={candidate.linkedinUrl}
                   target="_blank"
@@ -909,28 +930,22 @@ function CandidateDetailSheet({
                 >
                   Profile <ExternalLink className="size-3" />
                 </a>
-              </DetailRow>
-            )}
+              )}
+            </DetailRow>
             <DetailRow icon={MapPin} label="Country">
               <span className="mr-1.5">{countryFlag}</span>
-              {candidate.country}
+              {countryValue}
             </DetailRow>
             <DetailRow icon={Globe2} label="Visa">
-             <span className="capitalize">
-  {candidate.visaStatus?.replace(/_/g, " ") || "-"}
-</span>
-              {candidate.euWorkEligible && (
+              <span className="capitalize">{visaValue}</span>
+              {!shouldHideContactDetails && candidate.euWorkEligible && (
                 <Badge className="ml-2 text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/15">
                   EU Work Eligible
                 </Badge>
               )}
             </DetailRow>
-            <DetailRow icon={Languages} label="English">{candidate.englishLevel}</DetailRow>
-            <DetailRow icon={Calendar} label="Joined">
-              {new Date(candidate.createdAt).toLocaleDateString(undefined, {
-                dateStyle: "medium",
-              })}
-            </DetailRow>
+            <DetailRow icon={Languages} label="English">{englishValue}</DetailRow>
+            <DetailRow icon={Calendar} label="Joined">{joinedValue}</DetailRow>
           </DetailSection>
 
           {/* Skills */}

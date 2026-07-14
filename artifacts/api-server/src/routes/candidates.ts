@@ -134,6 +134,24 @@ router.post(
 
       const { skills: _ignored, ...rest } = parsed.data;
 
+      // Normalize some fields to match DB schema (arrays)
+      const normalized = {
+        ...rest,
+        careerPreference: Array.isArray((rest as any).careerPreference)
+          ? (rest as any).careerPreference
+          : rest.careerPreference
+          ? [String((rest as any).careerPreference)]
+          : [],
+        preferredWorkMode: Array.isArray((rest as any).preferredWorkMode)
+          ? (rest as any).preferredWorkMode
+          : rest.preferredWorkMode
+          ? [String((rest as any).preferredWorkMode)]
+          : [],
+        interestedSkills: Array.isArray((rest as any).interestedSkills)
+          ? (rest as any).interestedSkills
+          : [],
+      };
+
       console.log("Insert Payload =", {
         ...rest,
         skills,
@@ -149,7 +167,7 @@ router.post(
       const [row] = await db
         .insert(candidatesTable)
         .values({
-          ...rest,
+          ...normalized,
           candidateCode,
           skills,
           avatarUrl,

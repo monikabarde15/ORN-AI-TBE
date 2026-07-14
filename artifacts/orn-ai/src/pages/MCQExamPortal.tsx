@@ -3,6 +3,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Question, Assessment } from '../lib/MCQTypes';
 import api from "../../services/api";
 import { Shell } from '@/components/layout/Shell';
+import { useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
 
 // --- Types ---
 export interface StudentMCQPortalProps {
@@ -20,6 +22,8 @@ export const MCQExamPortal: React.FC<StudentMCQPortalProps> = ({
   onSubmit,
   onExit,
 }) => {
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [assessmentId, setAssessmentId] = useState("");
   const [result, setResult] = useState<any>(null);
@@ -572,16 +576,31 @@ if (loading) {
           })}
         </div>
 
-        {onExit && (
-          <div className="flex justify-center pt-4">
+        <div className="flex flex-col items-center gap-3 pt-4 sm:flex-row sm:justify-center">
+          {user?.candidateId ? (
+            <button
+              onClick={() => navigate(`/candidate/${user.candidateId}/evaluation`)}
+              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm transition"
+            >
+              My Evaluation
+            </button>
+          ) : onExit ? (
             <button
               onClick={onExit}
               className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl shadow-sm transition"
             >
               Exit to Dashboard
             </button>
-          </div>
-        )}
+          ) : null}
+          {onExit && user?.candidateId && (
+            <button
+              onClick={onExit}
+              className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl shadow-sm transition"
+            >
+              Exit to Dashboard
+            </button>
+          )}
+        </div>
       </div>
     );
   }

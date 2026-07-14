@@ -110,7 +110,7 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/candidate/:id/upload" component={CandidateUpload} />
       <Route path="/candidate/:id/evaluation" component={CandidateEvaluation} />
-      <Route path="/candidate/:id/training" component={CandidateTraining} />
+      <Route path="/candidate/:id/learning-student-path-list" component={CandidateTraining} />
       <Route path="/cyber-security" component={Pricing} />
       <Route path="/data-science-ai" component={DataScientce} />
       <Route path="/advanced-programs" component={Advancedprograms} />

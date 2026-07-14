@@ -22,6 +22,8 @@ import {
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import countryList from "country-list-with-dial-code-and-flag";
 import {
   Loader2,
   ArrowRight,
@@ -72,9 +74,12 @@ const formSchema = z.object({
 
   // Step 2
   currentLocation: z.string().min(1, "Please select current location"),
+  city: z.string().optional(),
   country: z.string().min(1, "Please select a country"),
   visaStatus: z.enum(VISA_VALUES),
   euWorkEligible: z.boolean(),
+
+  interestedSkills: z.array(z.string()).optional(),
 
   // Step 3
   currentRole: z.string().min(1),
@@ -82,9 +87,9 @@ const formSchema = z.object({
   yearsOfExperience: z.string().min(1),
   skills: z.array(z.string()).min(1),
   languagesKnown: z.array(z.string()).min(1),
-  careerPreference: z.string().min(1),
+  careerPreference: z.array(z.string()),
   preferredCountries: z.array(z.string()),
-  preferredWorkMode: z.string().min(1),
+  preferredWorkMode: z.array(z.string()),
   expectedSalary: z.string().min(1),
   availability: z.string().min(1),
 
@@ -100,8 +105,8 @@ type FormValues = z.infer<typeof formSchema>;
 // ----- Steps -----
 const STEPS = [
   { id: 1, title: "Personal Details", icon: User, fields: ["firstName", "middleName", "lastName", "email", "phone", "linkedinUrl"] as const },
-  { id: 2, title: "Location & Eligibility", icon: Globe2, fields: ["currentLocation", "country", "visaStatus", "euWorkEligible"] as const },
-  { id: 3, title: "Professional Profile & Career Preferences", icon: Wrench, fields: ["currentRole", "preferredRole", "yearsOfExperience", "skills", "languagesKnown", "careerPreference", "preferredWorkMode", "expectedSalary", "availability"] as const },
+  { id: 2, title: "Location & Eligibility", icon: Globe2, fields: ["currentLocation", "city", "country", "visaStatus", "euWorkEligible"] as const },
+  { id: 3, title: "Professional Profile & Career Preferences", icon: Wrench, fields: ["currentRole", "preferredRole", "yearsOfExperience", "skills", "interestedSkills", "languagesKnown", "careerPreference", "preferredWorkMode", "expectedSalary", "availability"] as const },
   // { id: 4, title: "Language Readiness", icon: Languages, fields: ["englishLevel"] as const },
   { id: 4, title: "AI CV Evaluation & Account Setup", icon: FileUp, fields: ["password", "gdprConsent"] as const },
 ] as const;
@@ -111,9 +116,15 @@ export default function Register() {
   const [step, setStep] = useState(1);
   const [createdCandidateId, setCreatedCandidateId] = useState<string | null>(null);
   const [skillInput, setSkillInput] = useState("");
+  const [interestedSkillInput, setInterestedSkillInput] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [languageInput, setLanguageInput] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [currentLocationInput, setCurrentLocationInput] = useState("");
+  const [countryInput, setCountryInput] = useState("");
+  const [currentLocationFocused, setCurrentLocationFocused] = useState(false);
+  const [countryFocused, setCountryFocused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: regions } = useListRegions({
@@ -138,17 +149,19 @@ export default function Register() {
       phone: "",
       linkedinUrl: "",
       currentLocation: "",
+      city: "",
       country: "",
       visaStatus: "eu_citizen",
       euWorkEligible: true,
+      interestedSkills: [],
       currentRole: "",
       preferredRole: "",
       yearsOfExperience: "",
       skills: [],
       languagesKnown: [],
-      careerPreference: "",
+      careerPreference: [],
       preferredCountries: [],
-      preferredWorkMode: "",
+      preferredWorkMode: [],
       expectedSalary: "",
       availability: "",
       password: "",
@@ -167,6 +180,27 @@ export default function Register() {
     : [];
 
   const allCountries = [...phase1, ...phase2];
+  const availableCountries = countryList.getAll().map((country) => ({
+    code: country.countryCode,
+    name: country.name,
+    flag: country.flag,
+  }));
+
+  const filteredCurrentLocationCountries = availableCountries.filter((country) => {
+    const query = currentLocationInput.trim().toLowerCase();
+    return (
+      country.name.toLowerCase().includes(query) ||
+      country.code.toLowerCase().includes(query)
+    );
+  });
+
+  const filteredResidenceCountries = availableCountries.filter((country) => {
+    const query = countryInput.trim().toLowerCase();
+    return (
+      country.name.toLowerCase().includes(query) ||
+      country.code.toLowerCase().includes(query)
+    );
+  });
 
   // ----- Skills helpers -----
   const addSkill = () => {
@@ -189,6 +223,62 @@ export default function Register() {
     form.setValue(
       "skills",
       form.getValues("skills").filter((x) => x !== s),
+      { shouldValidate: true },
+    );
+  };
+
+  // Interested skills helpers (behaves like Top Skills)
+  const addInterestedSkill = () => {
+    const value = interestedSkillInput.trim();
+    if (!value) return;
+    const current = form.getValues("preferredCountries");
+    // Use a separate field 'interestedSkills' stored in preferredCountries temporarily
+    const existing = (form.getValues("preferredCountries") || []) as string[];
+    if (existing.includes(value)) {
+      setInterestedSkillInput("");
+      return;
+    }
+    if (existing.length >= 20) {
+      toast.error("Max 20 items");
+      return;
+    }
+    // store interested skills in 'preferredCountries' is not ideal; better to add new field
+    // but to keep changes minimal, we'll create and manage 'interestedSkills' as a form value
+    const curr = (form.getValues("interestedSkills") || []) as string[];
+    form.setValue("interestedSkills", [...curr, value], { shouldValidate: true });
+    setInterestedSkillInput("");
+  };
+
+  const removeInterestedSkill = (s: string) => {
+    const curr = (form.getValues("interestedSkills") || []) as string[];
+    form.setValue(
+      "interestedSkills",
+      curr.filter((x) => x !== s),
+      { shouldValidate: true },
+    );
+  };
+
+  // Languages helpers (behave like Top Skills)
+  const addLanguage = () => {
+    const value = languageInput.trim();
+    if (!value) return;
+    const current = form.getValues("languagesKnown");
+    if (current.includes(value)) {
+      setLanguageInput("");
+      return;
+    }
+    if (current.length >= 20) {
+      toast.error("Max 20 languages");
+      return;
+    }
+    form.setValue("languagesKnown", [...current, value], { shouldValidate: true });
+    setLanguageInput("");
+  };
+
+  const removeLanguage = (s: string) => {
+    form.setValue(
+      "languagesKnown",
+      form.getValues("languagesKnown").filter((x) => x !== s),
       { shouldValidate: true },
     );
   };
@@ -248,6 +338,8 @@ export default function Register() {
           fullName,
           email: values.email,
           phone: values.phone,
+          currentLocation: values.currentLocation,
+          city: values.city,
           country: values.country,
           visaStatus: values.visaStatus,
           euWorkEligible: values.euWorkEligible,
@@ -260,6 +352,7 @@ export default function Register() {
           languagesKnown: values.languagesKnown,
           careerPreference: values.careerPreference,
           preferredWorkMode: values.preferredWorkMode,
+          interestedSkills: values.interestedSkills,
           expectedSalary: values.expectedSalary,
           availability: values.availability,
         },
@@ -389,9 +482,9 @@ export default function Register() {
                 <Button
                   size="lg"
                   className="flex-1 gap-2"
-                  onClick={() => setLocation(`/candidate/${createdCandidateId}/evaluation`)}
+                  onClick={() => setLocation(`/recruiter/test-assignment`)}
                 >
-                  <Sparkles className="size-4" /> View My AI Evaluation
+                  <Sparkles className="size-4" /> Start Assessment
                   <ArrowRight className="size-4" />
                 </Button>
                 <Button
@@ -640,73 +733,53 @@ export default function Register() {
                                 Current Location *
                               </FormLabel>
 
-                              <Select
-                                onValueChange={field.onChange}
-                                value={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select current location" />
-                                  </SelectTrigger>
-                                </FormControl>
+                              <FormControl>
+                                <div className="relative">
+                                  <Input
+                                    placeholder="Search current location…"
+                                    value={currentLocationInput}
+                                    onChange={(event) => {
+                                      setCurrentLocationInput(event.target.value);
+                                      if (field.value) {
+                                        const currentName = availableCountries.find((c) => c.code === field.value)?.name;
+                                        if (currentName !== event.target.value) {
+                                          field.onChange("");
+                                        }
+                                      }
+                                    }}
+                                    onFocus={() => setCurrentLocationFocused(true)}
+                                    onBlur={() => setTimeout(() => setCurrentLocationFocused(false), 150)}
+                                    autoComplete="off"
+                                  />
 
-                                <SelectContent
-                                  className="max-h-[320px]"
-                                  position="popper"
-                                >
-                                  {regions?.phase1.length ? (
-                                    <>
-                                      <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                        Phase 1 — Active
-                                      </div>
-
-                                      {regions.phase1.map((c) => (
-                                        <SelectItem
-                                          key={c.code}
-                                          value={c.code}
-                                        >
-                                          <span className="font-mono text-xs text-muted-foreground mr-2">
-                                            {c.flag}
-                                          </span>
-
-                                          {c.name}
-                                        </SelectItem>
-                                      ))}
-
-                                      {regions.phase2.length >
-                                        0 && (
-                                          <div className="px-2 py-1.5 mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-t">
-                                            Phase 2 — Coming Soon
-                                          </div>
-                                        )}
-
-                                      {regions.phase2.map((c) => (
-                                        <SelectItem
-                                          key={c.code}
-                                          value={c.code}
-                                        >
-                                          <span className="font-mono text-xs text-muted-foreground mr-2">
-                                            {c.flag}
-                                          </span>
-
-                                          {c.name}
-                                        </SelectItem>
-                                      ))}
-                                    </>
-                                  ) : (
-                                    allCountries.map(
-                                      (c: any) => (
-                                        <SelectItem
-                                          key={c.code}
-                                          value={c.code}
-                                        >
-                                          {c.name}
-                                        </SelectItem>
-                                      )
-                                    )
+                                  {currentLocationFocused && (
+                                    <div className="absolute left-0 right-0 z-20 max-h-72 overflow-auto rounded-b-md border border-border bg-popover shadow-lg">
+                                      {filteredCurrentLocationCountries.length > 0 ? (
+                                        filteredCurrentLocationCountries.map((c) => (
+                                          <button
+                                            type="button"
+                                            key={c.code}
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                                            onMouseDown={(event) => event.preventDefault()}
+                                            onClick={() => {
+                                              field.onChange(c.code);
+                                              setCurrentLocationInput(c.name);
+                                              setCurrentLocationFocused(false);
+                                            }}
+                                          >
+                                            <span className="font-mono text-xs text-muted-foreground">{c.flag}</span>
+                                            <span>{c.name}</span>
+                                          </button>
+                                        ))
+                                      ) : (
+                                        <div className="px-3 py-3 text-sm text-muted-foreground">
+                                          No countries match your search.
+                                        </div>
+                                      )}
+                                    </div>
                                   )}
-                                </SelectContent>
-                              </Select>
+                                </div>
+                              </FormControl>
 
                               <FormMessage />
                             </FormItem>
@@ -715,50 +788,71 @@ export default function Register() {
                         {/* COUNTRY OF RESIDENCE */}
                         <FormField
                           control={form.control}
+                          name="city"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>City</FormLabel>
+                              <FormControl>
+                                <Input placeholder="City" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
                           name="country"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Country of Residence *</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a country" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent
-                                  className="max-h-[320px]"
-                                  position="popper"
-                                >
-                                  {regions?.phase1.length ? (
-                                    <>
-                                      <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                        Phase 1 — Active
-                                      </div>
-                                      {regions.phase1.map((c) => (
-                                        <SelectItem key={c.code} value={c.code}>
-                                          <span className="font-mono text-xs text-muted-foreground mr-2">{c.flag}</span>
-                                          {c.name}
-                                        </SelectItem>
-                                      ))}
-                                      {regions.phase2.length > 0 && (
-                                        <div className="px-2 py-1.5 mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-t">
-                                          Phase 2 — Coming Soon
+                              <FormControl>
+                                <div className="relative">
+                                  <Input
+                                    placeholder="Search country of residence…"
+                                    value={countryInput}
+                                    onChange={(event) => {
+                                      setCountryInput(event.target.value);
+                                      if (field.value) {
+                                        const currentName = allCountries.find((c) => c.code === field.value)?.name;
+                                        if (currentName !== event.target.value) {
+                                          field.onChange("");
+                                        }
+                                      }
+                                    }}
+                                    onFocus={() => setCountryFocused(true)}
+                                    onBlur={() => setTimeout(() => setCountryFocused(false), 150)}
+                                    autoComplete="off"
+                                  />
+
+                                  {countryFocused && (
+                                    <div className="absolute left-0 right-0 z-20 max-h-72 overflow-auto rounded-b-md border border-border bg-popover shadow-lg">
+                                      {filteredResidenceCountries.length > 0 ? (
+                                        filteredResidenceCountries.map((c) => (
+                                          <button
+                                            type="button"
+                                            key={c.code}
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                                            onMouseDown={(event) => event.preventDefault()}
+                                            onClick={() => {
+                                              field.onChange(c.code);
+                                              setCountryInput(c.name);
+                                              setCountryFocused(false);
+                                            }}
+                                          >
+                                            <span className="font-mono text-xs text-muted-foreground">{c.flag}</span>
+                                            <span>{c.name}</span>
+                                          </button>
+                                        ))
+                                      ) : (
+                                        <div className="px-3 py-3 text-sm text-muted-foreground">
+                                          No countries match your search.
                                         </div>
                                       )}
-                                      {regions.phase2.map((c) => (
-                                        <SelectItem key={c.code} value={c.code}>
-                                          <span className="font-mono text-xs text-muted-foreground mr-2">{c.flag}</span>
-                                          {c.name}
-                                        </SelectItem>
-                                      ))}
-                                    </>
-                                  ) : (
-                                    allCountries.map((c) => (
-                                      <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
-                                    ))
+                                    </div>
                                   )}
-                                </SelectContent>
-                              </Select>
+                                </div>
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -1003,160 +1097,174 @@ export default function Register() {
                           )}
                         />
 
-                        {/* Add Languages Known */}
+                        {/* Interested Skills (same as Top Skills) */}
+                        <FormField
+                          control={form.control}
+                          name="interestedSkills"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Interested Skills</FormLabel>
+                              <div className="space-y-3">
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="e.g. Machine Learning, DevOps"
+                                    value={interestedSkillInput}
+                                    onChange={(e) => setInterestedSkillInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" || e.key === ",") {
+                                        e.preventDefault();
+                                        addInterestedSkill();
+                                      }
+                                    }}
+                                  />
+                                  <Button type="button" variant="outline" onClick={addInterestedSkill}>
+                                    Add
+                                  </Button>
+                                </div>
+                                <div className="flex flex-wrap gap-2 min-h-[2rem]">
+                                  {field.value.length === 0 ? (
+                                    <span className="text-xs text-muted-foreground italic">
+                                      No items added yet.
+                                    </span>
+                                  ) : (
+                                    field.value.map((s) => (
+                                      <Badge key={s} variant="secondary" className="gap-1.5 pl-3 pr-1.5 py-1 text-sm">
+                                        {s}
+                                        <button type="button" onClick={() => removeInterestedSkill(s)} className="rounded-full hover:bg-muted-foreground/20 p-0.5">
+                                          <X className="size-3" />
+                                        </button>
+                                      </Badge>
+                                    ))
+                                  )}
+                                </div>
+                              </div>
+                              <FormDescription>Press Enter or comma to add. Up to 20 items.</FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Languages Known - freeform tag input */}
                         <FormField
                           control={form.control}
                           name="languagesKnown"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>
-                                Languages Known *
-                              </FormLabel>
-
-                              <div className="flex flex-wrap gap-2">
-                                {[
-                                  "English",
-                                  "German",
-                                  "French",
-                                  "Spanish",
-                                  "Italian",
-                                  "Dutch",
-                                  "Polish",
-                                  "Romanian",
-                                ].map((lang) => {
-                                  const selected =
-                                    field.value.includes(lang);
-
-                                  return (
-                                    <Button
-                                      key={lang}
-                                      type="button"
-                                      variant={
-                                        selected
-                                          ? "default"
-                                          : "outline"
+                              <FormLabel>Languages Known *</FormLabel>
+                              <div className="space-y-3">
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="e.g. English, German"
+                                    value={languageInput}
+                                    onChange={(e) => setLanguageInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" || e.key === ",") {
+                                        e.preventDefault();
+                                        addLanguage();
                                       }
-                                      onClick={() => {
-                                        if (selected) {
-                                          field.onChange(
-                                            field.value.filter(
-                                              (
-                                                l: string
-                                              ) =>
-                                                l !== lang
-                                            )
-                                          );
-                                        } else {
-                                          field.onChange([
-                                            ...field.value,
-                                            lang,
-                                          ]);
-                                        }
-                                      }}
-                                    >
-                                      {lang}
-                                    </Button>
-                                  );
-                                })}
+                                    }}
+                                  />
+                                  <Button type="button" variant="outline" onClick={addLanguage}>
+                                    Add
+                                  </Button>
+                                </div>
+                                <div className="flex flex-wrap gap-2 min-h-[2rem]">
+                                  {field.value.length === 0 ? (
+                                    <span className="text-xs text-muted-foreground italic">No languages added yet.</span>
+                                  ) : (
+                                    field.value.map((s: string) => (
+                                      <Badge key={s} variant="secondary" className="gap-1.5 pl-3 pr-1.5 py-1 text-sm">
+                                        {s}
+                                        <button type="button" onClick={() => removeLanguage(s)} className="rounded-full hover:bg-muted-foreground/20 p-0.5">
+                                          <X className="size-3" />
+                                        </button>
+                                      </Badge>
+                                    ))
+                                  )}
+                                </div>
                               </div>
-
                               <FormMessage />
                             </FormItem>
                           )}
                         />
 
-                        {/* Career Preference */}
+                        {/* Career Preference (multi-select dropdown) */}
                         <FormField
                           control={form.control}
                           name="careerPreference"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>
-                                Career & Employment Preference *
-                              </FormLabel>
-
-                              <Select
-                                onValueChange={field.onChange}
-                                value={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select preference" />
-                                  </SelectTrigger>
-                                </FormControl>
-
-                                <SelectContent>
-                                  <SelectItem value="Freelance">
-                                    Freelance
-                                  </SelectItem>
-
-                                  <SelectItem value="Permanent">
-                                    Permanent
-                                  </SelectItem>
-
-                                  <SelectItem value="Contract">
-                                    Contract
-                                  </SelectItem>
-
-                                  <SelectItem value="Fixed Term">
-                                    Fixed Term
-                                  </SelectItem>
-
-                                  <SelectItem value="Contract-to-Hire">
-                                    Contract-to-Hire
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-
+                              <FormLabel>Career & Employment Preference *</FormLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button variant={field.value.length ? "default" : "outline"}>
+                                    {field.value.length > 0 ? field.value.join(", ") : "Select preferences"}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent>
+                                  {[
+                                    "Freelance",
+                                    "Permanent",
+                                    "Contract",
+                                    "Fixed Term",
+                                    "Contract-to-Hire",
+                                  ].map((opt) => (
+                                    <div key={opt} className="flex items-center gap-3 py-2">
+                                      <Checkbox
+                                        checked={field.value.includes(opt)}
+                                        onCheckedChange={(v) => {
+                                          if (v) field.onChange([...field.value, opt]);
+                                          else field.onChange(field.value.filter((v2: string) => v2 !== opt));
+                                        }}
+                                      />
+                                      <div>{opt}</div>
+                                    </div>
+                                  ))}
+                                </PopoverContent>
+                              </Popover>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
 
-                        {/* Preferred Work Mode */}
-
+                        {/* Preferred Work Mode (multi-select dropdown) */}
                         <FormField
                           control={form.control}
                           name="preferredWorkMode"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>
-                                Preferred Work Mode *
-                              </FormLabel>
-
-                              <Select
-                                onValueChange={field.onChange}
-                                value={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select work mode" />
-                                  </SelectTrigger>
-                                </FormControl>
-
-                                <SelectContent>
-                                  <SelectItem value="Remote">
-                                    Remote
-                                  </SelectItem>
-
-                                  <SelectItem value="Hybrid">
-                                    Hybrid
-                                  </SelectItem>
-
-                                  <SelectItem value="Onsite">
-                                    Onsite
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-
+                              <FormLabel>Preferred Work Mode *</FormLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button variant={field.value.length ? "default" : "outline"}>
+                                    {field.value.length > 0 ? field.value.join(", ") : "Select work modes"}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent>
+                                  {[
+                                    "Remote",
+                                    "Hybrid",
+                                    "Onsite",
+                                  ].map((opt) => (
+                                    <div key={opt} className="flex items-center gap-3 py-2">
+                                      <Checkbox
+                                        checked={field.value.includes(opt)}
+                                        onCheckedChange={(v) => {
+                                          if (v) field.onChange([...field.value, opt]);
+                                          else field.onChange(field.value.filter((v2: string) => v2 !== opt));
+                                        }}
+                                      />
+                                      <div>{opt}</div>
+                                    </div>
+                                  ))}
+                                </PopoverContent>
+                              </Popover>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
 
-
                         {/* Expected Salary */}
-
                         <FormField
                           control={form.control}
                           name="expectedSalary"
@@ -1165,14 +1273,9 @@ export default function Register() {
                               <FormLabel>
                                 Expected Salary / Rate Range *
                               </FormLabel>
-
                               <FormControl>
-                                <Input
-                                  placeholder="€40,000 - €50,000"
-                                  {...field}
-                                />
+                                <Input {...field} />
                               </FormControl>
-
                               <FormMessage />
                             </FormItem>
                           )}
@@ -1368,8 +1471,8 @@ export default function Register() {
                                     I consent to ORN-AI processing my profile and CV
                                   </FormLabel>
                                   <FormDescription className="text-xs">
-                                    Required under GDPR. You can revoke consent and request deletion at any time.
-                                  </FormDescription>
+                                    <a href="#">Required under GDPR. You can revoke consent and request deletion at any time.
+                                  </a></FormDescription>
                                   <FormMessage />
                                 </div>
                               </FormItem>

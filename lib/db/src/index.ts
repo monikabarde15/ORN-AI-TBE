@@ -33,8 +33,25 @@ function resolveSslConfig(): pg.PoolConfig["ssl"] {
   return { rejectUnauthorized: false };
 }
 
+const rawDatabaseUrl = process.env.DATABASE_URL;
+const normalizedDatabaseUrl = rawDatabaseUrl
+  ? rawDatabaseUrl
+      .replace(/([?&])sslmode=[^&]*/gi, "")
+      .replace(/[?&]$/, "")
+  : undefined;
+
+if (!normalizedDatabaseUrl) {
+  throw new Error("DATABASE_URL is invalid");
+}
+
+const parsedDatabaseUrl = new URL(normalizedDatabaseUrl);
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  host: parsedDatabaseUrl.hostname,
+  port: parsedDatabaseUrl.port ? Number(parsedDatabaseUrl.port) : undefined,
+  user: decodeURIComponent(parsedDatabaseUrl.username),
+  password: decodeURIComponent(parsedDatabaseUrl.password),
+  database: parsedDatabaseUrl.pathname?.slice(1),
   ssl: resolveSslConfig(),
 });
 export const db = drizzle(pool, { schema });
