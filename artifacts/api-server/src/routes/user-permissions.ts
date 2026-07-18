@@ -4,7 +4,10 @@ import {
   db,
   usersTable,
   userPermissionsTable,
+  candidatesTable,
 } from "@workspace/db";
+import { hashPassword } from "../lib/auth";
+import { requireAuth } from "../lib/auth";
 const router: IRouter = Router();
 
 router.get("/users", async (_req, res) => {
@@ -36,10 +39,12 @@ router.get("/users", async (_req, res) => {
         city: usersTable.city,
 
         candidateId: usersTable.candidateId,
+        candidateCode: candidatesTable.candidateCode,
 
         createdAt: usersTable.createdAt,
       })
-      .from(usersTable);
+      .from(usersTable)
+      .leftJoin(candidatesTable, eq(usersTable.candidateId, candidatesTable.id));
 
     return res.status(200).json({
       success: true,
@@ -155,7 +160,21 @@ router.post(
     }
   }
 );
-router.put("/users/:id", async (req, res) => {
+router.get("/users/:id", async (req, res) => {
+  try {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.params.id));
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    const candidate = user.candidateId
+      ? (await db.select().from(candidatesTable).where(eq(candidatesTable.id, user.candidateId)))[0]
+      : (await db.select().from(candidatesTable).where(eq(candidatesTable.email, user.email)))[0];
+    return res.json({ success: true, user: { ...user, candidate } });
+  } catch (error) {
+    console.error("Get User Error:", error);
+    return res.status(500).json({ success: false, message: "Failed to fetch user" });
+  }
+});
+
+router.put("/users/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -175,12 +194,24 @@ router.put("/users/:id", async (req, res) => {
       country,
       state,
       city,
+      candidateProfile,
+      password,
     } = req.body;
 
     const fullName = `${firstName ?? ""} ${middleName ?? ""} ${lastName ?? ""}`
       .replace(/\s+/g, " ")
       .trim();
 
+    const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.id, id));
+    if (!existingUser) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+    const isPrivileged = req.user?.role === "admin" || String(req.user?.role) === "super_admin";
+    if (role && role !== existingUser.role && !isPrivileged) {
+      return res.status(403).json({ success: false, error: "Only an admin can change user roles" });
+    }
+    const safeRole = req.user?.id === id && !isPrivileged ? existingUser.role : role;
+    const passwordHash = password ? await hashPassword(password) : undefined;
     const [updatedUser] = await db
       .update(usersTable)
       .set({
@@ -190,12 +221,12 @@ router.put("/users/:id", async (req, res) => {
         fullName,
 
         email,
-        mobile,
+        mobile: mobile ?? candidateProfile?.phone,
 
         username,
         employeeId,
 
-        role,
+        role: safeRole,
         status,
 
         company,
@@ -205,9 +236,44 @@ router.put("/users/:id", async (req, res) => {
         country,
         state,
         city,
+        ...(passwordHash ? { passwordHash } : {}),
       })
       .where(eq(usersTable.id, id))
       .returning();
+
+    // Keep the linked candidate profile in sync when a candidate is edited
+    // from the user-management modal.
+    if (candidateProfile) {
+      const candidate = updatedUser.candidateId
+        ? (await db.select().from(candidatesTable).where(eq(candidatesTable.id, updatedUser.candidateId)))[0]
+        : (await db.select().from(candidatesTable).where(eq(candidatesTable.email, updatedUser.email)))[0];
+
+      if (candidate) {
+        await db.update(candidatesTable).set({
+          fullName: candidateProfile.fullName || fullName || candidate.fullName,
+          email: candidateProfile.email || email || candidate.email,
+          phone: candidateProfile.phone ?? mobile ?? candidate.phone,
+          country: candidateProfile.country ?? country ?? candidate.country,
+          city: candidateProfile.city ?? city ?? candidate.city,
+          currentLocation: candidateProfile.currentLocation ?? candidate.currentLocation,
+          currentRole: candidateProfile.currentRole ?? candidate.currentRole,
+          preferredRole: candidateProfile.preferredRole ?? candidate.preferredRole,
+          targetRole: candidateProfile.targetRole ?? candidate.targetRole,
+          yearsExperience: candidateProfile.yearsExperience ?? candidate.yearsExperience,
+          visaStatus: candidateProfile.visaStatus ?? candidate.visaStatus,
+          englishLevel: candidateProfile.englishLevel ?? candidate.englishLevel,
+          euWorkEligible: candidateProfile.euWorkEligible ?? candidate.euWorkEligible,
+          linkedinUrl: candidateProfile.linkedinUrl ?? candidate.linkedinUrl,
+          skills: candidateProfile.skills ?? candidate.skills,
+          interestedSkills: candidateProfile.interestedSkills ?? candidate.interestedSkills,
+          languagesKnown: candidateProfile.languagesKnown ?? candidate.languagesKnown,
+          careerPreference: candidateProfile.careerPreference ?? candidate.careerPreference,
+          preferredWorkMode: candidateProfile.preferredWorkMode ?? candidate.preferredWorkMode,
+          expectedSalary: candidateProfile.expectedSalary ?? candidate.expectedSalary,
+          availability: candidateProfile.availability ?? candidate.availability,
+        }).where(eq(candidatesTable.id, candidate.id));
+      }
+    }
 
     return res.json({
       success: true,

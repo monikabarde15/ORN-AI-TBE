@@ -11,7 +11,7 @@ import {
 import { Shell } from "@/components/layout/Shell";
 
 const Support: React.FC = () => {
-  const fadeUp = {
+  const fadeUp: any = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
@@ -20,7 +20,7 @@ const Support: React.FC = () => {
     },
   };
 
-  const staggerContainer = {
+  const staggerContainer: any = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,

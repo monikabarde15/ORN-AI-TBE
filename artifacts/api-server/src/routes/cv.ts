@@ -41,6 +41,25 @@ async function loadCandidateRow(id: string) {
   return row ?? null;
 }
 
+// Download the original CV uploaded for a candidate.
+router.get(
+  "/candidates/:id/cv-file",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    const candidate = await loadCandidateRow(req.params.id as string);
+    if (!candidate?.cvFileBytes) {
+      res.status(404).json({ error: "CV not found" });
+      return;
+    }
+    res.setHeader("Content-Type", candidate.cvMimeType || "application/octet-stream");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${(candidate.cvFileName || "candidate-cv").replace(/[\"\\\r\n]/g, "_")}"`,
+    );
+    res.send(candidate.cvFileBytes);
+  },
+);
+
 async function ensureCanMutateCandidate(
   req: Request,
   candidateId: string,

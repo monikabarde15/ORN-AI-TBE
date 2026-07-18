@@ -413,7 +413,7 @@ const TechnologyPrograms = () => {
   const [, navigate] = useLocation(); 
   const [labs] = useState(cyberLabs);
 
-  const handlePlanClick = (lab) => {
+  const handlePlanClick = (lab: any) => {
     toast.success("Added to cart", { autoClose: 2000 });
   };
 

@@ -21,7 +21,7 @@ const ContactUs = () => {
   const [countryCode, setCountryCode] = useState("+91");
 
   // ⭐ Updated Final Working Submit Function
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 

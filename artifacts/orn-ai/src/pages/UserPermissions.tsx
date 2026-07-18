@@ -42,7 +42,7 @@ interface User {
   role: string;
 }
 
-export default function UserPermissions() {
+export default function UserPermissions({ showCandidates = false }: { showCandidates?: boolean }) {
   const [selectedUser, setSelectedUser] =
     useState<User | null>(null);
 
@@ -62,6 +62,9 @@ export default function UserPermissions() {
       console.error(error);
     }
   };
+  const adminCount = users.filter((item) => item.role === "admin").length;
+  const recruiterCount = users.filter((item) => item.role === "recruiter").length;
+  const candidateCount = users.filter((item) => item.role === "candidate").length;
   return (
     <Shell>
       <Toaster position="top-right" />
@@ -69,7 +72,11 @@ export default function UserPermissions() {
       <div className="p-6">
 
         <PermissionHeader
-          totalUsers={users.length}
+          totalUsers={showCandidates ? candidateCount : users.length}
+          showCandidates={showCandidates}
+          adminCount={adminCount}
+          recruiterCount={recruiterCount}
+          candidateCount={candidateCount}
         />
 
         {/* <div className="grid grid-cols-12 gap-6">
@@ -94,6 +101,7 @@ export default function UserPermissions() {
         <div className="space-y-6">
 
           <UserListPanel
+            showCandidates={showCandidates}
             selectedUser={selectedUser}
             onSelectUser={(user) => {
               setSelectedUser(user);

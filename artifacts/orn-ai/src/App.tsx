@@ -66,10 +66,9 @@ import { Loader2 } from "lucide-react";
 
 import LearningPathManage from "./pages/LearningPathManage";
 import LearningPathStudentViewManage from "./pages/LearningPathStudentViewManage";
-import LearningPathCourses from "./pages/LearningPathCourses";
-import LearningPathSessions from "./pages/LearningPathSessions";
 import { MCQAdminPanel } from "./pages/MCQAdminPanel";
 import CandidateMaskedCV from "@/pages/CandidateMaskedCV";
+import Profile from "@/pages/Profile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -107,6 +106,11 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
+      <Route path="/profile">
+        <ProtectedRoute roles={["candidate", "recruiter", "admin"]}>
+          <Profile />
+        </ProtectedRoute>
+      </Route>
       <Route path="/register" component={Register} />
       <Route path="/candidate/:id/upload" component={CandidateUpload} />
       <Route path="/candidate/:id/evaluation" component={CandidateEvaluation} />
@@ -134,7 +138,7 @@ function Router() {
       <Route path="/lab/:id" component={LabDetail} />
       <Route path="/courses" component={MyFeed} />
 
-      <Route path="/recruiter/test-assignment" component={MCQExamPortal}/>
+      <Route path="/recruiter/test-assignment"><MCQExamPortal /></Route>
       <Route path="/admin-test-assignment" component={MCQAdminPanel}/>
 
 
@@ -168,7 +172,12 @@ function Router() {
       
       <Route path="/admin/permissons">
         <ProtectedRoute roles={["admin"]}>
-          <UserPermissions  />
+          <UserPermissions />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/candidates">
+        <ProtectedRoute roles={["admin"]}>
+          <UserPermissions showCandidates />
         </ProtectedRoute>
       </Route>
       <Route path="/recruiter/learning-student-path-list">

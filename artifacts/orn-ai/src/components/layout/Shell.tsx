@@ -183,6 +183,7 @@ export function Shell({
   const isDashboard =
     location.startsWith("/recruiter") ||
     location.startsWith("/admin") ||
+    location.startsWith("/profile") ||
     location.startsWith("/candidate") ||
     candidateRoutes.some((route) =>
       location.startsWith(route)

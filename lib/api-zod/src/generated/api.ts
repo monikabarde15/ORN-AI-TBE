@@ -1084,7 +1084,16 @@ export const RegisterCandidateBody = zod.object({
 //  preferredWorkMode:zod.string(),
 
   // NEW
-  preferredRole: zod.string(),
+ preferredRole: zod.string(),
+
+  city: zod.string().optional(),
+
+  careerPreference: zod.array(zod.string()).optional(),
+  preferredWorkMode: zod.array(zod.string()).optional(),
+  interestedSkills: zod.array(zod.string()).optional(),
+  languagesKnown: zod.array(zod.string()).optional(),
+  expectedSalary: zod.string().optional(),
+  availability: zod.string().optional(),
 
   country: zod.string(),
 

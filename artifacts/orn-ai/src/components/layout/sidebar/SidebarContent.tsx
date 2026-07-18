@@ -152,9 +152,17 @@ export default function SidebarContent({
                 My Evaluation
               </Link>
             )}
+            <Link href="/profile" onClick={onNavigate} className={linkClass(location === "/profile")}>
+              <UserIcon className="size-4" />
+              My Profile
+            </Link>
           </>
         ) : (
           <>
+            <Link href="/profile" onClick={onNavigate} className={linkClass(location === "/profile")}>
+              <UserIcon className="size-4" />
+              My Profile
+            </Link>
             <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Recruitment
             </div>
@@ -354,6 +362,24 @@ export default function SidebarContent({
                 </>
               )}
 
+            {/* Candidate Management */}
+            {hasPermission("Permissions") && (
+              <>
+                <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Candidate Management
+                </div>
+
+                <Link
+                  href="/admin/candidates"
+                  onClick={onNavigate}
+                  className={linkClass(location === "/admin/candidates")}
+                >
+                  <UserIcon className="size-4" />
+                  Candidates
+                </Link>
+              </>
+            )}
+
             {/* Role & Permissions */}
             {hasPermission("Permissions") && (
               <>
@@ -361,22 +387,17 @@ export default function SidebarContent({
                   Role & Permissions
                 </div>
 
-                {hasPermission("Permissions") && (
-                  <Link
-                    href="/admin/permissons"
-                    onClick={onNavigate}
-                    className={linkClass(
-                      location === "/admin/permissons"
-                    )}
-                  >
-                    <GraduationCap className="size-4" />
-                    Permissons
-                  </Link>
-                )}
+                <Link
+                  href="/admin/permissons"
+                  onClick={onNavigate}
+                  className={linkClass(location === "/admin/permissons")}
+                >
+                  <GraduationCap className="size-4" />
+                  Permissons
+                </Link>
 
                 <button
                   onClick={() => setShowAddUserModal(true)}
-                  // className={linkClass(location === "/admin/users")}
                   className={linkClass(false)}
                 >
                   <UserPlus className="size-4" />

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 interface Props {
   totalUsers: number;
+  showCandidates?: boolean;
 
   adminCount?: number;
   recruiterCount?: number;
@@ -15,6 +16,7 @@ interface Props {
 
 export default function PermissionHeader({
   totalUsers,
+  showCandidates = false,
   adminCount = 0,
   recruiterCount = 0,
   candidateCount = 0,
@@ -61,12 +63,13 @@ export default function PermissionHeader({
 
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                User Permission Management
+                {showCandidates ? "Candidate Management" : "User Permission Management"}
               </h1>
 
               <p className="text-gray-500 mt-1">
-                Manage user roles and access permissions
-                across the platform
+                {showCandidates
+                  ? "Manage candidate accounts across the platform"
+                  : "Manage user roles and access permissions across the platform"}
               </p>
             </div>
 

@@ -33,16 +33,19 @@ interface User {
   city?: string;
 
   status?: string;
+  candidateCode?: string;
 }
 
 interface Props {
   selectedUser: User | null;
   onSelectUser: (user: User) => void;
+  showCandidates?: boolean;
 }
 
 export default function UserListPanel({
   selectedUser,
   onSelectUser,
+  showCandidates = false,
 }: Props) {
   const [showEditModal, setShowEditModal] = useState(false);
 const [editUser, setEditUser] = useState<User | null>(null);
@@ -89,9 +92,17 @@ const [editUser, setEditUser] = useState<User | null>(null);
       setLoading(false);
     }
   };
-const handleEdit = (user: User) => {
-  setEditUser(user);
-  setShowEditModal(true);
+const handleEdit = async (user: User) => {
+  try {
+    const { data } = await api.get(`/api/users/${user.id}`);
+    setEditUser(data.user || user);
+  } catch (err) {
+    console.error("Failed to load user details", err);
+    setEditUser(user);
+    toast.error("Could not load latest user details");
+  } finally {
+    setShowEditModal(true);
+  }
 };
 
 const handleDelete = async (id: string) => {
@@ -108,14 +119,18 @@ const handleDelete = async (id: string) => {
     console.error(err);
   }
 };
-  const filteredUsers = users.filter(
+  const roleFilteredUsers = users.filter((user) =>
+    showCandidates ? user.role === "candidate" : user.role !== "candidate"
+  );
+
+  const filteredUsers = roleFilteredUsers.filter(
     (user) =>
-      user.fullName
+      (user.fullName || "")
         .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      user.email
+        .includes(search.trim().toLowerCase()) ||
+      (user.email || "")
         .toLowerCase()
-        .includes(search.toLowerCase())
+        .includes(search.trim().toLowerCase())
   );
 
   const totalPages = Math.ceil(
@@ -163,7 +178,7 @@ const handleDelete = async (id: string) => {
             onChange={(e) =>
               setSearch(e.target.value)
             }
-            placeholder="Search users..."
+            placeholder="Search by name or email..."
             className="w-full pl-10 pr-4 py-2 border rounded-xl"
           />
         </div>
@@ -193,7 +208,7 @@ const handleDelete = async (id: string) => {
 
           {/* Actions */}
 
-          <div className="flex items-center gap-3">
+          {!showCandidates && <div className="flex items-center gap-3">
 
             <button
               className="
@@ -221,7 +236,7 @@ const handleDelete = async (id: string) => {
               Clear All
             </button>
 
-          </div>
+          </div>}
 
         </div>
 
@@ -237,7 +252,7 @@ const handleDelete = async (id: string) => {
             <tr>
 
               <th className="px-6 py-4 text-left text-sm font-semibold">
-                Employee ID
+                {showCandidates ? "Candidate Code" : "Employee ID"}
               </th>
 
               <th className="px-6 py-4 text-left text-sm font-semibold">
@@ -262,7 +277,7 @@ const handleDelete = async (id: string) => {
 
           <tbody>
 
-            {paginatedUsers.map((user, index) => (
+            {paginatedUsers.map((user) => (
 
               <tr
                 key={user.id}
@@ -282,7 +297,7 @@ const handleDelete = async (id: string) => {
                 <td className="px-6 py-5">
 
                  
-                  {user.employeeId}
+                  {showCandidates ? user.candidateCode || "—" : user.employeeId || "—"}
 
                 </td>
 
@@ -329,18 +344,19 @@ const handleDelete = async (id: string) => {
                 <td className="px-6 py-5">
   <div className="flex items-center justify-center gap-2">
 
-    {/* Access Control */}
-    <button
-      onClick={() => onSelectUser(user)}
-      title="Access Control"
-      className={`flex h-10 w-10 items-center justify-center rounded-lg transition-all ${
-        selectedUser?.id === user.id
-          ? "bg-indigo-600 text-white"
-          : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
-      }`}
-    >
-      <ShieldCheck size={18} />
-    </button>
+    {!showCandidates && (
+      <button
+        onClick={() => onSelectUser(user)}
+        title="Access Control"
+        className={`flex h-10 w-10 items-center justify-center rounded-lg transition-all ${
+          selectedUser?.id === user.id
+            ? "bg-indigo-600 text-white"
+            : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
+        }`}
+      >
+        <ShieldCheck size={18} />
+      </button>
+    )}
 
     {/* Edit */}
     <button

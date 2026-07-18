@@ -12,7 +12,12 @@ export interface CandidateRegistration {
   /** @minLength 2 */
   fullName: string;
   email: string;
+  password: string;
   phone: string;
+  currentLocation: string;
+  city?: string;
+  currentRole: string;
+  preferredRole: string;
   country: string;
   targetRole: string;
   /**
@@ -25,4 +30,10 @@ export interface CandidateRegistration {
   euWorkEligible: boolean;
   linkedinUrl: string;
   skills?: string[];
+  interestedSkills?: string[];
+  languagesKnown?: string[];
+  careerPreference?: string[];
+  preferredWorkMode?: string[];
+  expectedSalary?: string;
+  availability?: string;
 }
