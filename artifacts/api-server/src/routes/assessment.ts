@@ -1406,6 +1406,9 @@ router.get("/student/assessments", async (_req, res) => {
           totalQuestions: questions.filter(
             (q) => q.status === "Published"
           ).length,
+          totalTimeLimitSeconds: questions
+            .filter((q) => q.status === "Published")
+            .reduce((total, question) => total + question.timeLimitSeconds, 0),
         };
       })
     );

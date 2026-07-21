@@ -42,7 +42,8 @@ const [config, setConfig] = useState({
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [markedForReview, setMarkedForReview] = useState<Set<number>>(new Set());
   const [visitedQuestions, setVisitedQuestions] = useState<Set<number>>(new Set([0]));
-  const [timeLeft, setTimeLeft] = useState<number>(config.durationMinutes * 60);
+  const [timeLeftByQuestion, setTimeLeftByQuestion] = useState<Record<string, number>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 interface StudentAssessment {
   id: string;
   assessmentName: string;
@@ -50,15 +51,11 @@ interface StudentAssessment {
   durationMinutes: number;
   passingPercentage: number;
   totalQuestions: number;
+  totalTimeLimitSeconds: number;
   difficulty: string;
 }
 
 const [assessments, setAssessments] = useState<StudentAssessment[]>([]);
-  useEffect(() => {
-    if (config.durationMinutes > 0) {
-        setTimeLeft(config.durationMinutes * 60);
-    }
-}, [config.durationMinutes]);
   // --- UI Filter & Save States ---
   const [paletteFilter, setPaletteFilter] = useState<'All' | 'Answered' | 'Not Answered' | 'Marked' | 'Not Visited'>('All');
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
@@ -112,9 +109,19 @@ const handleStartAssessment = async (assessment: StudentAssessment) => {
 
     setAssessmentId(data.id);
 
-    const publishedQuestions = (data.questions || []).filter(
-      (q: any) => q.status === "Published"
-    );
+    const publishedQuestions: Question[] = (data.questions || [])
+      .filter((q: any) => q.status === "Published")
+      .map((q: any) => ({
+        id: q.id,
+        text: q.question,
+        options: q.options || [],
+        correctOptionIndex: q.correctAnswer,
+        explanation: q.explanation || "",
+        difficulty: q.difficulty || "Easy",
+        marks: q.marks || 1,
+        timeLimitSeconds: Number(q.timeLimitSeconds) > 0 ? Number(q.timeLimitSeconds) : 60,
+        status: q.status,
+      }));
 
     setConfig({
       title: data.assessmentName,
@@ -122,8 +129,11 @@ const handleStartAssessment = async (assessment: StudentAssessment) => {
     });
 
     setQuestions(publishedQuestions);
-
-    setTimeLeft(data.durationMinutes * 60);
+    setTimeLeftByQuestion(
+      Object.fromEntries(
+        publishedQuestions.map((question) => [question.id, question.timeLimitSeconds])
+      )
+    );
 
     // Reset exam state
     setCurrentIndex(0);
@@ -131,6 +141,7 @@ const handleStartAssessment = async (assessment: StudentAssessment) => {
     setMarkedForReview(new Set());
     setVisitedQuestions(new Set([0]));
     setResult(null); // Previous result clear
+    setIsSubmitting(false);
 
     setStep("skeleton");
 
@@ -154,18 +165,32 @@ const handleStartAssessment = async (assessment: StudentAssessment) => {
     return () => clearTimeout(timer);
   }, [selectedAnswers, markedForReview, step]);
 
-  // --- Real-time Countdown Timer ---
+  const currentQuestion = questions[currentIndex];
+  const timeLeft = currentQuestion
+    ? (timeLeftByQuestion[currentQuestion.id] ?? currentQuestion.timeLimitSeconds)
+    : 0;
+
+  // --- Per-question countdown timer ---
   useEffect(() => {
-    if (step !== 'testing') return;
+    if (step !== 'testing' || !currentQuestion || isSubmitting) return;
+
     if (timeLeft <= 0) {
-      handleFinalSubmit();
+      if (currentIndex < questions.length - 1) {
+        handleQuestionSelect(currentIndex + 1);
+      } else {
+        handleFinalSubmit();
+      }
       return;
     }
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+
+    const timer = setTimeout(() => {
+      setTimeLeftByQuestion((previous) => ({
+        ...previous,
+        [currentQuestion.id]: Math.max(0, (previous[currentQuestion.id] ?? currentQuestion.timeLimitSeconds) - 1),
+      }));
     }, 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft, step]);
+    return () => clearTimeout(timer);
+  }, [currentIndex, currentQuestion, isSubmitting, questions.length, step, timeLeft]);
 
   // Timer Color State Class Calculation
   const timerStyle = useMemo(() => {
@@ -235,8 +260,19 @@ const handleStartAssessment = async (assessment: StudentAssessment) => {
   };
 
   const handleFinalSubmit = async () => {
+  if (isSubmitting) return;
   try {
+    setIsSubmitting(true);
     setIsSubmitModalOpen(false);
+
+    const totalAllocatedSeconds = questions.reduce(
+      (total, question) => total + question.timeLimitSeconds,
+      0,
+    );
+    const remainingSeconds = questions.reduce(
+      (total, question) => total + (timeLeftByQuestion[question.id] ?? question.timeLimitSeconds),
+      0,
+    );
 
     const payload = {
       assessmentId,
@@ -244,8 +280,7 @@ const handleStartAssessment = async (assessment: StudentAssessment) => {
         questionId: q.id,
         selectedOption: selectedAnswers[index] ?? null,
       })),
-      timeTakenSeconds:
-        config.durationMinutes * 60 - timeLeft,
+      timeTakenSeconds: totalAllocatedSeconds - remainingSeconds,
     };
 
     const res = await api.post(
@@ -259,6 +294,8 @@ const handleStartAssessment = async (assessment: StudentAssessment) => {
   } catch (err) {
     console.error(err);
     alert("Submit failed");
+  } finally {
+    setIsSubmitting(false);
   }
 };
 
@@ -316,7 +353,6 @@ const handleStartAssessment = async (assessment: StudentAssessment) => {
     });
   }, [questions, selectedAnswers, markedForReview, visitedQuestions, paletteFilter]);
 
-  const currentQuestion = questions[currentIndex];
 if (loading) {
     return (
         <div className="min-h-screen flex items-center justify-center">
@@ -384,11 +420,11 @@ if (loading) {
 
             <div className="bg-slate-50 p-4 rounded-xl border text-center">
               <span className="text-xs text-slate-500 block">
-                Duration
+                Question timers
               </span>
 
               <span className="text-xl font-bold text-slate-800">
-                {assessment.durationMinutes} Minutes
+                {formatTime(assessment.totalTimeLimitSeconds)}
               </span>
             </div>
 
@@ -649,6 +685,7 @@ if (loading) {
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
+            <span className="text-[10px] font-bold uppercase tracking-wide">Question timer</span>
             <span className="font-mono text-sm tracking-wider">{formatTime(timeLeft)}</span>
           </div>
 
