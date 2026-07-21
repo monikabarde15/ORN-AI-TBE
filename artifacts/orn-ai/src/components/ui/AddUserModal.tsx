@@ -92,6 +92,24 @@ const Select = ({
     </div>
 );
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_PATTERN = /^\+?[1-9]\d{6,14}$/;
+const STRONG_PASSWORD_MESSAGE = "Use 8+ characters with uppercase, lowercase, number, and special character";
+
+const normalizePhone = (value: string) => value.trim().replace(/[\s().-]/g, "");
+
+const isValidPhone = (value: string) => {
+  const normalized = normalizePhone(value);
+  return PHONE_PATTERN.test(normalized) && !/^(\+?)(\d)\2+$/.test(normalized);
+};
+
+const isStrongPassword = (value: string) =>
+  value.length >= 8 &&
+  /[A-Z]/.test(value) &&
+  /[a-z]/.test(value) &&
+  /\d/.test(value) &&
+  /[^A-Za-z0-9]/.test(value);
+
 
 
 export default function AddUserModal({
@@ -247,7 +265,7 @@ export default function AddUserModal({
 
     const generatePassword = () => {
         const password =
-            Math.random().toString(36).slice(-10) + "A1!";
+            "Aa1!" + Math.random().toString(36).slice(-10);
 
         setGeneratedPassword(password);
 
@@ -273,6 +291,16 @@ const handleSubmit = async () => {
         return;
         }
 
+        if (!EMAIL_PATTERN.test(formData.email.trim()) || formData.email.trim().length > 254) {
+          toast.error("Please enter a valid email address");
+          return;
+        }
+
+        if (!isValidPhone(formData.mobile)) {
+          toast.error("Please enter a valid mobile number with 7 to 15 digits");
+          return;
+        }
+
         if (
         mode === "create" &&
         !formData.password
@@ -280,6 +308,10 @@ const handleSubmit = async () => {
         toast.error("Password is required");
         return;
         }
+    if (formData.password && !isStrongPassword(formData.password)) {
+      toast.error(STRONG_PASSWORD_MESSAGE);
+      return;
+    }
     if (formData.password && formData.password !== formData.confirmPassword) {
   toast.error("Passwords do not match");
   return;
@@ -296,7 +328,7 @@ const handleSubmit = async () => {
     };
 
     const payload: any = {
-        email: formData.email,
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
         fullName: `${formData.firstName} ${formData.middleName} ${formData.lastName}`.replace(/\s+/g, " ").trim(),
 
@@ -304,7 +336,7 @@ const handleSubmit = async () => {
         middleName: formData.middleName,
         lastName: formData.lastName,
 
-        mobile: formData.mobile,
+        mobile: normalizePhone(formData.mobile),
         username: formData.username,
         employeeId: formData.employeeId,
 
@@ -332,7 +364,7 @@ const handleSubmit = async () => {
       payload.candidateProfile = {
         fullName: payload.fullName,
         email: formData.email,
-        phone: formData.mobile,
+        phone: normalizePhone(formData.mobile),
         country: formData.country,
 
         currentLocation: formData.currentLocation,
@@ -547,6 +579,7 @@ if (mode === "edit") {
                                     label="Email Address"
                                     required
                                     type="email"
+                                    autoComplete="email"
                                     name="email"
                                     value={formData.email}
                                     onChange={handleChange}
@@ -556,6 +589,9 @@ if (mode === "edit") {
                                     label="Mobile Number"
                                     required
                                     name="mobile"
+                                    type="tel"
+                                    inputMode="tel"
+                                    autoComplete="tel"
                                     value={formData.mobile}
                                     onChange={handleChange}
                                 />
@@ -882,7 +918,7 @@ if (mode === "edit") {
                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                               <Input label="Full Name" required name="candidateFullName" value={formData.candidateFullName} onChange={handleChange} />
                               <Input label="Email" required type="email" name="email" value={formData.email} onChange={handleChange} />
-                              <Input label="Phone" required name="mobile" value={formData.mobile} onChange={handleChange} />
+                              <Input label="Phone" required name="mobile" type="tel" inputMode="tel" autoComplete="tel" value={formData.mobile} onChange={handleChange} />
                               <Input label="LinkedIn URL" name="linkedinUrl" value={formData.linkedinUrl} onChange={handleChange} />
                               <Input label="Password (leave blank to keep current)" type="password" name="password" value={formData.password} onChange={handleChange} />
                               <Input label="Confirm Password" type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} />

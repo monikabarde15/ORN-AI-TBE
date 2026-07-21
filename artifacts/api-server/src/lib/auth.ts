@@ -12,6 +12,18 @@ if (!SECRET) {
 
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 export const AUTH_COOKIE = "orn_session";
+export const STRONG_PASSWORD_MESSAGE =
+  "Password must be at least 8 characters and include an uppercase letter, lowercase letter, number, and special character";
+
+export function isStrongPassword(password: string): boolean {
+  return (
+    password.length >= 8 &&
+    /[A-Z]/.test(password) &&
+    /[a-z]/.test(password) &&
+    /\d/.test(password) &&
+    /[^A-Za-z0-9]/.test(password)
+  );
+}
 
 export interface AuthUser {
   id: string;

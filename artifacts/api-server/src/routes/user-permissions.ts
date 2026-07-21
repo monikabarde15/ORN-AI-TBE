@@ -6,7 +6,7 @@ import {
   userPermissionsTable,
   candidatesTable,
 } from "@workspace/db";
-import { hashPassword } from "../lib/auth";
+import { hashPassword, isStrongPassword, STRONG_PASSWORD_MESSAGE } from "../lib/auth";
 import { requireAuth } from "../lib/auth";
 const router: IRouter = Router();
 
@@ -211,6 +211,9 @@ router.put("/users/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ success: false, error: "Only an admin can change user roles" });
     }
     const safeRole = req.user?.id === id && !isPrivileged ? existingUser.role : role;
+    if (password && !isStrongPassword(password)) {
+      return res.status(400).json({ success: false, error: STRONG_PASSWORD_MESSAGE });
+    }
     const passwordHash = password ? await hashPassword(password) : undefined;
     const [updatedUser] = await db
       .update(usersTable)

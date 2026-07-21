@@ -7,7 +7,7 @@ import {
   activityTable,
   usersTable,
 } from "@workspace/db";
-import { hashPassword, findUserByEmail } from "../lib/auth";
+import { hashPassword, findUserByEmail, isStrongPassword, STRONG_PASSWORD_MESSAGE } from "../lib/auth";
 import {
   ListCandidatesQueryParams,
   ListCandidatesResponse,
@@ -112,6 +112,11 @@ router.post(
           success: false,
           error: parsed.error.flatten(),
         });
+        return;
+      }
+
+      if (!isStrongPassword(parsed.data.password)) {
+        res.status(400).json({ error: STRONG_PASSWORD_MESSAGE });
         return;
       }
 

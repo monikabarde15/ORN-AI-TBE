@@ -62,14 +62,29 @@ const VISA_LABELS: Record<(typeof VISA_VALUES)[number], string> = {
   student_visa: "Student Visa",
 };
 
+const PHONE_PATTERN = /^\+?[1-9]\d{6,14}$/;
+const STRONG_PASSWORD_MESSAGE = "Use 8+ characters with uppercase, lowercase, number, and special character";
+
+const isStrongPassword = (value: string) =>
+  value.length >= 8 &&
+  /[A-Z]/.test(value) &&
+  /[a-z]/.test(value) &&
+  /\d/.test(value) &&
+  /[^A-Za-z0-9]/.test(value);
+
+const isValidPhone = (value: string) => {
+  const normalized = value.trim().replace(/[\s().-]/g, "");
+  return PHONE_PATTERN.test(normalized) && !/^(\+?)(\d)\2+$/.test(normalized);
+};
+
 // ----- Schema -----
 const formSchema = z.object({
   // Step 1
   firstName: z.string().min(1, "First name is required"),
   middleName: z.string().optional(),
   lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z.string().min(5, "Phone number is required"),
+  email: z.string().trim().email("Please enter a valid email address").max(254, "Email address is too long"),
+  phone: z.string().trim().refine(isValidPhone, "Enter a valid phone number with 7 to 15 digits"),
   linkedinUrl: z.string().url("Please enter a valid LinkedIn URL").or(z.literal("")),
 
   // Step 2
@@ -94,7 +109,7 @@ const formSchema = z.object({
   availability: z.string().min(1),
 
   // Step 5 (account credentials)
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().refine(isStrongPassword, STRONG_PASSWORD_MESSAGE),
   gdprConsent: z.literal(true, {
     errorMap: () => ({ message: "You must accept the privacy terms to continue" }),
   }),
@@ -677,7 +692,7 @@ export default function Register() {
                               <FormItem>
                                 <FormLabel>Email *</FormLabel>
                                 <FormControl>
-                                  <Input type="email" placeholder="anna@example.com" {...field} />
+                                  <Input type="email" autoComplete="email" placeholder="anna@example.com" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -692,7 +707,7 @@ export default function Register() {
                               <FormItem>
                                 <FormLabel>Phone Number *</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="+48 600 000 000" {...field} />
+                                  <Input type="tel" inputMode="tel" autoComplete="tel" placeholder="+48 600 000 000" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>

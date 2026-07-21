@@ -133,12 +133,23 @@ export default function CandidateMaskedCV() {
   { label: "GitHub URL", value: "Hidden", masked: true },
   // { label: "Employer History", value: "Hidden", masked: true },
 ];
-const careerPrefs = useMemo(() => {
-  if (!candidate?.careerPreference) return [];
 
-  return candidate.careerPreference
-    .split(",")
-    .map((x) => x.trim().toLowerCase());
+const careerPrefs = useMemo(() => {
+  const pref = candidate?.careerPreference;
+
+  if (!pref) return [];
+
+  if (Array.isArray(pref)) {
+    return pref.map((x) => String(x).trim().toLowerCase());
+  }
+
+  if (typeof pref === "string") {
+    return pref
+      .split(",")
+      .map((x) => x.trim().toLowerCase());
+  }
+
+  return [];
 }, [candidate?.careerPreference]);
 
 const isEmploymentActive = (type: string) =>

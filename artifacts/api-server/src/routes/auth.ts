@@ -16,6 +16,8 @@ import {
   findUserByEmail,
   publicUser,
   requireAuth,
+  isStrongPassword,
+  STRONG_PASSWORD_MESSAGE,
 } from "../lib/auth";
 import { recordAudit } from "../lib/audit";
 import { logger } from "../lib/logger";
@@ -30,6 +32,27 @@ function avatarFor(_name: string): string {
 }
 
 const router: IRouter = Router();
+
+// Registration details arrive from both the public candidate flow and the
+// administrator-created user flow. Keep these checks at the API boundary so
+// clients cannot bypass them by posting directly to this route.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_PATTERN = /^\+?[1-9]\d{6,14}$/;
+
+function normalizePhone(value: unknown): string {
+  return String(value ?? "").trim().replace(/[\s().-]/g, "");
+}
+
+function isValidPhone(value: unknown): boolean {
+  const phone = normalizePhone(value);
+
+  return PHONE_PATTERN.test(phone) && !/^(\+?)(\d)\2+$/.test(phone);
+}
+
+function isValidEmail(value: string): boolean {
+  return value.length <= 254 && EMAIL_PATTERN.test(value);
+}
+
 async function generateCandidateCode(): Promise<string> {
   const lastCandidate = await db
     .select({
@@ -96,6 +119,7 @@ interface RegisterBody {
   middleName?: string;
   lastName?: string;
 
+  phone?: string;
   mobile?: string;
   username?: string;
   employeeId?: string;
@@ -162,9 +186,15 @@ router.post("/auth/register", async (req, res) => {
     const gdprConsent = body.gdprConsent === true;
     const requestedRole = body.role as unknown as UserRole | undefined;
 
-    if (password.length < 8) {
+    if (!isValidEmail(email)) {
       return res.status(400).json({
-        error: "Password must be at least 8 characters",
+        error: "Please provide a valid email address",
+      });
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({
+        error: STRONG_PASSWORD_MESSAGE,
       });
     }
 
@@ -188,6 +218,12 @@ router.post("/auth/register", async (req, res) => {
       requestedRole && allowedRoles.includes(requestedRole)
         ? requestedRole
         : "candidate";
+
+    if (role !== "candidate" && !isValidPhone(body.mobile)) {
+      return res.status(400).json({
+        error: "Please provide a valid phone number with 7 to 15 digits",
+      });
+    }
 
     const existing = await findUserByEmail(email);
 
@@ -230,6 +266,21 @@ router.post("/auth/register", async (req, res) => {
           };
 
       if (cp) {
+        const profileEmail = String(cp.email ?? "").trim().toLowerCase();
+        const phone = normalizePhone(cp.phone);
+
+        if (!isValidEmail(profileEmail) || profileEmail !== email) {
+          return res.status(400).json({
+            error: "Candidate email must be a valid address matching the account email",
+          });
+        }
+
+        if (!isValidPhone(phone)) {
+          return res.status(400).json({
+            error: "Please provide a valid phone number with 7 to 15 digits",
+          });
+        }
+
         const englishLevelMap: Record<
           string,
           "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
@@ -264,8 +315,8 @@ router.post("/auth/register", async (req, res) => {
           .values({
             candidateCode,
             fullName: cp.fullName ?? fullName,
-            email: cp.email ?? email,
-            phone: cp.phone ?? "",
+            email: profileEmail,
+            phone,
             currentLocation: (cp.currentLocation as string) ?? "",
             city: (cp as any).city ?? "",
             currentRole: cp.currentRole ?? "",
@@ -355,7 +406,7 @@ if (role !== "candidate") {
     middleName: body.middleName ?? null,
     lastName: body.lastName ?? null,
 
-    mobile: body.mobile ?? null,
+    mobile: body.mobile ? normalizePhone(body.mobile) : null,
     username: body.username ?? null,
     employeeId,
 

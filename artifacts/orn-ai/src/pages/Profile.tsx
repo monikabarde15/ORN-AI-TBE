@@ -5,6 +5,10 @@ import api from "../../services/api";
 import countryList from "country-list-with-dial-code-and-flag";
 import { useToast } from "@/hooks/use-toast";
 
+const STRONG_PASSWORD_MESSAGE = "Use 8+ characters with uppercase, lowercase, number, and special character";
+const isStrongPassword = (value: string) =>
+  value.length >= 8 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /\d/.test(value) && /[^A-Za-z0-9]/.test(value);
+
 export default function Profile() {
   const { user, refresh } = useAuth();
   const { toast } = useToast();
@@ -50,7 +54,7 @@ export default function Profile() {
       const payload: any = { email: form.email, mobile: form.mobile, fullName: form.fullName, firstName: nameParts[0] || "", lastName: nameParts.slice(1).join(" "), username: form.username, company: form.company, department: form.department, designation: form.designation, country: form.country, state: form.state, city: form.city, role: current.role };
       if (form.password || form.confirmPassword) {
         if (form.password !== form.confirmPassword) throw new Error("Passwords do not match");
-        if (String(form.password).length < 8) throw new Error("Password must be at least 8 characters");
+        if (!isStrongPassword(String(form.password))) throw new Error(STRONG_PASSWORD_MESSAGE);
         payload.password = form.password;
       }
       if (isCandidate) {

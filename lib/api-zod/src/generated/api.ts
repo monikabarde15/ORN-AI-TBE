@@ -1071,7 +1071,13 @@ export const RegisterCandidateBody = zod.object({
   fullName: zod.string().min(registerCandidateBodyFullNameMin),
 
   email: zod.string().email(),
-  password: zod.string().min(8),
+  password: zod
+    .string()
+    .min(8)
+    .regex(/[A-Z]/, "Password must include an uppercase letter")
+    .regex(/[a-z]/, "Password must include a lowercase letter")
+    .regex(/\d/, "Password must include a number")
+    .regex(/[^A-Za-z0-9]/, "Password must include a special character"),
 
   phone: zod.string(),
 
