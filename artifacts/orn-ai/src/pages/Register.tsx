@@ -387,9 +387,10 @@ export default function Register() {
           const formData = new FormData();
 
           formData.append("file", file);
-
+            const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+            console.log(API_BASE_URL);
           await axios.post(
-              `http://localhost:8080/api/candidates/${response.candidateId}/cv`,
+              `${API_BASE_URL}/api/candidates/${response.candidateId}/cv`,
               formData,
               {
                 withCredentials: true,
