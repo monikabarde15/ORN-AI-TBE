@@ -392,7 +392,7 @@ export default function Register() {
       console.log("API:", API_BASE_URL);
 
       await axios.post(
-        `${API_BASE_URL}/api/candidates/${response.candidateId}/cv`,
+        `https://orn-ai.com/api/candidates/${response.candidateId}/cv`,
         formData,
         {
           withCredentials: true,
