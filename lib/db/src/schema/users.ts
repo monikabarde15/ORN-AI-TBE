@@ -38,7 +38,9 @@ export const usersTable = pgTable("users", {
   country: text("country"),
   state: text("state"),
   city: text("city"),
-
+  emailOtp: text("email_otp"),
+  emailOtpExpiry: timestamp("email_otp_expiry"),
+  isEmailVerified: boolean("is_email_verified").default(false),
   forcePasswordChange: boolean("force_password_change").default(false),
   sendWelcomeEmail: boolean("send_welcome_email").default(false),
   emailCredentials: boolean("email_credentials").default(false),

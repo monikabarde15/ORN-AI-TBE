@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import api from "../../services/api";
+import axios from "axios";
 import {
   useListRegions,
   getListRegionsQueryKey,
@@ -330,76 +332,96 @@ export default function Register() {
   // ----- Final submit -----
   const [authPending, setAuthPending] = useState(false);
   const handleFinalSubmit = async () => {
-    const valid = await form.trigger();
-    if (!valid) {
-      toast.error("Some earlier fields are invalid. Please review.");
-      return;
-    }
-    const values = form.getValues();
-    setAuthPending(true);
+  const valid = await form.trigger();
 
-    const fullName = [values.firstName, values.middleName, values.lastName,]
-      .filter(Boolean)
-      .join(" ");
+  if (!valid) {
+    toast.error("Some earlier fields are invalid. Please review.");
+    return;
+  }
 
-    try {
-      const session = await auth.register({
-        email: values.email,
-        password: values.password,
+  const values = form.getValues();
+  setAuthPending(true);
+
+  const fullName = [
+    values.firstName,
+    values.middleName,
+    values.lastName,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  try {
+    const response = await auth.register({
+      email: values.email,
+      password: values.password,
+      fullName,
+      role: "candidate",
+      gdprConsent: true,
+      candidateProfile: {
         fullName,
-        role: "candidate",
-        gdprConsent: true,
-        candidateProfile: {
-          fullName,
-          email: values.email,
-          phone: values.phone,
-          currentLocation: values.currentLocation,
-          city: values.city,
-          country: values.country,
-          visaStatus: values.visaStatus,
-          euWorkEligible: values.euWorkEligible,
-          linkedinUrl: values.linkedinUrl,
-          skills: values.skills,
-          currentRole: values.currentRole,
-          preferredRole: values.preferredRole,
-          targetRole: values.preferredRole,
-          yearsOfExperience: values.yearsOfExperience,
-          languagesKnown: values.languagesKnown,
-          careerPreference: values.careerPreference,
-          preferredWorkMode: values.preferredWorkMode,
-          interestedSkills: values.interestedSkills,
-          expectedSalary: values.expectedSalary,
-          availability: values.availability,
-        },
-      });
-      // Backend creates a candidate row from the embedded profile or via the
-      // auth route; for richer profile fields we still create one explicitly.
-      const candidateId = session.user.candidateId;
-      if (!candidateId) {
-        throw new Error("Account created without a candidate profile");
-      }
-      setCreatedCandidateId(candidateId);
+        email: values.email,
+        phone: values.phone,
+        currentLocation: values.currentLocation,
+        city: values.city,
+        country: values.country,
+        visaStatus: values.visaStatus,
+        euWorkEligible: values.euWorkEligible,
+        linkedinUrl: values.linkedinUrl,
+        skills: values.skills,
+        currentRole: values.currentRole,
+        preferredRole: values.preferredRole,
+        targetRole: values.preferredRole,
+        yearsOfExperience: values.yearsOfExperience,
+        languagesKnown: values.languagesKnown,
+        careerPreference: values.careerPreference,
+        preferredWorkMode: values.preferredWorkMode,
+        interestedSkills: values.interestedSkills,
+        expectedSalary: values.expectedSalary,
+        availability: values.availability,
+      },
+    });
 
-      if (file) {
-        await uploadCvMutation.mutateAsync({
-          id: candidateId,
-          data: { file },
-        });
-      }
+    // Registration successful
+    toast.success(response.message);
+    if (file && response.candidateId) {
+          const formData = new FormData();
 
-      await evaluateMutation.mutateAsync({ id: candidateId });
-      setSubmitted(true);
-    } catch (err) {
-      const message = err instanceof ApiError && typeof err.data === "object" && err.data && "message" in err.data
+          formData.append("file", file);
+
+          await axios.post(
+              `http://localhost:8080/api/candidates/${response.candidateId}/cv`,
+              formData,
+              {
+                withCredentials: true,
+              }
+            );
+
+        }
+
+    // Save email & candidate code for OTP page
+    sessionStorage.setItem("verifyEmail", response.email);
+    sessionStorage.setItem("candidateCode", response.candidateCode);
+
+    // Redirect to OTP Verification page
+    setLocation("/verify-otp");
+
+    return;
+  } catch (err) {
+    const message =
+      err instanceof ApiError &&
+      typeof err.data === "object" &&
+      err.data &&
+      "message" in err.data
         ? String((err.data as { message?: string }).message)
         : err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again.";
-      toast.error(message);
-    } finally {
-      setAuthPending(false);
-    }
-  };
+        ? err.message
+        : "Something went wrong. Please try again.";
+
+    toast.error(message);
+  } finally {
+    setAuthPending(false);
+  }
+};
 
   const isSubmitting =
     authPending || uploadCvMutation.isPending || evaluateMutation.isPending;

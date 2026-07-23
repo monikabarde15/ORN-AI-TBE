@@ -11,8 +11,15 @@ import type {
 export async function evaluateWithAI(
   candidate: CandidateLike,
 ): Promise<EvaluationResult> {
+  console.log("========== CANDIDATE TO AI ==========");
+  console.dir(candidate, { depth: null });
+
+  console.log("========== CV DATA ==========");
+  console.dir(candidate.cv, { depth: null });
   const ai = await generateFullEvaluation(candidate);
-  // console.log("canidate evaluation score :",ai.scores);
+  console.log("========== AI RESULT ==========");
+  console.dir(ai, { depth: null });
+  console.log("canidate evaluation score :",ai.scores);
   const skillGap = analyzeSkillGap(
     candidate.targetRole,
     candidate.skills ?? [],

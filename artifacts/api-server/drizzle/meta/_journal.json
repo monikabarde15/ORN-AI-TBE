@@ -183,6 +183,13 @@
       "when": 1784627433613,
       "tag": "0025_parallel_ulik",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1784714034821,
+      "tag": "0026_nappy_sandman",
+      "breakpoints": true
     }
   ]
 }

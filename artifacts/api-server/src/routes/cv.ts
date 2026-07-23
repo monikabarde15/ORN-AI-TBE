@@ -1,5 +1,7 @@
 // artifacts\api-server\src\routes\cv.ts
 import { Router, type IRouter, type Request } from "express";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { s3 } from "../lib/s3";
 import { eq } from "drizzle-orm";
 import multer from "multer";
 import {
@@ -73,159 +75,98 @@ async function ensureCanMutateCandidate(
 
 // ---- POST /candidates/:id/cv-file ------------------------------------------
 router.post(
+  "/candidates/:id/cv",
+  requireAuth,
+  requireCandidateAccess,
+  upload.single("file"),
+  async (req, res) => {
+    const candidateId = req.params.id;
+
+    if (!req.file) {
+      return res.status(400).json({
+        error: "Resume file required",
+      });
+    }
+
+    const key = `resume/${candidateId}/${Date.now()}-${req.file.originalname}`;
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: key,
+        Body: req.file.buffer,
+        ContentType: req.file.mimetype,
+      })
+    );
+
+    const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+    const [candidate] = await db
+      .update(candidatesTable)
+      .set({
+        cv: {
+          fileName: req.file.originalname,
+          fileSize: req.file.size,
+          key,
+          url: fileUrl,
+        },
+      })
+      .where(eq(candidatesTable.id, candidateId))
+      .returning();
+
+    res.json({
+      success: true,
+      cv: candidate.cv,
+    });
+  }
+);
+router.post(
   "/candidates/:id/cv-file",
   requireAuth,
   upload.single("file"),
-  async (req, res): Promise<void> => {
-    const id = req.params.id as string;
-    const guard = await ensureCanMutateCandidate(req, id);
-    if (!guard.ok) {
-      res.status(guard.status).json({ error: guard.error });
-      return;
-    }
-    const file = req.file;
-    if (!file) {
-      res.status(400).json({ error: "No file uploaded" });
-      return;
-    }
-    if (!ALLOWED_MIME.has(file.mimetype)) {
-      res.status(415).json({ error: `Unsupported file type: ${file.mimetype}` });
-      return;
+  async (req, res) => {
+    const candidateId = req.params.id;
+
+    if (!req.file) {
+      return res.status(400).json({
+        error: "Resume file required",
+      });
     }
 
-    let text = "";
-    try {
-      text = await parseCvBuffer(file.buffer, file.mimetype);
-    } catch (err) {
-      req.log.error({ err }, "CV parsing failed");
-      res.status(422).json({ error: "Could not parse the uploaded CV" });
-      return;
-    }
+    const key = `resume/${candidateId}/${Date.now()}-${req.file.originalname}`;
 
-    
-    // ==========================================================
-    // LEGACY PARSER
-    // ==========================================================
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: key,
+        Body: req.file.buffer,
+        ContentType: req.file.mimetype,
+      })
+    );
 
-    // const extracted = extractProfileFromText(text);
+    const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 
-    // ==========================================================
-    // FULL AI PARSER
-    // ==========================================================
-
-    const extracted = await parseCvWithAI(text);
-
-    // ==========================================================
-    // HYBRID MODE (AI + LEGACY FALLBACK)
-    // ==========================================================
-
-    // let extracted;
-
-    // if (AI_CONFIG.enabled) {
-    //   try {
-    //     extracted = await parseCvWithAI(text);
-    //   } catch {
-    //     extracted = extractProfileFromText(text);
-    //   }
-    // } else {
-    //   extracted = extractProfileFromText(text);
-    // }
-
-    const cvMeta = {
-      fileName: file.originalname,
-      fileSize: file.size,
-      contentSummary: extracted.rawText.slice(0, 280),
-    };
-
-    // const updates: Record<string, unknown> = {
-    //   cv: cvMeta,
-    //   cvFileBytes: file.buffer,
-    //   cvFileName: file.originalname,
-    //   cvMimeType: file.mimetype,
-    //   careerGapMonths: extracted.careerGapMonths,
-    // };
-
-
-
-    const updates: Record<string, unknown> = {
-      cv: cvMeta,
-      cvFileBytes: file.buffer,
-      cvFileName: file.originalname,
-      cvMimeType: file.mimetype,
-
-      // ==========================
-      // AI Resume Parser
-      // ==========================
-
-      // AI
-      yearsExperience: extracted.yearsExperience,
-      careerGapMonths: extracted.careerGapMonths,
-
-      // Legacy
-      // careerGapMonths: detectCareerGapMonths(text),
-    };
-    if (extracted.lastRole) updates["lastRole"] = extracted.lastRole;
-    if (extracted.domain) updates["domain"] = extracted.domain;
-
-    // AI SKILLS + REGISTRATION SKILLS BOTH MERGED
-    // if (extracted.skills.length > 0) {
-    //   // Merge with any existing skills, dedupe case-insensitively.
-    //   const existing = (await loadCandidateRow(id))?.skills ?? [];
-    //   const merged = new Map<string, string>();
-    //   for (const s of [...existing, ...extracted.skills])
-    //     merged.set(s.toLowerCase(), s);
-    //   updates["skills"] = Array.from(merged.values()).slice(0, 24);
-    // }
-
-    
-    // AI Only Extracted Resume Skills
-
-    if (extracted.skills.length > 0) {
-      updates["skills"] = extracted.skills.slice(0, 24);
-    }
-
-
-
-    const [updated] = await db
+    const [candidate] = await db
       .update(candidatesTable)
-      .set(updates)
-      .where(eq(candidatesTable.id, id))
+      .set({
+        cv: {
+          fileName: req.file.originalname,
+          fileSize: req.file.size,
+          key,
+          url: fileUrl,
+        },
+      })
+      .where(eq(candidatesTable.id, candidateId))
       .returning();
 
-
-    if (!updated) {
-      res.status(404).json({ error: "Candidate not found" });
-      return;
-    }
-    await recordAudit(req, {
-      action: "candidate.cv_upload",
-      entityType: "candidate",
-      entityId: id,
-      metadata: {
-        fileName: file.originalname,
-        fileSize: file.size,
-        skillsExtracted: extracted.skills.length,
-      },
+    res.json({
+      success: true,
+      cv: candidate.cv,
     });
-    res.status(200).json({
-      candidate: serializeCandidate(updated),
-      extracted: {
-        fullName: extracted.fullName,
-        email: extracted.email,
-        phone: extracted.phone,
-        location: extracted.location,
-        yearsExperience: extracted.yearsExperience,
-        lastRole: extracted.lastRole,
-        domain: extracted.domain,
-        careerGapMonths: extracted.careerGapMonths,
-        skills: extracted.skills,
-      },
-    });
-  },
+  }
 );
-
 // ---- GET /candidates/:id/skill-gap -----------------------------------------
-router.get("/candidates/:id/skill-gap", requireAuth, requireCandidateAccess(), async (req, res): Promise<void> => {
+router.get("/candidates/:id/skill-gap", requireAuth, async (req, res): Promise<void> => {
   const row = await loadCandidateRow(req.params.id as string);
   if (!row) {
     res.status(404).json({ error: "Candidate not found" });

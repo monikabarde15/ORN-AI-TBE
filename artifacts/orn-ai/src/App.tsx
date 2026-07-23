@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 
 import Landing from "@/pages/Landing";
 import Register from "@/pages/Register";
+import VerifyOtp from "@/pages/VerifyOtp";
 import Login from "@/pages/Login";
 import CandidateUpload from "@/pages/CandidateUpload";
 import CandidateEvaluation from "@/pages/CandidateEvaluation";
@@ -111,6 +112,7 @@ function Router() {
           <Profile />
         </ProtectedRoute>
       </Route>
+      <Route path="/verify-otp" component={VerifyOtp} />
       <Route path="/register" component={Register} />
       <Route path="/candidate/:id/upload" component={CandidateUpload} />
       <Route path="/candidate/:id/evaluation" component={CandidateEvaluation} />
