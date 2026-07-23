@@ -383,21 +383,22 @@ export default function Register() {
 
     // Registration successful
     toast.success(response.message);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
     if (file && response.candidateId) {
-          const formData = new FormData();
+      const formData = new FormData();
+      formData.append("file", file);
 
-          formData.append("file", file);
-            const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-            console.log(API_BASE_URL);
-          await axios.post(
-              `${API_BASE_URL}/api/candidates/${response.candidateId}/cv`,
-              formData,
-              {
-                withCredentials: true,
-              }
-            );
+      console.log("API:", API_BASE_URL);
 
+      await axios.post(
+        `${API_BASE_URL}/api/candidates/${response.candidateId}/cv`,
+        formData,
+        {
+          withCredentials: true,
         }
+      );
+    }
 
     // Save email & candidate code for OTP page
     sessionStorage.setItem("verifyEmail", response.email);
