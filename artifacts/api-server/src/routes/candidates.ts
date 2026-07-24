@@ -1,6 +1,7 @@
 // artifacts\api-server\src\routes\candidates.ts
 import { Router, type IRouter } from "express";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { evaluateWithAI } from "../lib/evaluation-full-ai";
 import { s3 } from "../lib/s3";
 import multer from "multer";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
@@ -658,11 +659,48 @@ router.post(
       })
       .where(eq(candidatesTable.id, candidateId))
       .returning();
+      if (candidate) {
+        try {
+          const result = await evaluateWithAI({
+            id: candidate.id,
+            fullName: candidate.fullName,
+            email: candidate.email,
+            englishLevel: candidate.englishLevel,
+            visaStatus: candidate.visaStatus,
+            yearsExperience: candidate.yearsExperience,
+            euWorkEligible: candidate.euWorkEligible,
+            targetRole: candidate.targetRole,
+            country: candidate.country,
+            skills: candidate.skills,
+            careerGapMonths: candidate.careerGapMonths ?? 0,
+            cv: candidate.cv as any,
+          });
 
-    return res.json({
-      success: true,
-      cv: candidate.cv,
-    });
+          await db
+            .update(candidatesTable)
+            .set({
+              evaluation: result,
+            })
+            .where(eq(candidatesTable.id, candidate.id));
+
+        } catch (err) {
+          console.error("AI Evaluation Failed:", err);
+        }
+      }
+const [updatedCandidate] = await db
+  .select()
+  .from(candidatesTable)
+  .where(eq(candidatesTable.id, candidate.id));
+
+return res.json({
+  success: true,
+  cv: updatedCandidate.cv,
+  evaluation: updatedCandidate.evaluation,
+});
+    // return res.json({
+    //   success: true,
+    //   cv: candidate.cv,
+    // });
   }
 );
 export default router;
