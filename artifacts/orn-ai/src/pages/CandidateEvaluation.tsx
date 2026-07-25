@@ -263,8 +263,8 @@ export default function CandidateEvaluation() {
     query: { enabled: !!id, queryKey: getGetSkillGapQueryKey(id || "") },
   });
 
-  console.log("Skillgap data:" , candidate);
-
+  console.log("candidate :==" , candidate);
+console.log("CV URL:", candidate?.cv?.url);
   if (!id || isLoadingCandidate || isLoadingEvaluation) {
     return (
       <Shell>
@@ -736,7 +736,8 @@ export default function CandidateEvaluation() {
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               <a
-                href={getDownloadFullCvUrl(candidate.id)}
+                // href={getDownloadFullCvUrl(candidate.id)}
+                href={candidate?.cv?.url}
                 target="_blank"
                 rel="noreferrer"
                 download
