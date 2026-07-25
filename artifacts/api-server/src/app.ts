@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();   // <-- sabse pehle load karo
 import { existsSync } from "node:fs";
 import path from "node:path";
 import express, { type Express } from "express";
