@@ -44,7 +44,28 @@ export interface CandidateLike {
   targetRole: string;
   country: string;
   skills?: string[] | null;
-  cv?: { fileName?: string; contentSummary?: string } | null;
+  cv?: {
+  fileName?: string;
+  contentSummary?: string;
+} | null;
+
+/**
+ * Raw resume text extracted from PDF/DOCX.
+ * Used only by AI evaluation.
+ */
+resumeText?: string | null;
+
+/**
+ * Structured AI resume analysis.
+ * Used by evaluation prompt.
+ */
+resumeAnalysis?: {
+  yearsExperience?: number;
+  careerGapMonths?: number;
+  skills?: string[];
+  employmentHistory?: unknown[];
+  rawText?: string;
+} | null;
   careerGapMonths?: number | null;
 }
 

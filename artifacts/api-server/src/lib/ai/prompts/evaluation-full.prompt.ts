@@ -1,3 +1,4 @@
+// artifacts\api-server\src\lib\ai\prompts\evaluation-full.prompt.ts
 import type { CandidateLike } from "../../evaluation";
 
 export function buildFullEvaluationPrompt(
@@ -34,6 +35,8 @@ Do NOT return additional properties.
 
 Candidate Source Of Truth
 
+Candidate Source Of Truth
+
 Use ONLY these candidate properties.
 
 - yearsExperience
@@ -44,6 +47,24 @@ Use ONLY these candidate properties.
 - targetRole
 - skills
 - country
+- resumeText
+- resumeAnalysis
+
+resumeAnalysis contains structured information extracted from the candidate CV.
+
+resumeText contains the original resume text.
+
+Use these two fields whenever evaluating:
+
+- CV Quality
+- Technical Relevance
+- Technical Skill Match
+
+Do NOT ignore resumeText.
+
+Do NOT ignore resumeAnalysis.
+
+Use candidate fields together with the parsed resume information.
 
 Never infer or modify these values.
 
@@ -97,23 +118,31 @@ Follow the business rules exactly.
 CV QUALITY
 --------------------------------------------------
 
-Evaluate only the quality of the CV itself.
+Evaluate the uploaded resume using resumeText.
 
-Consider
+Consider:
 
 - completeness
-- structure
 - formatting
 - readability
+- section structure
 - quantified achievements
 - measurable impact
+- project descriptions
+- certifications
+- employment history
 - professional presentation
 
-Higher score means better CV quality.
+If resumeText is empty then return 0.
+
+Otherwise score between 0 and 100 based on the actual resume content.
 
 --------------------------------------------------
 TECHNICAL RELEVANCE
 --------------------------------------------------
+Use resumeAnalysis and resumeText as the primary evidence.
+
+Do not rely only on candidate.skills.
 
 Evaluate
 
@@ -133,9 +162,17 @@ Return
 TECHNICAL SKILL MATCH
 --------------------------------------------------
 
-Compare
+Compare:
 
 candidate.skills
+
++
+
+resumeAnalysis.skills
+
++
+
+technologies found inside resumeText
 
 against
 

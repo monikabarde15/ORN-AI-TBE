@@ -25,14 +25,15 @@ import {
 import { serializeCandidate } from "../lib/serialize";
 import { pickSkillsFor } from "../lib/evaluation";
 import nodemailer from "nodemailer";
-
+import { parseCvBuffer } from "../lib/cv-parser";
+import { parseCvWithAI } from "../lib/cv-parser-ai";
 import { requireAuth, requireRole, requireCandidateAccess } from "../lib/auth";
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
   secure: false,
 
-  auth:{
+  auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
@@ -166,13 +167,13 @@ router.post(
         careerPreference: Array.isArray((rest as any).careerPreference)
           ? (rest as any).careerPreference
           : rest.careerPreference
-          ? [String((rest as any).careerPreference)]
-          : [],
+            ? [String((rest as any).careerPreference)]
+            : [],
         preferredWorkMode: Array.isArray((rest as any).preferredWorkMode)
           ? (rest as any).preferredWorkMode
           : rest.preferredWorkMode
-          ? [String((rest as any).preferredWorkMode)]
-          : [],
+            ? [String((rest as any).preferredWorkMode)]
+            : [],
         interestedSkills: Array.isArray((rest as any).interestedSkills)
           ? (rest as any).interestedSkills
           : [],
@@ -199,18 +200,18 @@ router.post(
           avatarUrl,
         })
         .returning();
-        await db.insert(activityTable).values({
+      await db.insert(activityTable).values({
         kind: "registration",
         candidateName: row.fullName,
         country: row.country,
         message: `${row.fullName} registered as ${row.targetRole}`,
       });
       const passwordHash = await hashPassword(parsed.data.password);
-          await transporter.sendMail({
-  from: `"ORN-AI" <${process.env.SMTP_USER}>`,
-  to: row.email,
-  subject: "Welcome to ORN-AI – Registration Successful",
-  html: `
+      await transporter.sendMail({
+        from: `"ORN-AI" <${process.env.SMTP_USER}>`,
+        to: row.email,
+        subject: "Welcome to ORN-AI – Registration Successful",
+        html: `
 <!DOCTYPE html>
 <html>
 <head>
@@ -434,24 +435,24 @@ https://orn-ai.com/
 </body>
 </html>
 `,
-});
-          const existingUser = await findUserByEmail(row.email);
+      });
+      const existingUser = await findUserByEmail(row.email);
 
-          if (!existingUser) {
-            await db.insert(usersTable).values({
-              email: row.email.toLowerCase(),
-              passwordHash,
-              fullName: row.fullName,
+      if (!existingUser) {
+        await db.insert(usersTable).values({
+          email: row.email.toLowerCase(),
+          passwordHash,
+          fullName: row.fullName,
 
-              role: "candidate",
-              candidateId: row.id,
+          role: "candidate",
+          candidateId: row.id,
 
-              country: row.country ?? null,
-              status: "Active",
+          country: row.country ?? null,
+          status: "Active",
 
-              gdprConsentAt: new Date(),
-            });
-          }
+          gdprConsentAt: new Date(),
+        });
+      }
 
       if (!row) {
         res.status(500).json({
@@ -577,19 +578,19 @@ router.get(
     //   row.candidateCode
     // );
 
-   const candidate = serializeCandidate(row);
+    const candidate = serializeCandidate(row);
 
-      res.json({
-        ...candidate,
+    res.json({
+      ...candidate,
 
-        candidateCode: row.candidateCode ?? null,
+      candidateCode: row.candidateCode ?? null,
 
-        preferredWorkMode:
-          row.preferredWorkMode ?? null,
+      preferredWorkMode:
+        row.preferredWorkMode ?? null,
 
-        careerPreference:
-          row.careerPreference ?? null,
-      });
+      careerPreference:
+        row.careerPreference ?? null,
+    });
   }
 );
 // router.post("/candidates/:id/cv", requireAuth, requireCandidateAccess(), async (req, res): Promise<void> => {
@@ -616,13 +617,14 @@ router.get(
 //   }
 //   res.json(UploadCvResponse.parse(serializeCandidate(row)));
 // });
+import { processAndSaveCv } from "../lib/cv-processor";
+
 router.post(
   "/candidates/:id/cv",
   requireAuth,
   requireCandidateAccess(),
   upload.single("file"),
   async (req, res) => {
-
     const candidateId = req.params.id;
 
     if (!req.file) {
@@ -631,76 +633,28 @@ router.post(
       });
     }
 
-    const key =
-      `resume/${candidateId}/${Date.now()}-${req.file.originalname}`;
+    try {
+      const result = await processAndSaveCv({
+        candidateId,
+        fileBuffer: req.file.buffer,
+        fileName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+      });
 
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: key,
-        Body: req.file.buffer,
-        ContentType: req.file.mimetype,
-      })
-    );
-
-    const fileUrl =
-      `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-
-    console.log("S3 URL =", fileUrl);
-
-    const [candidate] = await db
-      .update(candidatesTable)
-      .set({
-        cv: {
-          fileName: req.file.originalname,
-          key,
-          url: fileUrl,
-        },
-      })
-      .where(eq(candidatesTable.id, candidateId))
-      .returning();
-      if (candidate) {
-        try {
-          const result = await evaluateWithAI({
-            id: candidate.id,
-            fullName: candidate.fullName,
-            email: candidate.email,
-            englishLevel: candidate.englishLevel,
-            visaStatus: candidate.visaStatus,
-            yearsExperience: candidate.yearsExperience,
-            euWorkEligible: candidate.euWorkEligible,
-            targetRole: candidate.targetRole,
-            country: candidate.country,
-            skills: candidate.skills,
-            careerGapMonths: candidate.careerGapMonths ?? 0,
-            cv: candidate.cv as any,
-          });
-
-          await db
-            .update(candidatesTable)
-            .set({
-              evaluation: result,
-            })
-            .where(eq(candidatesTable.id, candidate.id));
-
-        } catch (err) {
-          console.error("AI Evaluation Failed:", err);
-        }
-      }
-const [updatedCandidate] = await db
-  .select()
-  .from(candidatesTable)
-  .where(eq(candidatesTable.id, candidate.id));
-
-return res.json({
-  success: true,
-  cv: updatedCandidate.cv,
-  evaluation: updatedCandidate.evaluation,
-});
-    // return res.json({
-    //   success: true,
-    //   cv: candidate.cv,
-    // });
+      return res.json({
+        success: true,
+        cv: result.cv,
+        evaluation: result.evaluation,
+      });
+    } catch (err) {
+      console.error("CV upload and processing error:", err);
+      return res.status(500).json({
+        error: "Failed to process uploaded CV",
+        details: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 );
 export default router;
+

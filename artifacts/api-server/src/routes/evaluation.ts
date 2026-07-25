@@ -16,6 +16,8 @@ import { backfillEvaluation } from "../lib/serialize";
 import { AI_CONFIG } from "../lib/ai/config";
 import { enhanceEvaluationWithAI } from "../lib/evaluation-ai";
 import { evaluateWithAI } from "../lib/evaluation-full-ai";
+import { parseCvBuffer } from "../lib/cv-parser";
+
 const router: IRouter = Router();
 
 router.post(
@@ -39,20 +41,16 @@ router.post(
         return;
       }
 
-      // const result = evaluate({
-      //   id: row.id,
-      //   fullName: row.fullName,
-      //   email: row.email,
-      //   englishLevel: row.englishLevel,
-      //   visaStatus: row.visaStatus,
-      //   yearsExperience: row.yearsExperience,
-      //   euWorkEligible: row.euWorkEligible,
-      //   targetRole: row.targetRole,
-      //   country: row.country,
-      //   skills: row.skills,
-      //   careerGapMonths: row.careerGapMonths ?? 0,
-      //   cv: row.cv as any,
-      // });
+      let resumeText = (row.cv as any)?.rawText ?? null;
+      let resumeAnalysis = (row.cv as any)?.resumeAnalysis ?? null;
+
+      if (!resumeText && row.cvFileBytes) {
+        try {
+          resumeText = await parseCvBuffer(row.cvFileBytes, row.cvMimeType || "application/pdf");
+        } catch (e) {
+          console.error("Failed to parse cvFileBytes on the fly:", e);
+        }
+      }
 
       const candidate = {
         id: row.id,
@@ -67,17 +65,9 @@ router.post(
         skills: row.skills,
         careerGapMonths: row.careerGapMonths,
         cv: row.cv as any,
+        resumeText,
+        resumeAnalysis,
       };
-
-      // ==========================================================
-      // LEGACY EVALUATION
-      // ==========================================================
-
-      // let result = evaluate(candidate);
-
-      // ==========================================================
-      // FULL AI EVALUATION
-      // ==========================================================
 
       let result = await evaluateWithAI(candidate);
 
