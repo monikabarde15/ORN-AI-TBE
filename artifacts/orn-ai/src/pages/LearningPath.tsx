@@ -11,7 +11,7 @@ import CourseGrid from "./learning-path/CourseGrid";
 import SelectedCourses from "./learning-path/SelectedCourses";
 import PaymentSummary from "./learning-path/PaymentSummary";
 import PaymentLinkBox from "./learning-path/PaymentLinkBox";
-
+import CandidateSelector from "./learning-path/CandidateSelector";
 interface Course {
   _id: string;
   title: string;
@@ -39,6 +39,9 @@ export default function LearningPath() {
     useState("");
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
+  const [candidateModalOpen, setCandidateModalOpen] = useState(false);
+
+  const [selectedCandidates, setSelectedCandidates] = useState<any[]>([]);
   const [learningPathId, setLearningPathId] =
     useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -114,12 +117,10 @@ export default function LearningPath() {
     );
 
     setSelectedCourses(
-      (path.courses || []).map(
-        (c: any) => ({
-          ...c,
-          id: c.id || c._id,
-        })
-      )
+      (path.courses || []).map((c: any) => ({
+        ...c,
+        id: c.id || c._id,
+      }))
     );
   };
   useEffect(() => {
@@ -149,31 +150,28 @@ export default function LearningPath() {
     }, [courses, search]);
 
   const toggleCourse = (course: any) => {
-    const courseId =
-      course.id || course._id;
+  const courseId = course.id || course._id;
 
-    setSelectedCourses((prev) => {
-      const exists = prev.some(
-        (c: any) =>
-          (c.id || c._id) === courseId
+  setSelectedCourses((prev) => {
+    const exists = prev.some(
+      (c: any) => (c.id || c._id) === courseId
+    );
+
+    if (exists) {
+      return prev.filter(
+        (c: any) => (c.id || c._id) !== courseId
       );
+    }
 
-      if (exists) {
-        return prev.filter(
-          (c: any) =>
-            (c.id || c._id) !== courseId
-        );
-      }
-
-      return [
-        ...prev,
-        {
-          ...course,
-          id: courseId,
-        },
-      ];
-    });
-  };
+    return [
+      ...prev,
+      {
+        ...course,
+        id: courseId,
+      },
+    ];
+  });
+};
   const removeCourse = (
     id: string
   ) => {
@@ -280,6 +278,12 @@ export default function LearningPath() {
       setSaving(true);
 
       const formData = new FormData();
+      if (selectedCandidate) {
+        formData.append(
+          "candidateId",
+          selectedCandidate.id
+        );
+      }
 
       formData.append("title", title);
       formData.append("description", description);
@@ -404,7 +408,12 @@ export default function LearningPath() {
           paymentLink
         );
       }
-
+      // if (selectedCandidate) {
+      //   formData.append(
+      //     "candidateId",
+      //     selectedCandidate.id
+      //   );
+      // }
       const courseIds = selectedCourses
         .map((c: any) => c.id || c._id)
         .filter(Boolean);
@@ -568,7 +577,12 @@ hover:bg-blue-800
         </div>
 
         {/* Right */}
+
         <div className="sticky top-6 space-y-6 pt-8 pr-4 ">
+                  {/* <CandidateSelector
+    selectedCandidate={selectedCandidate}
+    setSelectedCandidate={setSelectedCandidate}
+/> */}
           <SelectedCourses
             courses={selectedCourses}
             removeCourse={removeCourse}

@@ -14,6 +14,7 @@ import LearningPathSidebar from "./learning-path-manage/LearningPathSidebar";
 import { useAuth } from "@/hooks/use-auth";
 import LearningPathForm from "../pages/learning-path/LearningPathForm";
 import UploadMedia from "../pages/learning-path/UploadMedia";
+import CandidateSelector from "./learning-path/CandidateSelector";
 
 
 
@@ -59,6 +60,7 @@ const [videoPreview, setVideoPreview] = useState("");
     const [match, params] = useRoute("/recruiter/learning-path-manage/:id");
 
     const [saving, setSaving] = useState(false);
+    const [selectedCandidates, setSelectedCandidates] = useState<any[]>([]);
     const [sessionTitle, setSessionTitle] = useState("");
     const [trainerName, setTrainerName] = useState("");
     const [meetingLink, setMeetingLink] = useState("");
@@ -121,34 +123,29 @@ const [videoPreview, setVideoPreview] = useState("");
         }, [courses, search]);
 
 
-    const toggleCourse = (
-        course: any
-    ) => {
-        const courseId =
-            course.id || course._id;
+    const toggleCourse = (course: any) => {
+  const courseId = course.id || course._id;
 
-        setSelectedCourses((prev) => {
-            const exists = prev.some(
-                (c: any) =>
-                    (c.id || c._id) === courseId
-            );
+  setSelectedCourses((prev) => {
+    const exists = prev.some(
+      (c: any) => (c.id || c._id) === courseId
+    );
 
-            if (exists) {
-                return prev.filter(
-                    (c: any) =>
-                        (c.id || c._id) !== courseId
-                );
-            }
+    if (exists) {
+      return prev.filter(
+        (c: any) => (c.id || c._id) !== courseId
+      );
+    }
 
-            return [
-                ...prev,
-                {
-                    ...course,
-                    id: courseId,
-                },
-            ];
-        });
-    };
+    return [
+      ...prev,
+      {
+        ...course,
+        id: courseId,
+      },
+    ];
+  });
+};
 
     // Remove course
     const removeCourse = (
@@ -194,13 +191,11 @@ const [videoPreview, setVideoPreview] = useState("");
         setDescription(path.description || "");
 
         setSelectedCourses(
-            (path.courses || []).map(
-                (c: any) => ({
-                    ...c,
-                    id: c.id || c._id,
-                })
-            )
-        );
+  (path.courses || []).map((c: any) => ({
+    ...c,
+    id: c.id || c._id,
+  }))
+);
     };
 
 
