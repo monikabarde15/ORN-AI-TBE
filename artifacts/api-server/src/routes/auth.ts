@@ -1,3 +1,4 @@
+// artifacts\api-server\src\routes\auth.ts
 import { Router, type IRouter } from "express";
 import nodemailer from "nodemailer";
 import { evaluateWithAI } from "../lib/evaluation-full-ai";
@@ -26,9 +27,9 @@ import { logger } from "../lib/logger";
 function avatarFor(_name: string): string {
   const seed = Math.floor(Math.random() * 89) + 1;
   const gender = seed % 2 === 0 ? "men" : "women";
-   return gender === "women"
-          ? "https://api.dicebear.com/10.x/personas/svg?seed=female"
-          : "https://api.dicebear.com/10.x/personas/svg?seed=male";
+  return gender === "women"
+    ? "https://api.dicebear.com/10.x/personas/svg?seed=female"
+    : "https://api.dicebear.com/10.x/personas/svg?seed=male";
   // return `https://randomuser.me/api/portraits/${gender}/${seed}.jpg`;
 }
 const transporter = nodemailer.createTransport({
@@ -36,7 +37,7 @@ const transporter = nodemailer.createTransport({
   port: Number(process.env.SMTP_PORT),
   secure: false,
 
-  auth:{
+  auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
@@ -500,380 +501,380 @@ interface RegisterBody {
 //     }
 // });
 
-router.post("/auth/register", async (req,res)=>{
+router.post("/auth/register", async (req, res) => {
 
-try{
+  try {
 
-const body = req.body as Partial<RegisterBody>;
+    const body = req.body as Partial<RegisterBody>;
 
 
-const email =
-(body.email ?? "")
-.trim()
-.toLowerCase();
+    const email =
+      (body.email ?? "")
+        .trim()
+        .toLowerCase();
 
 
-const password =
-body.password ?? "";
+    const password =
+      body.password ?? "";
 
 
-const fullName =
-(body.fullName ?? "").trim();
+    const fullName =
+      (body.fullName ?? "").trim();
 
 
-if(!isValidEmail(email)){
-return res.status(400).json({
-error:"Invalid email"
-});
-}
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        error: "Invalid email"
+      });
+    }
 
 
-if(!isStrongPassword(password)){
-return res.status(400).json({
-error:STRONG_PASSWORD_MESSAGE
-});
-}
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({
+        error: STRONG_PASSWORD_MESSAGE
+      });
+    }
 
 
-if(body.gdprConsent !== true){
-return res.status(400).json({
-error:"GDPR consent required"
-});
-}
+    if (body.gdprConsent !== true) {
+      return res.status(400).json({
+        error: "GDPR consent required"
+      });
+    }
 
 
 
-const role:UserRole =
-[
-"candidate",
-"recruiter",
-"instructor",
-"mentor",
-"content_manager",
-"admin",
-"super_admin"
-].includes(body.role as any)
-?
-body.role as UserRole
-:
-"candidate";
+    const role: UserRole =
+      [
+        "candidate",
+        "recruiter",
+        "instructor",
+        "mentor",
+        "content_manager",
+        "admin",
+        "super_admin"
+      ].includes(body.role as any)
+        ?
+        body.role as UserRole
+        :
+        "candidate";
 
 
 
-const existing =
-await findUserByEmail(email);
+    const existing =
+      await findUserByEmail(email);
 
 
-if(existing){
-return res.status(409).json({
-error:"Email already exists"
-});
-}
+    if (existing) {
+      return res.status(409).json({
+        error: "Email already exists"
+      });
+    }
 
 
 
-let candidateId:string|null=null;
-let candidateCode:string|null=null;
+    let candidateId: string | null = null;
+    let candidateCode: string | null = null;
 
 
 
-// =====================
-// CREATE CANDIDATE
-// =====================
+    // =====================
+    // CREATE CANDIDATE
+    // =====================
 
-if(role==="candidate"){
+    if (role === "candidate") {
 
 
-const cp =
-body.candidateProfile;
+      const cp =
+        body.candidateProfile;
 
 
 
-if(cp){
+      if (cp) {
 
 
-const phone =
-normalizePhone(cp.phone);
+        const phone =
+          normalizePhone(cp.phone);
 
 
 
-if(!isValidPhone(phone)){
-return res.status(400).json({
-error:"Invalid phone"
-});
-}
+        if (!isValidPhone(phone)) {
+          return res.status(400).json({
+            error: "Invalid phone"
+          });
+        }
 
 
 
-candidateCode =
-await generateCandidateCode();
+        candidateCode =
+          await generateCandidateCode();
 
 
 
-const [candidate] =
-await db.insert(candidatesTable)
-.values({
+        const [candidate] =
+          await db.insert(candidatesTable)
+            .values({
 
 
-candidateCode,
+              candidateCode,
 
 
-fullName:
-cp.fullName ?? fullName,
+              fullName:
+                cp.fullName ?? fullName,
 
 
-email,
+              email,
 
 
-phone,
+              phone,
 
 
-currentLocation:
-cp.currentLocation ?? "",
+              currentLocation:
+                cp.currentLocation ?? "",
 
 
-city:
-cp.city ?? "",
+              city:
+                cp.city ?? "",
 
 
-currentRole:
-cp.currentRole ?? "",
+              currentRole:
+                cp.currentRole ?? "",
 
 
-preferredRole:
-cp.preferredRole ?? "",
+              preferredRole:
+                cp.preferredRole ?? "",
 
 
-country:
-cp.country ?? "",
+              country:
+                cp.country ?? "",
 
 
-targetRole:
-cp.targetRole ??
-cp.currentRole ??
-"Unknown",
+              targetRole:
+                cp.targetRole ??
+                cp.currentRole ??
+                "Unknown",
 
 
 
-yearsExperience:
-Number.isFinite(
-Number(cp.yearsExperience)
-)
-?
-Number(cp.yearsExperience)
-:
-0,
+              yearsExperience:
+                Number.isFinite(
+                  Number(cp.yearsExperience)
+                )
+                  ?
+                  Number(cp.yearsExperience)
+                  :
+                  0,
 
 
 
-visaStatus:
-cp.visaStatus ??
-"requires_sponsorship",
+              visaStatus:
+                cp.visaStatus ??
+                "requires_sponsorship",
 
 
 
-englishLevel:
-cp.englishLevel ??
-"B1",
+              englishLevel:
+                cp.englishLevel ??
+                "B1",
 
 
 
-euWorkEligible:
-cp.euWorkEligible === true,
+              euWorkEligible:
+                cp.euWorkEligible === true,
 
 
 
-linkedinUrl:
-cp.linkedinUrl ?? "",
+              linkedinUrl:
+                cp.linkedinUrl ?? "",
 
 
 
-avatarUrl:
-avatarFor(fullName),
+              avatarUrl:
+                avatarFor(fullName),
 
 
 
-skills:
-Array.isArray(cp.skills)
-?
-cp.skills
-:
-[],
+              skills:
+                Array.isArray(cp.skills)
+                  ?
+                  cp.skills
+                  :
+                  [],
 
 
 
-languagesKnown:
-Array.isArray(cp.languagesKnown)
-?
-cp.languagesKnown
-:
-[],
+              languagesKnown:
+                Array.isArray(cp.languagesKnown)
+                  ?
+                  cp.languagesKnown
+                  :
+                  [],
 
 
 
-interestedSkills:
-Array.isArray(cp.interestedSkills)
-?
-cp.interestedSkills
-:
-[],
+              interestedSkills:
+                Array.isArray(cp.interestedSkills)
+                  ?
+                  cp.interestedSkills
+                  :
+                  [],
 
 
 
-expectedSalary:
-cp.expectedSalary ?? "",
+              expectedSalary:
+                cp.expectedSalary ?? "",
 
 
 
-availability:
-cp.availability ?? "",
+              availability:
+                cp.availability ?? "",
 
 
 
-careerPreference:
-Array.isArray(cp.careerPreference)
-?
-cp.careerPreference
-:
-[],
+              careerPreference:
+                Array.isArray(cp.careerPreference)
+                  ?
+                  cp.careerPreference
+                  :
+                  [],
 
 
 
-preferredWorkMode:
-Array.isArray(cp.preferredWorkMode)
-?
-cp.preferredWorkMode
-:
-[],
+              preferredWorkMode:
+                Array.isArray(cp.preferredWorkMode)
+                  ?
+                  cp.preferredWorkMode
+                  :
+                  [],
 
 
 
-source:"direct"
+              source: "direct"
 
 
-})
-.returning();
+            })
+            .returning();
 
 
 
-candidateId =
-candidate.id;
+        candidateId =
+          candidate.id;
 
 
-}
+      }
 
-}
+    }
 
 
 
-// =====================
-// OTP
-// =====================
+    // =====================
+    // OTP
+    // =====================
 
 
-const otp =
-Math.floor(
-100000 +
-Math.random()*900000
-)
-.toString();
+    const otp =
+      Math.floor(
+        100000 +
+        Math.random() * 900000
+      )
+        .toString();
 
 
 
-const otpExpiry =
-new Date(
-Date.now()+10*60*1000
-);
+    const otpExpiry =
+      new Date(
+        Date.now() + 10 * 60 * 1000
+      );
 
 
 
-const passwordHash =
-await hashPassword(password);
+    const passwordHash =
+      await hashPassword(password);
 
 
 
-let employeeId=null;
+    let employeeId = null;
 
 
-if(role!=="candidate"){
-employeeId =
-await generateEmployeeId();
-}
+    if (role !== "candidate") {
+      employeeId =
+        await generateEmployeeId();
+    }
 
 
 
 
-// =====================
-// CREATE USER
-// =====================
+    // =====================
+    // CREATE USER
+    // =====================
 
 
-const [user] =
-await db.insert(usersTable)
-.values({
+    const [user] =
+      await db.insert(usersTable)
+        .values({
 
-email,
+          email,
 
-passwordHash,
+          passwordHash,
 
-fullName,
+          fullName,
 
 
-candidateId,
+          candidateId,
 
 
-role,
+          role,
 
 
-employeeId,
+          employeeId,
 
 
-emailOtp:
-otp,
+          emailOtp:
+            otp,
 
 
-emailOtpExpiry:
-otpExpiry,
+          emailOtpExpiry:
+            otpExpiry,
 
 
-isEmailVerified:false,
+          isEmailVerified: false,
 
 
-mobile:
-body.mobile
-?
-normalizePhone(body.mobile)
-:
-null,
+          mobile:
+            body.mobile
+              ?
+              normalizePhone(body.mobile)
+              :
+              null,
 
 
-username:
-body.username ?? null,
+          username:
+            body.username ?? null,
 
 
-status:"Active",
+          status: "Active",
 
 
-gdprConsentAt:
-new Date()
+          gdprConsentAt:
+            new Date()
 
-})
-.returning();
+        })
+        .returning();
 
 
 
 
 
-// =====================
-// SEND OTP EMAIL
-// =====================
+    // =====================
+    // SEND OTP EMAIL
+    // =====================
 
-await transporter.sendMail({
-  from: `"ORN-AI" <${process.env.SMTP_USER}>`,
-  to: email,
-  subject: "ORN-AI Email Verification OTP",
+    await transporter.sendMail({
+      from: `"ORN-AI" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "ORN-AI Email Verification OTP",
 
-  html: `
+      html: `
 <!DOCTYPE html>
 <html>
 <head>
@@ -991,45 +992,45 @@ https://orn-ai.com/
 </body>
 </html>
 `,
-});
+    });
 
-const token = signToken(user);
+    const token = signToken(user);
 
-setAuthCookie(res, token);
+    setAuthCookie(res, token);
 
-req.user = publicUser(user);
+    req.user = publicUser(user);
 
-return res.status(201).json({
+    return res.status(201).json({
 
-success:true,
+      success: true,
 
-message:
-"Registration successful. OTP sent",
+      message:
+        "Registration successful. OTP sent",
 
-email,
+      email,
 
-candidateCode,
-candidateId,
+      candidateCode,
+      candidateId,
 
-});
-
-
-
-}catch(err:any){
-
-console.log(err);
+    });
 
 
-return res.status(500).json({
 
-error:
-err.message ||
-"Registration failed"
+  } catch (err: any) {
 
-});
+    console.log(err);
 
 
-}
+    return res.status(500).json({
+
+      error:
+        err.message ||
+        "Registration failed"
+
+    });
+
+
+  }
 
 
 });
@@ -1092,25 +1093,24 @@ router.post("/auth/verify-email", async (req, res) => {
       ) {
         try {
           console.log("====================================");
-console.log("AI EVALUATION INPUT");
-console.log("====================================");
+          console.log("AI EVALUATION INPUT");
+          console.log("====================================");
 
-console.log("Candidate ID:", candidate.id);
-console.log("Name:", candidate.fullName);
-console.log("Email:", candidate.email);
-console.log("Target Role:", candidate.targetRole);
-console.log("Skills:", candidate.skills);
-console.log("Years Experience:", candidate.yearsExperience);
+          console.log("Candidate ID:", candidate.id);
+          console.log("Name:", candidate.fullName);
+          console.log("Email:", candidate.email);
+          console.log("Target Role:", candidate.targetRole);
+          console.log("Skills:", candidate.skills);
+          console.log("Years Experience:", candidate.yearsExperience);
 
-console.log("CV DATA:");
-console.dir(candidate.cv, { depth: null });
+          console.log("CV DATA:");
+          console.dir(candidate.cv, { depth: null });
 
-console.log(
-  "CV JSON:",
-  JSON.stringify(candidate.cv, null, 2)
-);
+          console.log(
+            "CV JSON:",
+            JSON.stringify(candidate.cv, null, 2)
+          );
 
-console.log("====================================");
           const result = await evaluateWithAI({
             id: candidate.id,
             fullName: candidate.fullName,
@@ -1122,12 +1122,11 @@ console.log("====================================");
             targetRole: candidate.targetRole,
             country: candidate.country,
             skills: candidate.skills,
-            careerGapMonths:
-              candidate.careerGapMonths ?? 0,
+            careerGapMonths: candidate.careerGapMonths ?? 0,
             cv: candidate.cv as any,
+            resumeText: (candidate.cv as any)?.rawText ?? null,
+            resumeAnalysis: (candidate.cv as any)?.resumeAnalysis ?? null,
           });
-console.log("FILE =>", req.file);
-console.log("RESUME DATA =>", parsedResume);
           await db
             .update(candidatesTable)
             .set({

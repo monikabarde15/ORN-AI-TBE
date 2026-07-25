@@ -1,6 +1,7 @@
 // artifacts\api-server\src\lib\cv-parser.ts
 // @ts-expect-error – pdf-parse v1 has no types
-import pdfParse from "pdf-parse/lib/pdf-parse.js";
+// import pdfParse from "pdf-parse/lib/pdf-parse.js";
+import PDFParser from "pdf2json";
 import mammoth from "mammoth";
 import { SKILL_POOL } from "./regions";
 
@@ -71,24 +72,81 @@ const LOCATION_HINTS = [
 const MONTH_RE =
   /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{4})/gi;
 
+function safeDecodeURIComponent(str: string): string {
+  if (!str) return "";
+  try {
+    return decodeURIComponent(str);
+  } catch {
+    try {
+      return decodeURIComponent(str.replace(/%(?![0-9A-Fa-f]{2})/g, "%25"));
+    } catch {
+      return str;
+    }
+  }
+}
+
+function extractTextFromPdf(buffer: Buffer): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      const parser = new PDFParser();
+
+      parser.on("pdfParser_dataError", (err) => {
+        console.error("PDF Parsing Error:", err);
+        resolve("");
+      });
+
+      parser.on("pdfParser_dataReady", (pdfData) => {
+        try {
+          const text = (pdfData.Pages ?? [])
+            .flatMap((page: any) => page.Texts ?? [])
+            .map((text: any) =>
+              safeDecodeURIComponent(
+                (text.R ?? [])
+                  .map((r: any) => r.T ?? "")
+                  .join(""),
+              ),
+            )
+            .join(" ");
+
+          resolve(text);
+        } catch (err) {
+          console.error("Error extracting text from PDF data:", err);
+          resolve("");
+        }
+      });
+
+      parser.parseBuffer(buffer);
+    } catch (err) {
+      console.error("Failed to parse PDF buffer:", err);
+      resolve("");
+    }
+  });
+}
+
+
 export async function parseCvBuffer(
   buffer: Buffer,
   mimeType: string,
 ): Promise<string> {
-  if (mimeType === "application/pdf") {
-    const data = await pdfParse(buffer);
-    return String(data.text ?? "");
+  try {
+    if (mimeType === "application/pdf") {
+      return await extractTextFromPdf(buffer);
+    }
+
+    if (
+      mimeType ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      mimeType === "application/msword"
+    ) {
+      const result = await mammoth.extractRawText({ buffer });
+      return String(result.value ?? "");
+    }
+
+    return buffer.toString("utf8");
+  } catch (err) {
+    console.error("Error in parseCvBuffer:", err);
+    return "";
   }
-  if (
-    mimeType ===
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    mimeType === "application/msword"
-  ) {
-    const result = await mammoth.extractRawText({ buffer });
-    return String(result.value ?? "");
-  }
-  // Plain text fallback
-  return buffer.toString("utf8");
 }
 
 function pickName(lines: string[]): string | null {

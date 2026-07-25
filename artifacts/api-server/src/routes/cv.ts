@@ -73,11 +73,13 @@ async function ensureCanMutateCandidate(
   return { ok: false, status: 403, error: "Insufficient permissions" };
 }
 
-// ---- POST /candidates/:id/cv-file ------------------------------------------
+import { processAndSaveCv } from "../lib/cv-processor";
+
+// ---- POST /candidates/:id/cv -----------------------------------------------
 router.post(
   "/candidates/:id/cv",
   requireAuth,
-  requireCandidateAccess,
+  requireCandidateAccess(),
   upload.single("file"),
   async (req, res) => {
     const candidateId = req.params.id;
@@ -88,41 +90,35 @@ router.post(
       });
     }
 
-    const key = `resume/${candidateId}/${Date.now()}-${req.file.originalname}`;
+    try {
+      const result = await processAndSaveCv({
+        candidateId,
+        fileBuffer: req.file.buffer,
+        fileName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+      });
 
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: key,
-        Body: req.file.buffer,
-        ContentType: req.file.mimetype,
-      })
-    );
-
-    const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-
-    const [candidate] = await db
-      .update(candidatesTable)
-      .set({
-        cv: {
-          fileName: req.file.originalname,
-          fileSize: req.file.size,
-          key,
-          url: fileUrl,
-        },
-      })
-      .where(eq(candidatesTable.id, candidateId))
-      .returning();
-
-    res.json({
-      success: true,
-      cv: candidate.cv,
-    });
+      return res.json({
+        success: true,
+        cv: result.cv,
+        evaluation: result.evaluation,
+      });
+    } catch (err) {
+      console.error("CV upload error in cv.ts:", err);
+      return res.status(500).json({
+        error: "Failed to process uploaded CV",
+        details: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 );
+
+// ---- POST /candidates/:id/cv-file ------------------------------------------
 router.post(
   "/candidates/:id/cv-file",
   requireAuth,
+  requireCandidateAccess(),
   upload.single("file"),
   async (req, res) => {
     const candidateId = req.params.id;
@@ -133,36 +129,27 @@ router.post(
       });
     }
 
-    const key = `resume/${candidateId}/${Date.now()}-${req.file.originalname}`;
+    try {
+      const result = await processAndSaveCv({
+        candidateId,
+        fileBuffer: req.file.buffer,
+        fileName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+      });
 
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: key,
-        Body: req.file.buffer,
-        ContentType: req.file.mimetype,
-      })
-    );
-
-    const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-
-    const [candidate] = await db
-      .update(candidatesTable)
-      .set({
-        cv: {
-          fileName: req.file.originalname,
-          fileSize: req.file.size,
-          key,
-          url: fileUrl,
-        },
-      })
-      .where(eq(candidatesTable.id, candidateId))
-      .returning();
-
-    res.json({
-      success: true,
-      cv: candidate.cv,
-    });
+      return res.json({
+        success: true,
+        cv: result.cv,
+        evaluation: result.evaluation,
+      });
+    } catch (err) {
+      console.error("CV-file upload error in cv.ts:", err);
+      return res.status(500).json({
+        error: "Failed to process uploaded CV file",
+        details: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 );
 // ---- GET /candidates/:id/skill-gap -----------------------------------------
