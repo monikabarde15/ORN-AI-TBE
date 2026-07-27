@@ -175,19 +175,27 @@ console.log("category =>", courseData.category);
 
   // Handlers
   const handleLessonSelect = useCallback((lesson: Lesson) => {
+    setCurrentLecture(lesson);
+    setContentMode("lesson");
+  }, []);
+
+  const handleLessonCompleted = useCallback((lessonId: string) => {
     setSections((prev) =>
       prev.map((section) => ({
         ...section,
         lessons: section.lessons.map((item) =>
-          item.id === lesson.id
+          item.id === lessonId
             ? { ...item, completed: true }
             : item
         ),
       }))
     );
 
-    setCurrentLecture({ ...lesson, completed: true });
-    setContentMode("lesson");
+    setCurrentLecture((prev) =>
+      prev && prev.id === lessonId
+        ? { ...prev, completed: true }
+        : prev
+    );
   }, []);
 
   const handleQuizSelect = useCallback((lesson: Lesson) => {
@@ -375,6 +383,7 @@ const fetchCategory = async (categoryId: string) => {
           relatedCourses={relatedCourses}
            categoryName={categoryName}
           onQuizCompleted={handleQuizCompleted}
+          onLessonCompleted={handleLessonCompleted}
 
           sections={sections}
           currentLecture={currentLecture}

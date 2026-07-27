@@ -15,6 +15,7 @@ interface VideoPlayerContentProps {
   lecture: any;
   onPreviousLesson?: () => void;
   onNextLesson?: () => void;
+  onLessonCompleted?: (lessonId: string) => void;
 }
 
 const VideoPlayerContent = ({
@@ -22,6 +23,7 @@ const VideoPlayerContent = ({
   lecture,
   onPreviousLesson,
   onNextLesson,
+  onLessonCompleted,
 }: VideoPlayerContentProps) => {
   const [openFaq, setOpenFaq] =
     useState<number | null>(null);
@@ -38,6 +40,9 @@ const VideoPlayerContent = ({
       }
       onNextLesson={
         onNextLesson
+      }
+      onLessonCompleted={
+        onLessonCompleted
       }
     />
     

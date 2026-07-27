@@ -19,7 +19,7 @@
 }
 
 .form-header h1 {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 700;
   color: #0c0c0e;
   margin: 0;
@@ -505,7 +505,7 @@ textarea.form-control {
 /* Save & Continue Button */
 .btn-primary {
   padding: 12px 32px;
-  background: #000000;
+  background: rgb(40, 40, 114);
   border: none;
   border-radius: 40px;
   font-size: 14px;

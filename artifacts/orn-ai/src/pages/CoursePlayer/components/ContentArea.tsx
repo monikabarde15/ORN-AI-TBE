@@ -13,6 +13,7 @@ interface ContentAreaProps {
   categoryName: string;
 
   onQuizCompleted: () => void;
+  onLessonCompleted?: (lessonId: string) => void;
 
   sections: any[];
   currentLecture: any;
@@ -32,6 +33,7 @@ const ContentArea = ({
   lecture,
   relatedCourses,
   onQuizCompleted,
+  onLessonCompleted,
   categoryName,
   sections,
   currentLecture,
@@ -68,6 +70,9 @@ const ContentArea = ({
               }
               onNextLesson={
                 onNextLesson
+              }
+              onLessonCompleted={
+                onLessonCompleted
               }
             />
           );

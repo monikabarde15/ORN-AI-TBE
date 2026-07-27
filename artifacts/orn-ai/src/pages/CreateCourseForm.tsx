@@ -19,10 +19,10 @@ import {
 } from "react-hot-toast"
 
 import { Shell }
-from "@/components/layout/Shell"
+  from "@/components/layout/Shell"
 
 import api
-from "../../services/api"
+  from "../../services/api"
 
 import "./CreateCourse.css"
 
@@ -83,57 +83,57 @@ const validatePdf = (file: File) => {
 ========================================================= */
 
 interface Category {
-  _id:string
-  name:string
+  _id: string
+  name: string
 }
 
 interface Lesson {
-  id:string
+  id: string
 
-  backendId?:string
+  backendId?: string
 
-  title:string
+  title: string
 
-  duration:string
+  duration: string
 
-  content:string
+  content: string
 
-  videoFile?:File | null
+  videoFile?: File | null
 
-  documentFile?:File | null
+  documentFile?: File | null
 
-  isEditing?:boolean
+  isEditing?: boolean
 }
 interface QuizQuestion {
-  id:string
-  question:string
-  options:string[]
-  correctAnswer:string
+  id: string
+  question: string
+  options: string[]
+  correctAnswer: string
 }
 
 interface Quiz {
-  id:string
+  id: string
 
-  title:string
+  title: string
 
-  questions:QuizQuestion[]
+  questions: QuizQuestion[]
 
-  isEditing?:boolean
+  isEditing?: boolean
 }
 
 interface Module {
-  id:string
-  title:string
+  id: string
+  title: string
 
-  lessons:Lesson[]
+  lessons: Lesson[]
 
-  quizzes:Quiz[]
+  quizzes: Quiz[]
 
-  showLessonForm?:boolean
+  showLessonForm?: boolean
 
-  showQuizForm?:boolean
+  showQuizForm?: boolean
 
-  isEditing?:boolean
+  isEditing?: boolean
 }
 
 
@@ -146,25 +146,25 @@ function CreateCourseForm() {
   const [loading, setLoading] =
     useState(false)
 
-    const [
-  thumbnailProgress,
-  setThumbnailProgress,
-] = useState(0)
+  const [
+    thumbnailProgress,
+    setThumbnailProgress,
+  ] = useState(0)
 
-const [
-  promoVideoProgress,
-  setPromoVideoProgress,
-] = useState(0)
+  const [
+    promoVideoProgress,
+    setPromoVideoProgress,
+  ] = useState(0)
 
-const [
-  lessonVideoProgress,
-  setLessonVideoProgress,
-] = useState(0)
+  const [
+    lessonVideoProgress,
+    setLessonVideoProgress,
+  ] = useState(0)
 
-const [
-  lessonPdfProgress,
-  setLessonPdfProgress,
-] = useState(0)
+  const [
+    lessonPdfProgress,
+    setLessonPdfProgress,
+  ] = useState(0)
 
   const [courseId, setCourseId] =
     useState("")
@@ -186,15 +186,15 @@ const [
 
   const [formData, setFormData] =
     useState({
-      title:"",
-      subtitle:"",
-      category:"",
-      instructor:"",
-      level:"Beginner",
-      price:"",
-      description:"",
-      thumbnailImage:null as File | null,
-      promotionalVideo:null as File | null,
+      title: "",
+      subtitle: "",
+      category: "",
+      instructor: "",
+      level: "Beginner",
+      price: "",
+      description: "",
+      thumbnailImage: null as File | null,
+      promotionalVideo: null as File | null,
     })
 
 
@@ -205,12 +205,12 @@ const [
 
   const [lessonForm, setLessonForm] =
     useState<Lesson>({
-      id:"",
-      title:"",
-      duration:"",
-      content:"",
-      videoFile:null,
-      documentFile:null,
+      id: "",
+      title: "",
+      duration: "",
+      content: "",
+      videoFile: null,
+      documentFile: null,
     })
 
 
@@ -221,34 +221,34 @@ const [
 
   const [quizForm, setQuizForm] =
     useState<Quiz>({
-      id:"",
-      title:"",
-      questions:[
+      id: "",
+      title: "",
+      questions: [
         {
-          id:crypto.randomUUID(),
-          question:"",
-          options:["","","",""] ,
-          correctAnswer:"",
+          id: crypto.randomUUID(),
+          question: "",
+          options: ["", "", "", ""],
+          correctAnswer: "",
         },
       ],
     })
 
 
 
-  useEffect(()=>{
+  useEffect(() => {
 
     setCategories([
       {
-        _id:"1",
-        name:"Development",
+        _id: "1",
+        name: "Development",
       },
       {
-        _id:"2",
-        name:"Design",
+        _id: "2",
+        name: "Design",
       },
       {
-        _id:"3",
-        name:"Artificial Intelligence",
+        _id: "3",
+        name: "Artificial Intelligence",
       },
     ])
 
@@ -261,46 +261,46 @@ const [
   ========================================================= */
 
   const handleCreateCourse =
-    async ()=>{
-if (!formData.title.trim()) {
-  toast.error("Course title required")
-  return
-}
+    async () => {
+      if (!formData.title.trim()) {
+        toast.error("Course title required")
+        return
+      }
 
-if (!formData.subtitle.trim()) {
-  toast.error("Subtitle required")
-  return
-}
+      if (!formData.subtitle.trim()) {
+        toast.error("Subtitle required")
+        return
+      }
 
-if (!formData.category) {
-  toast.error("Select category")
-  return
-}
+      if (!formData.category) {
+        toast.error("Select category")
+        return
+      }
 
-if (!formData.instructor.trim()) {
-  toast.error("Instructor required")
-  return
-}
+      if (!formData.instructor.trim()) {
+        toast.error("Instructor required")
+        return
+      }
 
-if (!formData.price.trim()) {
-  toast.error("Price required")
-  return
-}
+      if (!formData.price.trim()) {
+        toast.error("Price required")
+        return
+      }
 
-if (!formData.description.trim()) {
-  toast.error("Description required")
-  return
-}
+      if (!formData.description.trim()) {
+        toast.error("Description required")
+        return
+      }
 
-if (!formData.thumbnailImage) {
-  toast.error("Thumbnail required")
-  return
-}
+      if (!formData.thumbnailImage) {
+        toast.error("Thumbnail required")
+        return
+      }
 
-if (!formData.promotionalVideo) {
-  toast.error("Promotional video required")
-  return
-}
+      if (!formData.promotionalVideo) {
+        toast.error("Promotional video required")
+        return
+      }
       try {
 
         setLoading(true)
@@ -355,49 +355,49 @@ if (!formData.promotionalVideo) {
 
 
         const res =
-  await api.post(
-    "/api/course/createCourse",
-    form,
-    {
-      headers:{
-        "Content-Type":
-          "multipart/form-data",
-      },
+          await api.post(
+            "/api/course/createCourse",
+            form,
+            {
+              headers: {
+                "Content-Type":
+                  "multipart/form-data",
+              },
 
-      onUploadProgress:(progressEvent)=>{
+              onUploadProgress: (progressEvent) => {
 
-        const percent =
-          Math.round(
-            (
-              progressEvent.loaded * 100
-            ) /
-            (progressEvent.total || 1)
+                const percent =
+                  Math.round(
+                    (
+                      progressEvent.loaded * 100
+                    ) /
+                    (progressEvent.total || 1)
+                  )
+
+
+
+                if (
+                  formData.thumbnailImage
+                ) {
+
+                  setThumbnailProgress(
+                    percent
+                  )
+                }
+
+
+
+                if (
+                  formData.promotionalVideo
+                ) {
+
+                  setPromoVideoProgress(
+                    percent
+                  )
+                }
+              },
+            }
           )
-
-
-
-        if (
-          formData.thumbnailImage
-        ) {
-
-          setThumbnailProgress(
-            percent
-          )
-        }
-
-
-
-        if (
-          formData.promotionalVideo
-        ) {
-
-          setPromoVideoProgress(
-            percent
-          )
-        }
-      },
-    }
-  )
 
 
 
@@ -407,7 +407,7 @@ if (!formData.promotionalVideo) {
 
         setThumbnailProgress(100)
 
-setPromoVideoProgress(100)
+        setPromoVideoProgress(100)
 
         toast.success(
           "Course Created"
@@ -434,7 +434,7 @@ setPromoVideoProgress(100)
   ========================================================= */
 
   const handleAddModule =
-    async ()=>{
+    async () => {
 
       if (!moduleTitle.trim()) {
 
@@ -468,7 +468,7 @@ setPromoVideoProgress(100)
 
 
 
-        setModules((prev)=>[
+        setModules((prev) => [
           ...prev,
 
           {
@@ -479,13 +479,13 @@ setPromoVideoProgress(100)
             title:
               moduleTitle,
 
-            lessons:[],
+            lessons: [],
 
-            quizzes:[],
+            quizzes: [],
 
-            showLessonForm:false,
+            showLessonForm: false,
 
-            showQuizForm:false,
+            showQuizForm: false,
           },
         ])
 
@@ -511,389 +511,389 @@ setPromoVideoProgress(100)
      ADD LESSON
   ========================================================= */
 
-const handleAddLesson =
-  async (
-    moduleId:string
-  )=>{
-if (!lessonForm.title.trim()) {
-  toast.error("Lesson title required")
-  return
-}
-
-if (!lessonForm.content.trim()) {
-  toast.error("Lesson description required")
-  return
-}
-
-if (!lessonForm.duration.trim()) {
-  toast.error("Lesson duration required")
-  return
-}
-
-if (!lessonForm.videoFile) {
-  toast.error("Lesson video required")
-  return
-}
-
-if (!lessonForm.documentFile) {
-  toast.error("Lesson PDF required")
-  return
-}
-    if (
-      !lessonForm.title ||
-      !lessonForm.duration
-    ) {
-
-      toast.error(
-        "Fill all lesson fields"
-      )
-
-      return
-    }
-
-    try {
-
-      const form =
-        new FormData()
-
-      form.append(
-        "sectionId",
-        moduleId
-      )
-
-      form.append(
-        "title",
-        lessonForm.title
-      )
-
-      form.append(
-        "description",
-        lessonForm.content
-      )
-
-      form.append(
-        "timeDuration",
-        lessonForm.duration
-      )
-
-
-
-      if (
-        lessonForm.videoFile
-      ) {
-
-        form.append(
-          "video",
-          lessonForm.videoFile
-        )
+  const handleAddLesson =
+    async (
+      moduleId: string
+    ) => {
+      if (!lessonForm.title.trim()) {
+        toast.error("Lesson title required")
+        return
       }
 
-
-
-      if (
-        lessonForm.documentFile
-      ) {
-
-        form.append(
-          "pdf",
-          lessonForm.documentFile
-        )
+      if (!lessonForm.content.trim()) {
+        toast.error("Lesson description required")
+        return
       }
 
+      if (!lessonForm.duration.trim()) {
+        toast.error("Lesson duration required")
+        return
+      }
 
+      if (!lessonForm.videoFile) {
+        toast.error("Lesson video required")
+        return
+      }
 
-     const res =
-  await api.post(
-    "/api/course/addSubSection",
-    form,
-    {
-      headers:{
-        "Content-Type":
-          "multipart/form-data",
-      },
-
-      onUploadProgress:(progressEvent)=>{
-
-        const percent =
-          Math.round(
-            (
-              progressEvent.loaded * 100
-            ) /
-            (progressEvent.total || 1)
-          )
-
-
-
-        if (
-          lessonForm.videoFile
-        ) {
-
-          setLessonVideoProgress(
-            percent
-          )
-        }
-
-
-
-        if (
-          lessonForm.documentFile
-        ) {
-
-          setLessonPdfProgress(
-            percent
-          )
-        }
-      },
-    }
-  )
-
-
-
-      console.log(
-        "LESSON RESPONSE =>",
-        res.data
-      )
-
-
-
-      const backendId =
-        res.data?.data
-          ?.subSection?.[0]
-          ?._id
-
-
-
-      console.log(
-        "BACKEND ID =>",
-        backendId
-      )
-
-
-
-      if (!backendId) {
+      if (!lessonForm.documentFile) {
+        toast.error("Lesson PDF required")
+        return
+      }
+      if (
+        !lessonForm.title ||
+        !lessonForm.duration
+      ) {
 
         toast.error(
-          "Backend lesson id missing"
+          "Fill all lesson fields"
         )
 
         return
       }
 
+      try {
 
+        const form =
+          new FormData()
 
-      const newLesson = {
+        form.append(
+          "sectionId",
+          moduleId
+        )
 
-        id:
-          crypto.randomUUID(),
+        form.append(
+          "title",
+          lessonForm.title
+        )
 
-        backendId,
+        form.append(
+          "description",
+          lessonForm.content
+        )
 
-        title:
-          lessonForm.title,
-
-        duration:
-          lessonForm.duration,
-
-        content:
-          lessonForm.content,
-
-        videoFile:
-          lessonForm.videoFile,
-
-        documentFile:
-          lessonForm.documentFile,
-      }
-
-
-
-      setModules((prev)=>
-        prev.map((m)=>{
-
-          if (
-            m.id !== moduleId
-          ) return m
+        form.append(
+          "timeDuration",
+          lessonForm.duration
+        )
 
 
 
-          return {
+        if (
+          lessonForm.videoFile
+        ) {
 
-            ...m,
+          form.append(
+            "video",
+            lessonForm.videoFile
+          )
+        }
 
-            showLessonForm:false,
 
-            lessons:[
-              ...m.lessons,
-              newLesson,
-            ],
-          }
+
+        if (
+          lessonForm.documentFile
+        ) {
+
+          form.append(
+            "pdf",
+            lessonForm.documentFile
+          )
+        }
+
+
+
+        const res =
+          await api.post(
+            "/api/course/addSubSection",
+            form,
+            {
+              headers: {
+                "Content-Type":
+                  "multipart/form-data",
+              },
+
+              onUploadProgress: (progressEvent) => {
+
+                const percent =
+                  Math.round(
+                    (
+                      progressEvent.loaded * 100
+                    ) /
+                    (progressEvent.total || 1)
+                  )
+
+
+
+                if (
+                  lessonForm.videoFile
+                ) {
+
+                  setLessonVideoProgress(
+                    percent
+                  )
+                }
+
+
+
+                if (
+                  lessonForm.documentFile
+                ) {
+
+                  setLessonPdfProgress(
+                    percent
+                  )
+                }
+              },
+            }
+          )
+
+
+
+        console.log(
+          "LESSON RESPONSE =>",
+          res.data
+        )
+
+
+
+        const backendId =
+          res.data?.data
+            ?.subSection?.[0]
+            ?._id
+
+
+
+        console.log(
+          "BACKEND ID =>",
+          backendId
+        )
+
+
+
+        if (!backendId) {
+
+          toast.error(
+            "Backend lesson id missing"
+          )
+
+          return
+        }
+
+
+
+        const newLesson = {
+
+          id:
+            crypto.randomUUID(),
+
+          backendId,
+
+          title:
+            lessonForm.title,
+
+          duration:
+            lessonForm.duration,
+
+          content:
+            lessonForm.content,
+
+          videoFile:
+            lessonForm.videoFile,
+
+          documentFile:
+            lessonForm.documentFile,
+        }
+
+
+
+        setModules((prev) =>
+          prev.map((m) => {
+
+            if (
+              m.id !== moduleId
+            ) return m
+
+
+
+            return {
+
+              ...m,
+
+              showLessonForm: false,
+
+              lessons: [
+                ...m.lessons,
+                newLesson,
+              ],
+            }
+          })
+        )
+
+
+
+        setLessonForm({
+          id: "",
+          title: "",
+          duration: "",
+          content: "",
+          videoFile: null,
+          documentFile: null,
         })
-      )
 
 
 
-      setLessonForm({
-        id:"",
-        title:"",
-        duration:"",
-        content:"",
-        videoFile:null,
-        documentFile:null,
-      })
+        toast.success(
+          "Lesson Added"
+        )
 
+      } catch (error: any) {
 
+        console.log(
+          "LESSON ERROR =>",
+          error
+        )
 
-      toast.success(
-        "Lesson Added"
-      )
+        console.log(
+          "LESSON ERROR RESPONSE =>",
+          error?.response?.data
+        )
 
-    } catch (error:any) {
-
-      console.log(
-        "LESSON ERROR =>",
-        error
-      )
-
-      console.log(
-        "LESSON ERROR RESPONSE =>",
-        error?.response?.data
-      )
-
-      toast.error(
-        "Failed to add lesson"
-      )
+        toast.error(
+          "Failed to add lesson"
+        )
+      }
     }
-  }
 
   /* =========================================================
      ADD QUIZ
   ========================================================= */
 
-const handleAddQuiz =
-  async (
-    moduleId:string
-  )=>{
+  const handleAddQuiz =
+    async (
+      moduleId: string
+    ) => {
 
-    try {
+      try {
 
-      const question =
-        quizForm.questions[0]
+        const question =
+          quizForm.questions[0]
 
-      // VALIDATION
+        // VALIDATION
 
-      if (!question.question.trim()) {
+        if (!question.question.trim()) {
 
-        toast.error(
-          "Question required"
-        )
+          toast.error(
+            "Question required"
+          )
 
-        return
-      }
-
-      if (
-        question.options.some(
-          (op)=>!op.trim()
-        )
-      ) {
-
-        toast.error(
-          "All options required"
-        )
-
-        return
-      }
-
-      if (
-        !question.correctAnswer.trim()
-      ) {
-
-        toast.error(
-          "Select correct answer"
-        )
-
-        return
-      }
-
-      // MODULE
-
-      const currentModule =
-        modules.find(
-          (m)=>m.id === moduleId
-        )
-
-      if (!currentModule) {
-
-        toast.error(
-          "Module not found"
-        )
-
-        return
-      }
-
-      // LESSON CHECK
-
-      if (
-        currentModule.lessons.length === 0
-      ) {
-
-        toast.error(
-          "Please add lesson first"
-        )
-
-        return
-      }
-
-      const latestLesson =
-        currentModule.lessons[
-          currentModule.lessons.length - 1
-        ]
-
-      if (
-        !latestLesson?.backendId
-      ) {
-
-        toast.error(
-          "Lesson backendId missing"
-        )
-
-        return
-      }
-
-      // API
-
-      await api.post(
-        "/api/mcq/create",
-        {
-          question:
-            question.question,
-
-          options:
-            JSON.stringify(
-              question.options
-            ),
-
-          correctAnswer:
-            question.options.indexOf(
-              question.correctAnswer
-            ),
-
-          courseId,
-
-          subsectionId:
-            latestLesson.backendId,
+          return
         }
-      )
 
-      // STATE UPDATE
+        if (
+          question.options.some(
+            (op) => !op.trim()
+          )
+        ) {
 
-      setModules((prev)=>
-        prev.map((m)=>
-          m.id === moduleId
-            ? {
+          toast.error(
+            "All options required"
+          )
+
+          return
+        }
+
+        if (
+          !question.correctAnswer.trim()
+        ) {
+
+          toast.error(
+            "Select correct answer"
+          )
+
+          return
+        }
+
+        // MODULE
+
+        const currentModule =
+          modules.find(
+            (m) => m.id === moduleId
+          )
+
+        if (!currentModule) {
+
+          toast.error(
+            "Module not found"
+          )
+
+          return
+        }
+
+        // LESSON CHECK
+
+        if (
+          currentModule.lessons.length === 0
+        ) {
+
+          toast.error(
+            "Please add lesson first"
+          )
+
+          return
+        }
+
+        const latestLesson =
+          currentModule.lessons[
+          currentModule.lessons.length - 1
+          ]
+
+        if (
+          !latestLesson?.backendId
+        ) {
+
+          toast.error(
+            "Lesson backendId missing"
+          )
+
+          return
+        }
+
+        // API
+
+        await api.post(
+          "/api/mcq/create",
+          {
+            question:
+              question.question,
+
+            options:
+              JSON.stringify(
+                question.options
+              ),
+
+            correctAnswer:
+              question.options.indexOf(
+                question.correctAnswer
+              ),
+
+            courseId,
+
+            subsectionId:
+              latestLesson.backendId,
+          }
+        )
+
+        // STATE UPDATE
+
+        setModules((prev) =>
+          prev.map((m) =>
+            m.id === moduleId
+              ? {
                 ...m,
 
-                showQuizForm:false,
+                showQuizForm: false,
 
-                quizzes:[
+                quizzes: [
                   ...m.quizzes,
 
                   {
@@ -904,45 +904,45 @@ const handleAddQuiz =
                   },
                 ],
               }
-            : m
+              : m
+          )
         )
-      )
 
-      // RESET
+        // RESET
 
-      setQuizForm({
-        id:"",
-        title:"",
-        questions:[
-          {
-            id:crypto.randomUUID(),
-            question:"",
-            options:["","","",""],
-            correctAnswer:"",
-          },
-        ],
-      })
+        setQuizForm({
+          id: "",
+          title: "",
+          questions: [
+            {
+              id: crypto.randomUUID(),
+              question: "",
+              options: ["", "", "", ""],
+              correctAnswer: "",
+            },
+          ],
+        })
 
-      toast.success(
-        "Quiz Added"
-      )
+        toast.success(
+          "Quiz Added"
+        )
 
-    } catch (error) {
+      } catch (error) {
 
-      console.log(error)
+        console.log(error)
 
-      toast.error(
-        "Failed to add quiz"
-      )
+        toast.error(
+          "Failed to add quiz"
+        )
+      }
     }
-  }
 
   /* =========================================================
      PUBLISH COURSE
   ========================================================= */
 
   const handlePublishCourse =
-    async ()=>{
+    async () => {
 
       try {
 
@@ -979,7 +979,7 @@ const handleAddQuiz =
 
     return (
 
-     <Shell className={`bg-[#F7F8FC] min-h-screen`}>
+      <Shell className={`bg-[#F7F8FC] min-h-screen`}>
 
         <div className="max-w-4xl mx-auto p-10 md:p-20">
 
@@ -1030,7 +1030,7 @@ const handleAddQuiz =
 
             <div className="p-6 md:p-10 border-b">
 
-              <h1 className="text-2xl font-bold tracking-tight">
+              <h1 className="text-3xl font-bold tracking-tight">
 
                 Create New Course
 
@@ -1050,10 +1050,10 @@ const handleAddQuiz =
 
                   value={formData.title}
 
-                  onChange={(e)=>
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
-                      title:e.target.value,
+                      title: e.target.value,
                     })
                   }
                 />
@@ -1066,10 +1066,10 @@ const handleAddQuiz =
 
                   value={formData.subtitle}
 
-                  onChange={(e)=>
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
-                      subtitle:e.target.value,
+                      subtitle: e.target.value,
                     })
                   }
                 />
@@ -1083,10 +1083,10 @@ const handleAddQuiz =
                 <select
                   className="premium-input"
 
-                  onChange={(e)=>
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
-                      category:e.target.value,
+                      category: e.target.value,
                     })
                   }
                 >
@@ -1095,7 +1095,7 @@ const handleAddQuiz =
                     Select Category
                   </option>
 
-                  {categories.map((category)=>(
+                  {categories.map((category) => (
                     <option
                       key={category._id}
                       value={category._id}
@@ -1114,10 +1114,10 @@ const handleAddQuiz =
 
                   value={formData.instructor}
 
-                  onChange={(e)=>
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
-                      instructor:e.target.value,
+                      instructor: e.target.value,
                     })
                   }
                 />
@@ -1130,10 +1130,10 @@ const handleAddQuiz =
 
                   value={formData.price}
 
-                  onChange={(e)=>
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
-                      price:e.target.value,
+                      price: e.target.value,
                     })
                   }
                 />
@@ -1149,10 +1149,10 @@ const handleAddQuiz =
 
                 value={formData.description}
 
-                onChange={(e)=>
+                onChange={(e) =>
                   setFormData({
                     ...formData,
-                    description:e.target.value,
+                    description: e.target.value,
                   })
                 }
               />
@@ -1183,7 +1183,7 @@ const handleAddQuiz =
                       type="file"
                       accept="image/*"
 
-                      onChange={(e)=>
+                      onChange={(e) =>
                         setFormData({
                           ...formData,
                           thumbnailImage:
@@ -1196,9 +1196,9 @@ const handleAddQuiz =
 
 
 
-                {formData.thumbnailImage && (
+                  {formData.thumbnailImage && (
 
-  <div className="
+                    <div className="
     mt-4
     border
     border-[#ECECF3]
@@ -1207,56 +1207,56 @@ const handleAddQuiz =
     bg-white
   ">
 
-    <div className="
+                      <div className="
       flex
       items-center
       justify-between
       gap-4
     ">
 
-      <div className="flex gap-3">
+                        <div className="flex gap-3">
 
-        <img
-          src={URL.createObjectURL(
-            formData.thumbnailImage
-          )}
-          className="
+                          <img
+                            src={URL.createObjectURL(
+                              formData.thumbnailImage
+                            )}
+                            className="
             w-[70px]
             h-[70px]
             rounded-[12px]
             object-cover
           "
-        />
+                          />
 
-        <div>
+                          <div>
 
-          <p className="
+                            <p className="
             text-[14px]
             font-[600]
             text-[#161439]
           ">
-            {formData.thumbnailImage.name}
-          </p>
+                              {formData.thumbnailImage.name}
+                            </p>
 
-          <span className="
+                            <span className="
             text-[13px]
             text-[#8B8BA3]
           ">
-            {thumbnailProgress}%
-          </span>
+                              {thumbnailProgress}%
+                            </span>
 
-        </div>
+                          </div>
 
-      </div>
+                        </div>
 
-      <CheckCircle2
-        className="text-[#5B50FF]"
-        size={22}
-      />
+                        <CheckCircle2
+                          className="text-[#5B50FF]"
+                          size={22}
+                        />
 
-    </div>
+                      </div>
 
-    <div className="
+                      <div className="
       h-[6px]
       rounded-full
       bg-[#ECECF3]
@@ -1264,23 +1264,23 @@ const handleAddQuiz =
       overflow-hidden
     ">
 
-      <div
-        className="
+                        <div
+                          className="
           h-full
           bg-[#5B50FF]
           rounded-full
           transition-all
         "
-        style={{
-          width:
-            `${thumbnailProgress}%`,
-        }}
-      />
+                          style={{
+                            width:
+                              `${thumbnailProgress}%`,
+                          }}
+                        />
 
-    </div>
+                      </div>
 
-  </div>
-)}
+                    </div>
+                  )}
                 </div>
 
 
@@ -1306,22 +1306,22 @@ const handleAddQuiz =
                       accept="video/*"
 
                       onChange={(e) => {
-  const file = e.target.files?.[0]
+                        const file = e.target.files?.[0]
 
-  if (!file) return
+                        if (!file) return
 
-  const error = validateVideo(file)
+                        const error = validateVideo(file)
 
-  if (error) {
-    toast.error(error)
-    return
-  }
+                        if (error) {
+                          toast.error(error)
+                          return
+                        }
 
-  setFormData({
-    ...formData,
-    promotionalVideo: file,
-  })
-}}
+                        setFormData({
+                          ...formData,
+                          promotionalVideo: file,
+                        })
+                      }}
                     />
 
                   </label>
@@ -1330,7 +1330,7 @@ const handleAddQuiz =
 
                   {formData.promotionalVideo && (
 
-  <div className="
+                    <div className="
     mt-4
     border
     border-[#ECECF3]
@@ -1339,16 +1339,16 @@ const handleAddQuiz =
     bg-white
   ">
 
-    <div className="
+                      <div className="
       flex
       items-center
       justify-between
       gap-4
     ">
 
-      <div className="flex gap-3">
+                        <div className="flex gap-3">
 
-        <div className="
+                          <div className="
           w-[70px]
           h-[70px]
           rounded-[12px]
@@ -1358,41 +1358,41 @@ const handleAddQuiz =
           justify-center
         ">
 
-          <Video
-            className="text-[#5B50FF]"
-          />
+                            <Video
+                              className="text-[#5B50FF]"
+                            />
 
-        </div>
+                          </div>
 
-        <div>
+                          <div>
 
-          <p className="
+                            <p className="
             text-[14px]
             font-[600]
             text-[#161439]
           ">
-            {formData.promotionalVideo.name}
-          </p>
+                              {formData.promotionalVideo.name}
+                            </p>
 
-          <span className="
+                            <span className="
             text-[13px]
             text-[#8B8BA3]
           ">
-            {promoVideoProgress}%
-          </span>
+                              {promoVideoProgress}%
+                            </span>
 
-        </div>
+                          </div>
 
-      </div>
+                        </div>
 
-      <CheckCircle2
-        className="text-[#5B50FF]"
-        size={22}
-      />
+                        <CheckCircle2
+                          className="text-[#5B50FF]"
+                          size={22}
+                        />
 
-    </div>
+                      </div>
 
-    <div className="
+                      <div className="
       h-[6px]
       rounded-full
       bg-[#ECECF3]
@@ -1400,23 +1400,23 @@ const handleAddQuiz =
       overflow-hidden
     ">
 
-      <div
-        className="
+                        <div
+                          className="
           h-full
           bg-[#5B50FF]
           rounded-full
           transition-all
         "
-        style={{
-          width:
-            `${promoVideoProgress}%`,
-        }}
-      />
+                          style={{
+                            width:
+                              `${promoVideoProgress}%`,
+                          }}
+                        />
 
-    </div>
+                      </div>
 
-  </div>
-)}
+                    </div>
+                  )}
 
                 </div>
 
@@ -1481,7 +1481,7 @@ md:text-[24px]
                   <input
                     value={moduleTitle}
 
-                    onChange={(e)=>
+                    onChange={(e) =>
                       setModuleTitle(
                         e.target.value
                       )
@@ -1513,7 +1513,7 @@ md:text-[24px]
 
             <div className="p-4 md:p-10 space-y-6">
 
-              {modules.map((module, moduleIndex)=>(
+              {modules.map((module, moduleIndex) => (
 
                 <div
                   key={module.id}
@@ -1532,30 +1532,30 @@ md:text-[24px]
 
                   <div className="flex md:flex-row flex-col gap-5 justify-between mb-6">
 
-                   {module.isEditing ? (
+                    {module.isEditing ? (
 
-  <input
-    value={module.title}
+                      <input
+                        value={module.title}
 
-    onChange={(e)=>
-      setModules((prev)=>
-        prev.map((m)=>
-          m.id === module.id
-            ? {
-                ...m,
-                title:e.target.value,
-              }
-            : m
-        )
-      )
-    }
+                        onChange={(e) =>
+                          setModules((prev) =>
+                            prev.map((m) =>
+                              m.id === module.id
+                                ? {
+                                  ...m,
+                                  title: e.target.value,
+                                }
+                                : m
+                            )
+                          )
+                        }
 
-    className="premium-input max-w-[350px]"
-  />
+                        className="premium-input max-w-[350px]"
+                      />
 
-) : (
+                    ) : (
 
-  <h2 className="
+                      <h2 className="
     text-[18px]
     font-[700]
     text-[#161439]
@@ -1564,44 +1564,44 @@ md:text-[24px]
     gap-3
   ">
 
-    Module {moduleIndex + 1}
-    :
-    {" "}
-    {module.title}
+                        Module {moduleIndex + 1}
+                        :
+                        {" "}
+                        {module.title}
 
-  </h2>
-)}
+                      </h2>
+                    )}
 
 
                     <div className="flex flex-wrap gap-4">
-                    <button
-                    onClick={()=>
-                      setModules((prev)=>
-                        prev.map((m)=>
-                          m.id === module.id
-                            ? {
-                                ...m,
-                                isEditing:!m.isEditing,
-                              }
-                            : m
-                        )
-                      )
-                    }
-                    className="outline-btn"
-                  >
-
-                    Edit
-
-                  </button>
                       <button
-                        onClick={()=>
-                          setModules((prev)=>
-                            prev.map((m)=>
+                        onClick={() =>
+                          setModules((prev) =>
+                            prev.map((m) =>
                               m.id === module.id
                                 ? {
-                                    ...m,
-                                    showLessonForm:true,
-                                  }
+                                  ...m,
+                                  isEditing: !m.isEditing,
+                                }
+                                : m
+                            )
+                          )
+                        }
+                        className="outline-btn"
+                      >
+
+                        Edit
+
+                      </button>
+                      <button
+                        onClick={() =>
+                          setModules((prev) =>
+                            prev.map((m) =>
+                              m.id === module.id
+                                ? {
+                                  ...m,
+                                  showLessonForm: true,
+                                }
                                 : m
                             )
                           )
@@ -1616,14 +1616,14 @@ md:text-[24px]
 
 
                       <button
-                        onClick={()=>
-                          setModules((prev)=>
-                            prev.map((m)=>
+                        onClick={() =>
+                          setModules((prev) =>
+                            prev.map((m) =>
                               m.id === module.id
                                 ? {
-                                    ...m,
-                                    showQuizForm:true,
-                                  }
+                                  ...m,
+                                  showQuizForm: true,
+                                }
                                 : m
                             )
                           )
@@ -1638,10 +1638,10 @@ md:text-[24px]
 
 
                       <button
-                        onClick={()=>
-                          setModules((prev)=>
+                        onClick={() =>
+                          setModules((prev) =>
                             prev.filter(
-                              (m)=>m.id !== module.id
+                              (m) => m.id !== module.id
                             )
                           )
                         }
@@ -1671,10 +1671,10 @@ md:text-[24px]
 
                         value={lessonForm.title}
 
-                        onChange={(e)=>
+                        onChange={(e) =>
                           setLessonForm({
                             ...lessonForm,
-                            title:e.target.value,
+                            title: e.target.value,
                           })
                         }
                       />
@@ -1690,10 +1690,10 @@ md:text-[24px]
 
                         value={lessonForm.content}
 
-                        onChange={(e)=>
+                        onChange={(e) =>
                           setLessonForm({
                             ...lessonForm,
-                            content:e.target.value,
+                            content: e.target.value,
                           })
                         }
                       />
@@ -1707,21 +1707,21 @@ md:text-[24px]
 
                         value={lessonForm.duration}
 
-                        onChange={(e)=>
+                        onChange={(e) =>
                           setLessonForm({
                             ...lessonForm,
-                            duration:e.target.value,
+                            duration: e.target.value,
                           })
                         }
                       />
 
 
 
-                     <div className="grid md:grid-cols-2 grid-cols-1 gap-5">
+                      <div className="grid md:grid-cols-2 grid-cols-1 gap-5">
 
-  {/* VIDEO UPLOAD */}
+                        {/* VIDEO UPLOAD */}
 
-  <label className="
+                        <label className="
     border-2
     border-dashed
     border-[#D9DBE9]
@@ -1737,59 +1737,59 @@ md:text-[24px]
     transition-all
   ">
 
-    <Video
-      size={38}
-      className="text-[#5B50FF]"
-    />
+                          <Video
+                            size={38}
+                            className="text-[#5B50FF]"
+                          />
 
-    <p className="
+                          <p className="
       mt-4
       text-[15px]
       font-[600]
       text-[#161439]
     ">
-      Upload Lesson Video
-    </p>
+                            Upload Lesson Video
+                          </p>
 
-    <span className="
+                          <span className="
       text-[13px]
       text-[#8B8BA3]
       mt-1
     ">
-      MP4, MOV
-    </span>
+                            MP4, MOV
+                          </span>
 
-    <input
-      hidden
-      type="file"
-      accept="video/*"
+                          <input
+                            hidden
+                            type="file"
+                            accept="video/*"
 
-      onChange={(e) => {
-  const file = e.target.files?.[0]
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
 
-  if (!file) return
+                              if (!file) return
 
-  const error = validateVideo(file)
+                              const error = validateVideo(file)
 
-  if (error) {
-    toast.error(error)
-    return
-  }
+                              if (error) {
+                                toast.error(error)
+                                return
+                              }
 
-  setLessonForm({
-    ...lessonForm,
-    videoFile: file,
-  })
-}}
-    />
+                              setLessonForm({
+                                ...lessonForm,
+                                videoFile: file,
+                              })
+                            }}
+                          />
 
-  </label>
+                        </label>
 
 
 
-  {/* PDF UPLOAD */}
+                        {/* PDF UPLOAD */}
 
-  <label className="
+                        <label className="
     border-2
     border-dashed
     border-[#D9DBE9]
@@ -1805,52 +1805,52 @@ md:text-[24px]
     transition-all
   ">
 
-    <UploadCloud
-      size={38}
-      className="text-[#5B50FF]"
-    />
+                          <UploadCloud
+                            size={38}
+                            className="text-[#5B50FF]"
+                          />
 
-    <p className="
+                          <p className="
       mt-4
       text-[15px]
       font-[600]
       text-[#161439]
     ">
-      Upload PDF Notes
-    </p>
+                            Upload PDF Notes
+                          </p>
 
-    <span className="
+                          <span className="
       text-[13px]
       text-[#8B8BA3]
       mt-1
     ">
-      PDF Documents
-    </span>
+                            PDF Documents
+                          </span>
 
-    <input
-      hidden
-      type="file"
-      accept=".pdf"
+                          <input
+                            hidden
+                            type="file"
+                            accept=".pdf"
 
-      onChange={(e)=>
-        setLessonForm({
-          ...lessonForm,
+                            onChange={(e) =>
+                              setLessonForm({
+                                ...lessonForm,
 
-          documentFile:
-            e.target.files?.[0] || null,
-        })
-      }
-    />
+                                documentFile:
+                                  e.target.files?.[0] || null,
+                              })
+                            }
+                          />
 
-  </label>
+                        </label>
 
 
 
-  {/* VIDEO PREVIEW */}
+                        {/* VIDEO PREVIEW */}
 
-  {lessonForm.videoFile && (
+                        {lessonForm.videoFile && (
 
-    <div className="
+                          <div className="
       border
       border-[#ECECF3]
       rounded-[16px]
@@ -1859,16 +1859,16 @@ md:text-[24px]
       md:col-span-1
     ">
 
-      <div className="
+                            <div className="
         flex
         items-center
         justify-between
         gap-4
       ">
 
-        <div className="flex gap-3">
+                              <div className="flex gap-3">
 
-          <div className="
+                                <div className="
             w-[60px]
             h-[60px]
             rounded-[12px]
@@ -1878,42 +1878,42 @@ md:text-[24px]
             justify-center
           ">
 
-            <Video
-              className="text-[#5B50FF]"
-              size={22}
-            />
+                                  <Video
+                                    className="text-[#5B50FF]"
+                                    size={22}
+                                  />
 
-          </div>
+                                </div>
 
-          <div>
+                                <div>
 
-            <p className="
+                                  <p className="
               text-[14px]
               font-[600]
               text-[#161439]
             ">
-              {lessonForm.videoFile.name}
-            </p>
+                                    {lessonForm.videoFile.name}
+                                  </p>
 
-            <span className="
+                                  <span className="
               text-[13px]
               text-[#8B8BA3]
             ">
-              {lessonVideoProgress}%
-            </span>
+                                    {lessonVideoProgress}%
+                                  </span>
 
-          </div>
+                                </div>
 
-        </div>
+                              </div>
 
-        <CheckCircle2
-          size={22}
-          className="text-[#5B50FF]"
-        />
+                              <CheckCircle2
+                                size={22}
+                                className="text-[#5B50FF]"
+                              />
 
-      </div>
+                            </div>
 
-      <div className="
+                            <div className="
         h-[6px]
         rounded-full
         bg-[#ECECF3]
@@ -1921,31 +1921,31 @@ md:text-[24px]
         overflow-hidden
       ">
 
-        <div
-          className="
+                              <div
+                                className="
             h-full
             bg-[#5B50FF]
             transition-all
             rounded-full
           "
-          style={{
-            width:
-              `${lessonVideoProgress}%`,
-          }}
-        />
+                                style={{
+                                  width:
+                                    `${lessonVideoProgress}%`,
+                                }}
+                              />
 
-      </div>
+                            </div>
 
-    </div>
-  )}
+                          </div>
+                        )}
 
 
 
-  {/* PDF PREVIEW */}
+                        {/* PDF PREVIEW */}
 
-  {lessonForm.documentFile && (
+                        {lessonForm.documentFile && (
 
-    <div className="
+                          <div className="
       border
       border-[#ECECF3]
       rounded-[16px]
@@ -1954,16 +1954,16 @@ md:text-[24px]
       md:col-span-1
     ">
 
-      <div className="
+                            <div className="
         flex
         items-center
         justify-between
         gap-4
       ">
 
-        <div className="flex gap-3">
+                              <div className="flex gap-3">
 
-          <div className="
+                                <div className="
             w-[60px]
             h-[60px]
             rounded-[12px]
@@ -1975,39 +1975,39 @@ md:text-[24px]
             font-bold
           ">
 
-            PDF
+                                  PDF
 
-          </div>
+                                </div>
 
-          <div>
+                                <div>
 
-            <p className="
+                                  <p className="
               text-[14px]
               font-[600]
               text-[#161439]
             ">
-              {lessonForm.documentFile.name}
-            </p>
+                                    {lessonForm.documentFile.name}
+                                  </p>
 
-            <span className="
+                                  <span className="
               text-[13px]
               text-[#8B8BA3]
             ">
-              {lessonPdfProgress}%
-            </span>
+                                    {lessonPdfProgress}%
+                                  </span>
 
-          </div>
+                                </div>
 
-        </div>
+                              </div>
 
-        <CheckCircle2
-          size={22}
-          className="text-[#5B50FF]"
-        />
+                              <CheckCircle2
+                                size={22}
+                                className="text-[#5B50FF]"
+                              />
 
-      </div>
+                            </div>
 
-      <div className="
+                            <div className="
         h-[6px]
         rounded-full
         bg-[#ECECF3]
@@ -2015,30 +2015,30 @@ md:text-[24px]
         overflow-hidden
       ">
 
-        <div
-          className="
+                              <div
+                                className="
             h-full
             bg-[#5B50FF]
             transition-all
             rounded-full
           "
-          style={{
-            width:
-              `${lessonPdfProgress}%`,
-          }}
-        />
+                                style={{
+                                  width:
+                                    `${lessonPdfProgress}%`,
+                                }}
+                              />
 
-      </div>
+                            </div>
 
-    </div>
-  )}
+                          </div>
+                        )}
 
-</div>
+                      </div>
 
 
 
                       <button
-                        onClick={()=>
+                        onClick={() =>
                           handleAddLesson(
                             module.id
                           )
@@ -2059,7 +2059,7 @@ md:text-[24px]
 
                   <div className="space-y-4">
 
-                    {module.lessons.map((lesson, index)=>(
+                    {module.lessons.map((lesson, index) => (
 
                       <div
                         key={lesson.id}
@@ -2089,42 +2089,42 @@ md:text-[24px]
 
                             </span>
 
-                           {lesson.isEditing ? (
+                            {lesson.isEditing ? (
 
-  <input
-    value={lesson.title}
+                              <input
+                                value={lesson.title}
 
-    onChange={(e)=>
-      setModules((prev)=>
-        prev.map((m)=>
-          m.id === module.id
-            ? {
-                ...m,
+                                onChange={(e) =>
+                                  setModules((prev) =>
+                                    prev.map((m) =>
+                                      m.id === module.id
+                                        ? {
+                                          ...m,
 
-                lessons:
-                  m.lessons.map((l)=>
-                    l.id === lesson.id
-                      ? {
-                          ...l,
-                          title:e.target.value,
-                        }
-                      : l
-                  ),
-              }
-            : m
-        )
-      )
-    }
+                                          lessons:
+                                            m.lessons.map((l) =>
+                                              l.id === lesson.id
+                                                ? {
+                                                  ...l,
+                                                  title: e.target.value,
+                                                }
+                                                : l
+                                            ),
+                                        }
+                                        : m
+                                    )
+                                  )
+                                }
 
-    className="premium-input h-[42px] w-[260px]"
-  />
+                                className="premium-input h-[42px] w-[260px]"
+                              />
 
-) : (
+                            ) : (
 
-  <span>
-    {lesson.title}
-  </span>
-)}
+                              <span>
+                                {lesson.title}
+                              </span>
+                            )}
 
                           </div>
 
@@ -2144,54 +2144,54 @@ md:text-[24px]
 
 
                         <button
-                          onClick={()=>
-                            setModules((prev)=>
-                              prev.map((m)=>
+                          onClick={() =>
+                            setModules((prev) =>
+                              prev.map((m) =>
                                 m.id === module.id
                                   ? {
-                                      ...m,
+                                    ...m,
 
-                                      lessons:
-                                        m.lessons.filter(
-                                          (l)=>
-                                            l.id !== lesson.id
-                                        ),
-                                    }
+                                    lessons:
+                                      m.lessons.filter(
+                                        (l) =>
+                                          l.id !== lesson.id
+                                      ),
+                                  }
                                   : m
                               )
                             )
                           }
                           className="text-red-500"
                         >
-                            <button
-  onClick={()=>
-    setModules((prev)=>
-      prev.map((m)=>
-        m.id === module.id
-          ? {
-              ...m,
+                          <button
+                            onClick={() =>
+                              setModules((prev) =>
+                                prev.map((m) =>
+                                  m.id === module.id
+                                    ? {
+                                      ...m,
 
-              lessons:
-                m.lessons.map((l)=>
-                  l.id === lesson.id
-                    ? {
-                        ...l,
-                        isEditing:
-                          !l.isEditing,
-                      }
-                    : l
-                ),
-            }
-          : m
-      )
-    )
-  }
-  className="text-[#5B50FF]"
->
+                                      lessons:
+                                        m.lessons.map((l) =>
+                                          l.id === lesson.id
+                                            ? {
+                                              ...l,
+                                              isEditing:
+                                                !l.isEditing,
+                                            }
+                                            : l
+                                        ),
+                                    }
+                                    : m
+                                )
+                              )
+                            }
+                            className="text-[#5B50FF]"
+                          >
 
-  Edit
+                            Edit
 
-</button>
+                          </button>
                           <Trash2 size={18} />
 
                         </button>
@@ -2207,7 +2207,7 @@ md:text-[24px]
 
                   {module.showQuizForm && (
 
-                   <div className="
+                    <div className="
  mt-6
  border
  border-[#ECECF3]
@@ -2225,16 +2225,16 @@ md:text-[24px]
                           quizForm.questions[0].question
                         }
 
-                        onChange={(e)=>
+                        onChange={(e) =>
                           setQuizForm({
                             ...quizForm,
 
-                            title:e.target.value,
+                            title: e.target.value,
 
-                            questions:[
+                            questions: [
                               {
                                 ...quizForm.questions[0],
-                                question:e.target.value,
+                                question: e.target.value,
                               },
                             ],
                           })
@@ -2247,7 +2247,7 @@ md:text-[24px]
 
                         {quizForm.questions[0]
                           .options.map(
-                            (option, index)=>(
+                            (option, index) => (
 
                               <div
                                 key={index}
@@ -2267,11 +2267,11 @@ md:text-[24px]
                                 <button
                                   type="button"
 
-                                  onClick={()=>
+                                  onClick={() =>
                                     setQuizForm({
                                       ...quizForm,
 
-                                      questions:[
+                                      questions: [
                                         {
                                           ...quizForm.questions[0],
 
@@ -2282,12 +2282,11 @@ md:text-[24px]
                                       ],
                                     })
                                   }
-                                  className={`w-5 h-5 rounded-full border ${
-                                    quizForm.questions[0]
+                                  className={`w-5 h-5 rounded-full border ${quizForm.questions[0]
                                       .correctAnswer === option
                                       ? "bg-[#5B50FF] border-[#5B50FF]"
                                       : "border-gray-300"
-                                  }`}
+                                    }`}
                                 />
 
 
@@ -2299,18 +2298,18 @@ md:text-[24px]
 
                                   value={option}
 
-                                  onChange={(e)=>
+                                  onChange={(e) =>
                                     setQuizForm({
                                       ...quizForm,
 
-                                      questions:[
+                                      questions: [
                                         {
                                           ...quizForm.questions[0],
 
                                           options:
                                             quizForm.questions[0]
                                               .options.map(
-                                                (op, i)=>
+                                                (op, i) =>
                                                   i === index
                                                     ? e.target.value
                                                     : op
@@ -2330,11 +2329,11 @@ md:text-[24px]
 
 
                       <button
-                       onClick={()=>
-                        handleAddQuiz(
-                          module.id
-                        )
-                      }
+                        onClick={() =>
+                          handleAddQuiz(
+                            module.id
+                          )
+                        }
                         className="primary-btn mt-6"
                       >
 
@@ -2351,11 +2350,11 @@ md:text-[24px]
 
                   <div className="space-y-4 mt-6">
 
-                    {module.quizzes.map((quiz, index)=>(
+                    {module.quizzes.map((quiz, index) => (
 
                       <div
                         key={quiz.id}
-                       className="
+                        className="
  min-h-[68px]
  border
  border-[#ECECF3]
@@ -2375,107 +2374,107 @@ md:text-[24px]
 
                           <span className="font-semibold">
 
-                           Question {index + 1}
+                            Question {index + 1}
 
                           </span>
 
-                         {quiz.isEditing ? (
+                          {quiz.isEditing ? (
 
-  <input
-    value={
-      quiz.questions[0]
-        .question
-    }
+                            <input
+                              value={
+                                quiz.questions[0]
+                                  .question
+                              }
 
-    onChange={(e)=>
-      setModules((prev)=>
-        prev.map((m)=>
-          m.id === module.id
-            ? {
-                ...m,
+                              onChange={(e) =>
+                                setModules((prev) =>
+                                  prev.map((m) =>
+                                    m.id === module.id
+                                      ? {
+                                        ...m,
 
-                quizzes:
-                  m.quizzes.map((q)=>
-                    q.id === quiz.id
-                      ? {
-                          ...q,
+                                        quizzes:
+                                          m.quizzes.map((q) =>
+                                            q.id === quiz.id
+                                              ? {
+                                                ...q,
 
-                          questions:[
-                            {
-                              ...q.questions[0],
+                                                questions: [
+                                                  {
+                                                    ...q.questions[0],
 
-                              question:
-                                e.target.value,
-                            },
-                          ],
-                        }
-                      : q
-                  ),
-              }
-            : m
-        )
-      )
-    }
+                                                    question:
+                                                      e.target.value,
+                                                  },
+                                                ],
+                                              }
+                                              : q
+                                          ),
+                                      }
+                                      : m
+                                  )
+                                )
+                              }
 
-    className="premium-input h-[42px] w-[350px]"
-  />
+                              className="premium-input h-[42px] w-[350px]"
+                            />
 
-) : (
+                          ) : (
 
-  <span>
-    {
-      quiz.questions[0]
-        .question
-    }
-  </span>
-)}
+                            <span>
+                              {
+                                quiz.questions[0]
+                                  .question
+                              }
+                            </span>
+                          )}
 
                         </div>
 
-<button
-  onClick={()=>
-    setModules((prev)=>
-      prev.map((m)=>
-        m.id === module.id
-          ? {
-              ...m,
-
-              quizzes:
-                m.quizzes.map((q)=>
-                  q.id === quiz.id
-                    ? {
-                        ...q,
-                        isEditing:
-                          !q.isEditing,
-                      }
-                    : q
-                ),
-            }
-          : m
-      )
-    )
-  }
-  className="text-[#5B50FF]"
->
-
-  Edit
-
-</button>
-
                         <button
-                          onClick={()=>
-                            setModules((prev)=>
-                              prev.map((m)=>
+                          onClick={() =>
+                            setModules((prev) =>
+                              prev.map((m) =>
                                 m.id === module.id
                                   ? {
-                                      ...m,
+                                    ...m,
 
-                                      quizzes:
-                                        m.quizzes.filter(
-                                          (q)=>
-                                            q.id !== quiz.id
-                                        ),
-                                    }
+                                    quizzes:
+                                      m.quizzes.map((q) =>
+                                        q.id === quiz.id
+                                          ? {
+                                            ...q,
+                                            isEditing:
+                                              !q.isEditing,
+                                          }
+                                          : q
+                                      ),
+                                  }
+                                  : m
+                              )
+                            )
+                          }
+                          className="text-[#5B50FF]"
+                        >
+
+                          Edit
+
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            setModules((prev) =>
+                              prev.map((m) =>
+                                m.id === module.id
+                                  ? {
+                                    ...m,
+
+                                    quizzes:
+                                      m.quizzes.filter(
+                                        (q) =>
+                                          q.id !== quiz.id
+                                      ),
+                                  }
                                   : m
                               )
                             )

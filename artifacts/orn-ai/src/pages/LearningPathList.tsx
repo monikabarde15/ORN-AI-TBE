@@ -208,7 +208,7 @@ const handleConfirmDelete = async () => {
             {hasPermission("Learning Paths", "canAdd") && (
               <a
                 href="/recruiter/learning-path"
-                className="inline-flex items-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-blue-700"
+                className="inline-flex items-center rounded-xl bg-blue-900 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-blue-700"
               >
                 + Add Learning Path
               </a>

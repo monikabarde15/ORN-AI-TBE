@@ -597,12 +597,12 @@ if (loading) {
                 <div className="max-w-7xl mx-auto p-6 space-y-8 animate-in fade-in duration-200">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
                         <div>
-                            <h1 className="text-2xl font-bold text-slate-900">Assessment Library</h1>
+                            <h1 className="text-3xl font-bold text-slate-900">Assessment Library</h1>
                             <p className="text-slate-500 text-sm mt-1">Configure, build, and publish standardized assessments for candidate pre-screening.</p>
                         </div>
                         <button
                             onClick={handleCreateNewAssessment}
-                            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition flex items-center space-x-2 shadow-sm self-start"
+                            className="px-5 py-2.5 bg-indigo-900 hover:bg-indigo-800 text-white rounded-lg text-sm font-semibold transition flex items-center space-x-2 shadow-sm self-start"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -665,7 +665,7 @@ if (loading) {
                                         <span>ID: {assessment.id}</span>
                                         <button
                                             onClick={(e) => handleDuplicateAssessment(assessment, e)}
-                                            className="text-indigo-600 hover:text-indigo-700 font-semibold flex items-center space-x-1"
+                                            className="text-blue-900 hover:text-blue-800 font-semibold flex items-center space-x-1"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H5.4M7 2h7.375c.621 0 1.125.504 1.125 1.125V17.25" />
