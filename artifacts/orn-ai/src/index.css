@@ -82,16 +82,16 @@
   --sidebar: 0 0% 98%;
   --sidebar-foreground: 240 10% 10%;
   --sidebar-border: 240 5% 90%;
-  --sidebar-primary: 215 75% 38%;
+  --sidebar-primary: 214 76% 36%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 240 5% 90%;
   --sidebar-accent-foreground: 240 10% 10%;
-  --sidebar-ring: 215 75% 38%;
+  --sidebar-ring: 214 76% 36%;
   --popover: 0 0% 100%;
   --popover-foreground: 240 10% 10%;
   --popover-border: 240 5% 90%;
   
-  --primary: 215 75% 38%; /* ORN-AI brand blue */
+  --primary: 214 76% 36%; /* ORN-AI brand blue #1652A0 */
   --primary-foreground: 0 0% 100%;
   --secondary: 240 5% 90%;
   --secondary-foreground: 240 10% 10%;
@@ -102,9 +102,9 @@
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   --input: 240 5% 85%;
-  --ring: 215 75% 38%;
+  --ring: 214 76% 36%;
   
-  --chart-1: 215 75% 38%;
+  --chart-1: 214 76% 36%;
   --chart-2: 240 10% 20%;
   --chart-3: 160 60% 45%;
   --chart-4: 45 90% 55%;

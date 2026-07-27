@@ -55,7 +55,7 @@ const STATUS_LABELS: Record<string, { label: string; tone: string }> = {
   live_session_pending: { label: "Live session due", tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
   assessment_pending: { label: "Assessment pending", tone: "bg-orange-500/10 text-orange-700 dark:text-orange-300" },
   completed: { label: "Completed", tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
-  recruiter_ready: { label: "Recruiter-ready", tone: "bg-primary/10 text-primary" },
+  recruiter_ready: { label: "Recruiter-ready", tone: "bg-[#1652A0]/10 text-[#1652A0] dark:text-[#3B82F6]" },
 };
 
 function fmtDate(iso: string) {

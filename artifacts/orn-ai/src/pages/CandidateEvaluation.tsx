@@ -62,10 +62,10 @@ function scoreColor(score: number): {
     };
   if (score >= 65)
     return {
-      text: "text-primary",
-      bg: "bg-primary/10",
-      ring: "stroke-primary",
-      bar: "bg-primary",
+      text: "text-[#1652A0] dark:text-[#3B82F6]",
+      bg: "bg-[#1652A0]/10",
+      ring: "stroke-[#1652A0]",
+      bar: "bg-[#1652A0]",
       label: "Strong",
     };
   if (score >= 50)
@@ -336,13 +336,13 @@ console.log("CV URL:", candidate?.cv?.url);
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-2xl font-bold">
+                    <div className="w-full h-full flex items-center justify-center bg-[#1652A0]/10 text-[#1652A0] text-2xl font-bold">
                       {candidate.fullName.charAt(0)}
                     </div>
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-1">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#1652A0] mb-1">
                     AI Readiness Evaluation
                   </div>
                   <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
@@ -374,7 +374,7 @@ console.log("CV URL:", candidate?.cv?.url);
                         href={candidate.linkedinUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors px-2.5 py-0.5 rounded-md border bg-background"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-[#1652A0] transition-colors px-2.5 py-0.5 rounded-md border bg-background"
                       >
                         <Linkedin className="size-3" /> LinkedIn
                       </a>
@@ -401,7 +401,7 @@ console.log("CV URL:", candidate?.cv?.url);
                       strokeWidth="10"
                       fill="none"
                       strokeLinecap="round"
-                      className="stroke-primary"
+                      className="stroke-[#1652A0]"
                       strokeDasharray={overallRingCircumference}
                       initial={{ strokeDashoffset: overallRingCircumference }}
                       animate={{ strokeDashoffset: overallRingOffset }}

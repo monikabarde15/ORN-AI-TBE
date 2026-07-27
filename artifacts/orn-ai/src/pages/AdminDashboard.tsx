@@ -182,7 +182,7 @@ export default function AdminDashboard() {
         {/* ============ HEADER ============ */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-1">
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#1652A0] mb-1">
               Investor Briefing · Q2 2026
             </div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">

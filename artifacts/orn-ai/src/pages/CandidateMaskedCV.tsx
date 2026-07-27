@@ -709,7 +709,7 @@ function SectionTitle({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-900">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#1652A0]/10 text-[#1652A0]">
         {icon}
       </div>
       <div>
