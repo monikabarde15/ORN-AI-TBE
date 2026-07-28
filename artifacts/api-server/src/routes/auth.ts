@@ -1,6 +1,7 @@
 // artifacts\api-server\src\routes\auth.ts
 import { Router, type IRouter } from "express";
 import nodemailer from "nodemailer";
+import { getOfficialEmailTemplate, sendMailWithRetry } from "../lib/mail";
 import { evaluateWithAI } from "../lib/evaluation-full-ai";
 import {
   db,
@@ -869,129 +870,19 @@ router.post("/auth/register", async (req, res) => {
     // SEND OTP EMAIL
     // =====================
 
-    await transporter.sendMail({
-      from: `"ORN-AI" <${process.env.SMTP_USER}>`,
+    const html = getOfficialEmailTemplate({
+      badgeTitle: "Email Verification",
+      recipientName: "Learner",
+      headlineText: `Thank you for choosing <strong>ORN-AI</strong>. To verify your email address and complete your sign-in, please use the One-Time Password (OTP) below: <br><br><div style="text-align:center;"><div style="display:inline-block;padding:16px 36px;background:#EFF6FF;border:2px dashed #2563EB;border-radius:10px;font-size:36px;font-weight:bold;letter-spacing:8px;color:#1E40AF;">${otp}</div></div><br> This verification code is valid for 10 minutes. Please do not share this code with anyone.`,
+      learningPathTitle: "Account Verification Code",
+      learningPathDescription: "Please enter this verification code in your ORN-AI portal to proceed.",
+    });
+
+    await sendMailWithRetry({
+      from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
       to: email,
       subject: "ORN-AI Email Verification OTP",
-
-      html: `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ORN-AI Email Verification</title>
-</head>
-
-<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,Helvetica,sans-serif;">
-
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
-<tr>
-<td align="center">
-
-<table width="600" cellpadding="0" cellspacing="0"
-style="background:#ffffff;border:1px solid #e5e5e5;border-radius:10px;overflow:hidden;">
-
-<tr>
-<td style="background:#163c7a;padding:25px;text-align:center;">
-<h1 style="margin:0;color:#ffffff;">
-Welcome to ORN-AI
-</h1>
-</td>
-</tr>
-
-<tr>
-<td style="padding:40px;">
-
-<p style="font-size:16px;color:#333;">
-Dear Candidate,
-</p>
-
-<p style="font-size:15px;color:#555;line-height:1.8;">
-Thank you for choosing <strong>ORN-AI</strong>.
-To verify your email address and complete your sign-in, please use the One-Time Password (OTP) below.
-</p>
-
-<div style="margin:35px 0;text-align:center;">
-
-<div style="
-display:inline-block;
-padding:18px 40px;
-background:#f3f8ff;
-border:2px dashed #2563eb;
-border-radius:8px;
-font-size:36px;
-font-weight:bold;
-letter-spacing:8px;
-color:#163c7a;
-">
-${otp}
-</div>
-
-</div>
-
-<p style="font-size:15px;color:#555;line-height:1.8;">
-This verification code is valid for <strong>10 minutes</strong>.
-Please do not share this code with anyone for security reasons.
-</p>
-
-<p style="font-size:15px;color:#555;line-height:1.8;">
-If you did not request this verification, you can safely ignore this email.
-</p>
-
-<hr style="margin:35px 0;border:none;border-top:1px solid #e5e5e5;">
-
-<p style="font-size:15px;color:#555;">
-Need assistance?
-</p>
-
-<p style="margin:8px 0;">
-🌐
-<a href="https://orn-ai.com/" style="color:#2563eb;text-decoration:none;">
-https://orn-ai.com/
-</a>
-</p>
-
-<p style="margin:8px 0;">
-📧
-<a href="mailto:connect@orn-ai.co.uk" style="color:#2563eb;text-decoration:none;">
-connect@orn-ai.co.uk
-</a>
-</p>
-
-<p style="margin-top:30px;color:#555;">
-Kind Regards,
-<br><br>
-<strong>ORN-AI Team</strong>
-</p>
-
-</td>
-</tr>
-
-<tr>
-<td style="background:#163c7a;padding:18px;text-align:center;color:#ffffff;font-size:13px;">
-
-© ${new Date().getFullYear()} ORN-AI. All Rights Reserved.
-
-<br><br>
-
-<a href="https://orn-ai.com/"
-style="color:#ffffff;text-decoration:none;">
-https://orn-ai.com/
-</a>
-
-</td>
-</tr>
-
-</table>
-
-</td>
-</tr>
-</table>
-
-</body>
-</html>
-`,
+      html,
     });
 
     const token = signToken(user);

@@ -3,6 +3,7 @@ import { Router, type IRouter } from "express";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { evaluateWithAI } from "../lib/evaluation-full-ai";
 import { s3 } from "../lib/s3";
+import { getOfficialEmailTemplate, sendMailWithRetry } from "../lib/mail";
 import multer from "multer";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import {
@@ -207,234 +208,21 @@ router.post(
         message: `${row.fullName} registered as ${row.targetRole}`,
       });
       const passwordHash = await hashPassword(parsed.data.password);
-      await transporter.sendMail({
-        from: `"ORN-AI" <${process.env.SMTP_USER}>`,
+      const html = getOfficialEmailTemplate({
+        badgeTitle: "Welcome to ORN-AI",
+        recipientName: row.fullName,
+        headlineText: `Thank you for registering with us. We are delighted to have you join our growing network of professionals across global markets! Your login email is <strong>${row.email}</strong> and your password is <strong>${parsed.data.password}</strong>.`,
+        learningPathTitle: "Account Registration & Candidate Portal Access",
+        learningPathDescription: "ORN-AI is a Talent Conditioning and Career-Readiness Platform supporting job seekers, candidates and consultants through assessment, upskilling, and hands-on learning.",
+        joinUrl: process.env.FRONTEND_URL || "https://orn-ai.com/",
+        callToActionText: "Access ORN-AI Portal",
+      });
+
+      await sendMailWithRetry({
+        from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
         to: row.email,
         subject: "Welcome to ORN-AI – Registration Successful",
-        html: `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Welcome to ORN-AI</title>
-</head>
-
-<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,Helvetica,sans-serif;">
-
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
-<tr>
-<td align="center">
-
-<table width="700" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e5e5e5;">
-
-<tr>
-<td style="background:#163c7a;padding:30px;text-align:center;">
-<h1 style="margin:0;color:#ffffff;font-size:30px;">
-Welcome to ORN-AI
-</h1>
-</td>
-</tr>
-
-<tr>
-<td style="padding:40px;">
-
-<p style="font-size:16px;color:#333;">
-Dear <strong>${row.fullName}</strong>,
-</p>
-
-<p style="font-size:15px;color:#555;line-height:1.8;">
-Thank you for registering with us. We are delighted to have you join our growing network of professionals across the UK, Europe and global markets.
-</p>
-
-<p style="font-size:15px;color:#555;line-height:1.8;">
-<strong>ORN-AI</strong> is a Talent Conditioning and Career-Readiness Platform that supports job seekers, active candidates and consultants through assessment, upskilling, hands-on learning and career opportunities.
-</p>
-
-<p style="font-size:15px;color:#555;line-height:1.8;">
-Your initial registration has been completed, and your account is now ready for activation.
-</p>
-
-<hr style="margin:35px 0;border:none;border-top:1px solid #e5e5e5;">
-
-<h2 style="color:#163c7a;margin-top:0;">
-Access Your ORN-AI Portal
-</h2>
-
-<p style="font-size:15px;color:#555;">
-Click the button below to access your ORN-AI Candidate Portal.
-</p>
-
-<div style="text-align:center;margin:30px 0;">
-
-<a href="https://orn-ai.com/"
-style="background:#2563eb;
-color:#ffffff;
-padding:14px 30px;
-text-decoration:none;
-border-radius:6px;
-display:inline-block;
-font-weight:bold;
-font-size:15px;">
-Access ORN-AI Portal
-</a>
-
-</div>
-
-<p style="font-size:14px;color:#666;">
-If the button above does not work, copy and paste this URL into your browser:
-</p>
-
-<p>
-<a href="https://orn-ai.com/" style="color:#2563eb;">
-https://orn-ai.com/
-</a>
-</p>
-
-<hr style="margin:35px 0;border:none;border-top:1px solid #e5e5e5;">
-
-<h2 style="color:#163c7a;">
-How to Activate Your Account
-</h2>
-
-<ol style="color:#555;line-height:2;">
-<li>Click the portal link above.</li>
-<li>Sign in using your registered email address.</li>
-<li>Enter the One-Time Password (OTP) sent to your email.</li>
-<li>Access your ORN-AI Candidate Dashboard.</li>
-</ol>
-
-<hr style="margin:35px 0;border:none;border-top:1px solid #e5e5e5;">
-
-<h2 style="color:#163c7a;">
-Your Login Details
-</h2>
-
-<table cellpadding="8" cellspacing="0" width="100%" style="border-collapse:collapse;border:1px solid #ddd;">
-
-<tr style="background:#f8fafc;">
-<td width="180"><strong>Email</strong></td>
-<td>${row.email}</td>
-</tr>
-
-<tr>
-<td><strong>Password</strong></td>
-<td>${parsed.data.password}</td>
-</tr>
-
-</table>
-
-<hr style="margin:35px 0;border:none;border-top:1px solid #e5e5e5;">
-
-<h2 style="color:#163c7a;">
-Verify Your Profile
-</h2>
-
-<p style="color:#555;line-height:1.8;">
-Once logged in, please review and confirm your profile information, including:
-</p>
-
-<ul style="color:#555;line-height:2;">
-<li>Contact details</li>
-<li>Professional experience</li>
-<li>Skills and certifications</li>
-<li>Career preferences</li>
-<li>Availability status</li>
-</ul>
-
-<p style="color:#555;">
-You may update any information before proceeding.
-</p>
-
-<hr style="margin:35px 0;border:none;border-top:1px solid #e5e5e5;">
-
-<h2 style="color:#163c7a;">
-Complete Your GDPR Consent
-</h2>
-
-<p style="color:#555;line-height:1.8;">
-To activate your account and enable ORN-AI services, please review and provide your consent to our GDPR Privacy & Data Processing Policy.
-</p>
-
-<p style="color:#555;">
-Once consent is provided, your profile will become eligible for:
-</p>
-
-<ul style="color:#555;line-height:2;">
-<li>Career Readiness Assessment</li>
-<li>Job-ready Conditioning & Upskilling</li>
-<li>Access to Learning Resources</li>
-<li>Live Project Opportunities</li>
-<li>Interview Readiness Support</li>
-<li>Relevant Customer Opportunities</li>
-</ul>
-
-<p style="color:#555;line-height:1.8;">
-Please note that your profile remains under your control at all times. Your CV, personal details and contact information will never be shared with any customer without your approval for a specific opportunity.
-</p>
-
-<hr style="margin:35px 0;border:none;border-top:1px solid #e5e5e5;">
-
-<h2 style="color:#163c7a;">
-Need Assistance?
-</h2>
-
-<p style="color:#555;line-height:1.8;">
-If you have any questions or require assistance, our support team will be happy to help.
-</p>
-
-<p style="line-height:2;">
-🌐 Website:
-<a href="https://orn-ai.com/" style="color:#2563eb;">
-https://orn-ai.com/
-</a>
-</p>
-
-<p style="line-height:2;">
-📧 Email:
-<a href="mailto:connect@orn-ai.co.uk" style="color:#2563eb;">
-connect@orn-ai.co.uk
-</a>
-</p>
-
-<p style="color:#555;line-height:1.8;">
-We look forward to supporting you throughout your career journey.
-</p>
-
-<p style="margin-top:35px;color:#555;">
-Kind Regards,<br><br>
-
-<strong style="font-size:16px;">
-ORN-AI Team
-</strong>
-</p>
-
-</td>
-</tr>
-
-<tr>
-<td style="background:#163c7a;padding:20px;text-align:center;color:#ffffff;font-size:13px;">
-
-© ${new Date().getFullYear()} ORN-AI. All Rights Reserved.
-<br><br>
-
-<a href="https://orn-ai.com/"
-style="color:#ffffff;text-decoration:none;">
-https://orn-ai.com/
-</a>
-
-</td>
-</tr>
-
-</table>
-
-</td>
-</tr>
-</table>
-
-</body>
-</html>
-`,
+        html,
       });
       const existingUser = await findUserByEmail(row.email);
 
