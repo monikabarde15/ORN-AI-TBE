@@ -198,66 +198,82 @@ export default function LearningPath() {
     (subtotal + gst).toFixed(2)
   );
 
-  const generatePaymentLink = async () => {
-  try {
-    if (!learningPathId) {
-      toast.error("Create Learning Path First");
-      return;
-    }
+  const generatePaymentLink = async (candidates?: any[]) => {
+    try {
+      if (!learningPathId) {
+        toast.error("Please save/create the Learning Path first");
+        return;
+      }
 
-    const courseIds = selectedCourses.map(
-      (c: any) => c.id || c._id
-    );
+      const courseIds = selectedCourses.map(
+        (c: any) => c.id || c._id
+      );
 
-    // FREE LEARNING PATH
-    if (Number(total) <= 0) {
-      // Direct Join Page
-      const joinLink = `${window.location.origin}/join/${learningPathId}`;
+      const recipientData = candidates && candidates.length > 0
+        ? candidates.map((c) => ({ email: c.email, fullName: c.fullName }))
+        : undefined;
 
-      setPaymentLink(joinLink);
+      // FREE LEARNING PATH
+      if (Number(total) <= 0) {
+        const joinLink = `${window.location.origin}/join/${learningPathId}`;
+
+        setPaymentLink(joinLink);
+
+        await api.put(
+          `/api/learning-paths/${learningPathId}`,
+          {
+            paymentLink: joinLink,
+            courseIds,
+            isFree: true,
+          }
+        );
+
+        if (recipientData && recipientData.length > 0) {
+          await api.post("/api/payment/send-link-email", {
+            learningPathId,
+            recipients: recipientData,
+          });
+          toast.success(`Free Join Link sent to ${recipientData.length} candidate(s)`);
+        } else {
+          toast.success("Free Learning Path Join Link Generated");
+        }
+        return;
+      }
+
+      // PAID LEARNING PATH
+      const res = await api.post(
+        "/api/payment/generate-link",
+        {
+          learningPathId,
+          courseIds,
+          amount: total,
+          recipients: recipientData,
+        }
+      );
+
+      const generatedLink = `${window.location.origin}/payment/${res.data.paymentId}`;
+
+      setPaymentLink(generatedLink);
 
       await api.put(
         `/api/learning-paths/${learningPathId}`,
         {
-          paymentLink: joinLink,
+          paymentLink: generatedLink,
           courseIds,
-          isFree: true,
+          isFree: false,
         }
       );
 
-      toast.success("Free Learning Path Join Link Generated");
-      return;
+      if (recipientData && recipientData.length > 0) {
+        toast.success(`Payment Link generated & email sent to ${recipientData.length} candidate(s)`);
+      } else {
+        toast.success("Payment Link Generated");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate payment link");
     }
-
-    // PAID LEARNING PATH
-    const res = await api.post(
-      "/api/payment/generate-link",
-      {
-        learningPathId,
-        courseIds,
-        amount: total,
-      }
-    );
-
-    const paymentLink = `${window.location.origin}/payment/${res.data.paymentId}`;
-
-    setPaymentLink(paymentLink);
-
-    await api.put(
-      `/api/learning-paths/${learningPathId}`,
-      {
-        paymentLink,
-        courseIds,
-        isFree: false,
-      }
-    );
-
-    toast.success("Payment Link Generated");
-  } catch (error) {
-    console.error(error);
-    toast.error("Failed to generate payment link");
-  }
-};
+  };
   const createLearningPath = async () => {
     try {
       if (!title) {

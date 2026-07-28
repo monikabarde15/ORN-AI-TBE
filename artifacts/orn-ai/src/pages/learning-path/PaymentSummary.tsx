@@ -17,7 +17,7 @@ interface Props {
   total: number;
   paymentLink?: string;
    showRemoveButton?: boolean;
-  generatePaymentLink: () => void;
+  generatePaymentLink: (candidates?: CandidateUser[]) => void | Promise<void>;
 }
 
 export default function PaymentSummary({
@@ -240,9 +240,8 @@ export default function PaymentSummary({
       <AddCandidatePaymentModal
         open={isAddCandidateOpen}
         onClose={() => setIsAddCandidateOpen(false)}
-        onSend={(selectedCandidates: CandidateUser[]) => {
-          toast.success(`Added ${selectedCandidates.length} candidate(s)`);
-          generatePaymentLink();
+        onSend={async (selectedCandidates: CandidateUser[]) => {
+          await generatePaymentLink(selectedCandidates);
         }}
       />
     </div>

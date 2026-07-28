@@ -119,15 +119,16 @@ router.post(
 
           let recipients: { email: string; fullName: string }[] = [];
 
-          if (req.body.studentEmail || req.body.email) {
+          if (req.body.recipients && Array.isArray(req.body.recipients) && req.body.recipients.length > 0) {
+            recipients = req.body.recipients.map((r: any) => ({
+              email: (r.email || "").trim().toLowerCase(),
+              fullName: r.fullName || "Learner",
+            }));
+          } else if (req.body.studentEmail || req.body.email) {
             const singleEmail = (req.body.studentEmail || req.body.email).trim().toLowerCase();
             recipients = [{ email: singleEmail, fullName: req.body.studentName || "Learner" }];
           } else {
-            const users = await db
-              .select({ email: usersTable.email, fullName: usersTable.fullName })
-              .from(usersTable)
-              .where(eq(usersTable.role, "candidate"));
-            recipients = users.filter((u) => u.email).map((u) => ({ email: u.email, fullName: u.fullName }));
+            recipients = [];
           }
 
           const joinUrl = learningPathId
@@ -523,14 +524,15 @@ router.post(
       }
 
       let recipients: { email: string; fullName: string }[] = [];
-      if (targetEmail) {
+      if (req.body.recipients && Array.isArray(req.body.recipients) && req.body.recipients.length > 0) {
+        recipients = req.body.recipients.map((r: any) => ({
+          email: (r.email || "").trim().toLowerCase(),
+          fullName: r.fullName || "Learner",
+        }));
+      } else if (targetEmail) {
         recipients = [{ email: targetEmail.trim().toLowerCase(), fullName: "Learner" }];
       } else {
-        const users = await db
-          .select({ email: usersTable.email, fullName: usersTable.fullName })
-          .from(usersTable)
-          .where(eq(usersTable.role, "candidate"));
-        recipients = users.filter((u) => u.email).map((u) => ({ email: u.email, fullName: u.fullName }));
+        recipients = [];
       }
 
       const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "") || "http://localhost:5173";
@@ -554,8 +556,8 @@ router.post(
           });
 
           const info = await sendMailWithRetry({
-            from: `"ORN-AI" <${process.env.SMTP_FROM_EMAIL}>`,
-            to: `monika01sanawad@gmail.com`,//recipient.email,
+            from: `"ORN-AI" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
+            to: recipient.email,
             subject: `Enrollment & Payment Link: ${lpTitle} - ORN-AI`,
             html,
           });

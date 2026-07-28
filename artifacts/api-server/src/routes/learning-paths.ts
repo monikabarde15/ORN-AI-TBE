@@ -122,58 +122,7 @@ router.post(
           })
           .returning();
 
-      // ==========================
-      // Broadcast Email to all registered candidates
-      // ==========================
-      (async () => {
-        try {
-          const candidates = await db
-            .select({ email: usersTable.email, fullName: usersTable.fullName })
-            .from(usersTable)
-            .where(eq(usersTable.role, "candidate"));
 
-          const frontendUrl =
-            process.env.FRONTEND_URL?.replace(/\/$/, "") ||
-            "http://localhost:5173";
-
-          const joinUrl = `${frontendUrl}/join/${learningPath.id}`;
-
-          const validCandidates = candidates.filter((c) => c.email);
-          const chunkSize = 5;
-          for (let i = 0; i < validCandidates.length; i += chunkSize) {
-            const chunk = validCandidates.slice(i, i + chunkSize);
-            await Promise.all(
-              chunk.map(async (candidate) => {
-                try {
-                  const html = getOfficialEmailTemplate({
-                    badgeTitle: "New Course Announcement",
-                    recipientName: candidate.fullName,
-                    headlineText: `A new Learning Path <strong>"${learningPath.title}"</strong> is now available on the ORN-AI platform! If you are interested in advancing your skills, please click below to join:`,
-                    learningPathTitle: learningPath.title,
-                    learningPathDescription: learningPath.description || undefined,
-                    joinUrl,
-                    paymentUrl: paymentLink || undefined,
-                    callToActionText: "Join Learning Path",
-                  });
-
-                  await sendMailWithRetry({
-                    from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
-                    to: candidate.email!,
-                    subject: `New Course Added: ${learningPath.title} - ORN-AI`,
-                    html,
-                  });
-                } catch (e) {
-                  console.error(`[NEW LP MAIL ERROR for ${candidate.email}]:`, e);
-                }
-              })
-            );
-            await new Promise((r) => setTimeout(r, 20));
-          }
-          console.log(`[NEW LP ANNOUNCEMENT] Sent announcement emails to ${candidates.length} candidate(s)`);
-        } catch (err) {
-          console.error("[NEW LP ANNOUNCEMENT ERROR]:", err);
-        }
-      })();
 
       res.status(201).json({
         success: true,
@@ -459,60 +408,7 @@ router.put(
           )
           .returning();
 
-      // ==========================
-      // Broadcast Email to all registered candidates on Learning Path Update / Free Payment Link Generation
-      // ==========================
-      if (req.body.isFree !== false) {
-        (async () => {
-          try {
-            const candidates = await db
-              .select({ email: usersTable.email, fullName: usersTable.fullName })
-              .from(usersTable)
-              .where(eq(usersTable.role, "candidate"));
 
-            const frontendUrl =
-              process.env.FRONTEND_URL?.replace(/\/$/, "") ||
-              "http://localhost:5173";
-
-            const joinUrl = `${frontendUrl}/join/${learningPath.id}`;
-
-            const validCandidates = candidates.filter((c) => c.email);
-            const chunkSize = 5;
-            for (let i = 0; i < validCandidates.length; i += chunkSize) {
-              const chunk = validCandidates.slice(i, i + chunkSize);
-              await Promise.all(
-                chunk.map(async (candidate) => {
-                  try {
-                    const html = getOfficialEmailTemplate({
-                      badgeTitle: "Learning Path Announcement",
-                      recipientName: candidate.fullName,
-                      headlineText: `The Learning Path <strong>"${learningPath.title}"</strong> has been updated with new details & payment options on ORN-AI! Click below to join:`,
-                      learningPathTitle: learningPath.title,
-                      learningPathDescription: learningPath.description || undefined,
-                      joinUrl,
-                      paymentUrl: learningPath.paymentLink || undefined,
-                      callToActionText: "Join Learning Path",
-                    });
-
-                    await sendMailWithRetry({
-                      from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
-                      to: candidate.email!,
-                      subject: `Learning Path Update: ${learningPath.title} - ORN-AI`,
-                      html,
-                    });
-                  } catch (e) {
-                    console.error(`[EDIT LP MAIL ERROR for ${candidate.email}]:`, e);
-                  }
-                })
-              );
-              await new Promise((r) => setTimeout(r, 20));
-            }
-            console.log(`[EDIT LP ANNOUNCEMENT] Sent update emails to ${candidates.length} candidate(s)`);
-          } catch (err) {
-            console.error("[EDIT LP ANNOUNCEMENT ERROR]:", err);
-          }
-        })();
-      }
 
       res.json({
         success: true,

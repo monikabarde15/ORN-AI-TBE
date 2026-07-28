@@ -17,7 +17,7 @@ interface LearningPathSidebarProps {
 
     paymentLink: string;
 
-    generatePaymentLink: () => void;
+    generatePaymentLink: (candidates?: any[]) => void | Promise<void>;
 }
 
 export default function LearningPathSidebar({

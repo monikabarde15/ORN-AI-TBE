@@ -16,7 +16,7 @@ export interface CandidateUser {
 interface AddCandidatePaymentModalProps {
   open: boolean;
   onClose: () => void;
-  onSend?: (selectedCandidates: CandidateUser[]) => void;
+  onSend?: (selectedCandidates: CandidateUser[]) => Promise<void> | void;
 }
 
 export default function AddCandidatePaymentModal({
@@ -27,6 +27,7 @@ export default function AddCandidatePaymentModal({
   const [users, setUsers] = useState<CandidateUser[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function AddCandidatePaymentModal({
       setLoading(true);
       const { data } = await api.get("/api/users");
       const userList: CandidateUser[] = data.users || [];
-      
+
       // Filter for candidates primarily or list all available users
       const candidates = userList.filter((u) => u.role === "candidate" || u.candidateCode);
       setUsers(candidates.length > 0 ? candidates : userList);
@@ -82,19 +83,26 @@ export default function AddCandidatePaymentModal({
     setSelectedUserIds(next);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const selectedList = users.filter((u) => selectedUserIds.has(u.id));
     if (selectedList.length === 0) {
       toast.error("Please select at least one candidate");
       return;
     }
 
-    if (onSend) {
-      onSend(selectedList);
-    } else {
-      toast.success(`Successfully sent to ${selectedList.length} candidate(s)`);
+    try {
+      setSending(true);
+      if (onSend) {
+        await onSend(selectedList);
+      } else {
+        toast.success(`Successfully sent to ${selectedList.length} candidate(s)`);
+      }
+      onClose();
+    } catch (error: any) {
+      console.error("Send error:", error);
+    } finally {
+      setSending(false);
     }
-    onClose();
   };
 
   return (
@@ -171,9 +179,8 @@ export default function AddCandidatePaymentModal({
                     <tr
                       key={user.id}
                       onClick={() => toggleSelectUser(user.id)}
-                      className={`cursor-pointer transition-colors hover:bg-slate-50 ${
-                        isSelected ? "bg-blue-50/60" : ""
-                      }`}
+                      className={`cursor-pointer transition-colors hover:bg-slate-50 ${isSelected ? "bg-blue-50/60" : ""
+                        }`}
                     >
                       <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
                         <input
@@ -223,11 +230,20 @@ export default function AddCandidatePaymentModal({
             </button>
             <button
               onClick={handleSend}
-              disabled={selectedUserIds.size === 0}
+              disabled={selectedUserIds.size === 0 || sending}
               className="flex items-center gap-2 rounded-xl bg-[#1652A0] hover:bg-[#124282] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Check size={16} />
-              Send
+              {sending ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Check size={16} />
+                  Send
+                </>
+              )}
             </button>
           </div>
         </div>
