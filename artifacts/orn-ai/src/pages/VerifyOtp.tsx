@@ -76,6 +76,42 @@ export default function VerifyOtp() {
   }
 };
 
+  const [resending, setResending] = useState(false);
+
+  const handleResend = async () => {
+    if (!email) {
+      toast.error("Email address not found. Please register again.");
+      return;
+    }
+
+    try {
+      setResending(true);
+      const rawApiUrl = String(import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
+      const API_URL = rawApiUrl ? (rawApiUrl.endsWith("/api") ? rawApiUrl : `${rawApiUrl}/api`) : "/api";
+
+      const res = await fetch(`${API_URL}/auth/resend-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Failed to resend OTP");
+        return;
+      }
+
+      toast.success("A new 6-digit OTP code has been sent to your email!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to resend OTP");
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <Card className="w-full max-w-md bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
@@ -110,6 +146,17 @@ export default function VerifyOtp() {
           >
             Verify OTP & Continue
           </Button>
+
+          <div className="text-center pt-2">
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resending}
+              className="text-xs text-[#1652A0] font-semibold hover:underline disabled:opacity-50"
+            >
+              {resending ? "Sending new OTP..." : "Didn't get the code? Resend OTP"}
+            </button>
+          </div>
         </CardContent>
       </Card>
     </div>

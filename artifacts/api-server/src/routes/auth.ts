@@ -1,7 +1,7 @@
 // artifacts\api-server\src\routes\auth.ts
 import { Router, type IRouter } from "express";
 import nodemailer from "nodemailer";
-import { getOfficialEmailTemplate, sendMailWithRetry } from "../lib/mail";
+import { getOfficialEmailTemplate, getOtpEmailTemplate, sendMailWithRetry } from "../lib/mail";
 import { evaluateWithAI } from "../lib/evaluation-full-ai";
 import {
   db,
@@ -870,13 +870,7 @@ router.post("/auth/register", async (req, res) => {
     // SEND OTP EMAIL
     // =====================
 
-    const html = getOfficialEmailTemplate({
-      badgeTitle: "Email Verification",
-      recipientName: "Learner",
-      headlineText: `Thank you for choosing <strong>ORN-AI</strong>. To verify your email address and complete your sign-in, please use the One-Time Password (OTP) below: <br><br><div style="text-align:center;"><div style="display:inline-block;padding:16px 36px;background:#EFF6FF;border:2px dashed #2563EB;border-radius:10px;font-size:36px;font-weight:bold;letter-spacing:8px;color:#1E40AF;">${otp}</div></div><br> This verification code is valid for 10 minutes. Please do not share this code with anyone.`,
-      learningPathTitle: "Account Verification Code",
-      learningPathDescription: "Please enter this verification code in your ORN-AI portal to proceed.",
-    });
+    const html = getOtpEmailTemplate(otp, fullName);
 
     await sendMailWithRetry({
       from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
@@ -925,6 +919,54 @@ router.post("/auth/register", async (req, res) => {
 
 
 });
+router.post("/auth/resend-otp", async (req, res) => {
+  try {
+    const email = (req.body.email || "").trim().toLowerCase();
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const user = await findUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ error: "Email already verified" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    await db
+      .update(usersTable)
+      .set({
+        emailOtp: otp,
+        emailOtpExpiry: otpExpiry,
+      })
+      .where(eq(usersTable.id, user.id));
+
+    const html = getOtpEmailTemplate(otp, user.fullName);
+
+    await sendMailWithRetry({
+      from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
+      to: email,
+      subject: "ORN-AI Email Verification OTP",
+      html,
+    });
+
+    return res.json({
+      success: true,
+      message: "New OTP sent successfully",
+    });
+  } catch (err: any) {
+    console.error("RESEND OTP ERROR =>", err);
+    return res.status(500).json({
+      error: err?.message || "Failed to resend OTP",
+    });
+  }
+});
+
 router.post("/auth/verify-email", async (req, res) => {
   try {
     const { email, otp } = req.body;

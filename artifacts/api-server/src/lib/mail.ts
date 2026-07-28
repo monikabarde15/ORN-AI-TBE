@@ -236,6 +236,88 @@ interface EmailTemplateOptions {
 // </html>
 //   `;
 // }
+export function getOtpEmailTemplate(
+  otp: string,
+  recipientName?: string
+): string {
+  const cleanName = formatCleanName(recipientName);
+  const year = new Date().getFullYear();
+  const logoSrc = `https://orn-ai.com/assets/logo-kXDOLpgf.jpg`;
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ORN-AI Verification Code</title>
+</head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F8FAFC;padding:40px 15px;">
+<tr>
+<td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 10px 30px rgba(15,23,42,.08);">
+<tr>
+<td style="background:linear-gradient(135deg,#0F172A,#1D4ED8);padding:40px;text-align:center;">
+<div style="display:inline-block;background:#fff;padding:10px 20px;border-radius:12px;margin-bottom:16px;">
+<img src="${logoSrc}" alt="ORN-AI" style="height:48px;">
+</div>
+<h1 style="margin:0;color:#fff;font-size:28px;font-weight:700;">
+ORN<span style="color:#93C5FD;">-AI</span>
+</h1>
+<p style="margin-top:8px;color:#CBD5E1;font-size:12px;letter-spacing:2px;text-transform:uppercase;">
+Talent Infrastructure Platform
+</p>
+</td>
+</tr>
+<tr>
+<td style="padding:40px;">
+<p style="margin:0 0 20px;font-size:18px;font-weight:600;color:#0F172A;">
+Dear ${cleanName},
+</p>
+<p style="font-size:15px;line-height:1.8;color:#475569;">
+Thank you for choosing <strong>ORN-AI</strong>! To verify your email address and proceed with registration, please enter the One-Time Password (OTP) verification code below:
+</p>
+
+<div style="text-align:center;margin:30px 0;">
+<div style="display:inline-block;padding:18px 40px;background:#EFF6FF;border:2px dashed #2563EB;border-radius:12px;font-size:38px;font-weight:bold;letter-spacing:12px;color:#1E40AF;">
+${otp}
+</div>
+</div>
+
+<p style="font-size:14px;color:#64748B;text-align:center;margin-bottom:30px;">
+This OTP code is valid for <strong>10 minutes</strong>. Please do not share this code with anyone.
+</p>
+
+<hr style="margin:30px 0;border:none;border-top:1px solid #E2E8F0;">
+
+<p style="font-size:13px;color:#64748B;">
+If you did not request this email verification, please ignore this email or contact support at <a href="mailto:chandra@orn-ai.co.uk" style="color:#2563EB;text-decoration:none;">chandra@orn-ai.co.uk</a>.
+</p>
+
+<p style="margin-top:25px;color:#475569;font-size:15px;line-height:1.8;">
+Kind regards,<br>
+<strong style="color:#0F172A;">ORN-AI Team</strong>
+</p>
+</td>
+</tr>
+<tr>
+<td style="background:#F1F5F9;padding:25px;text-align:center;border-top:1px solid #E2E8F0;">
+<p style="margin:0;font-size:12px;color:#94A3B8;line-height:1.8;">
+© ${year} ORN-AI. All rights reserved.<br>
+This is an automated verification email from ORN-AI.
+</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>
+  `;
+}
+
 export function getOfficialEmailTemplate(
   options: EmailTemplateOptions
 ): string {
