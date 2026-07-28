@@ -1,18 +1,26 @@
 import { Router, type IRouter } from "express";
 import crypto from "crypto";
 import Razorpay from "razorpay";
-import { transporter, getOfficialEmailTemplate, sendMailWithRetry } from "../lib/mail";
+import {
+  getPaymentEmailTemplate,      // 👈 Payment template
+  getLearningPathEmailTemplate,  // 👈 Learning Path template
+  sendMailWithRetry,
+} from "../lib/mail";
 import { db, paymentLinksTable, learningPathsTable, usersTable } from "@workspace/db";
 import { coursesTable } from "@workspace/db";
-
 import { requireAuth, requireRole } from "../lib/auth";
 import { desc, eq } from "drizzle-orm";
+
 const router: IRouter = Router();
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
+
+/* =========================================
+GENERATE PAYMENT LINK
+========================================= */
 
 router.post(
   "/payment/generate-link",
@@ -33,10 +41,7 @@ router.post(
         });
       }
 
-      if (
-        !Array.isArray(courseIds) ||
-        courseIds.length === 0
-      ) {
+      if (!Array.isArray(courseIds) || courseIds.length === 0) {
         return res.status(400).json({
           error: "courseIds required",
         });
@@ -49,48 +54,31 @@ router.post(
       }
 
       const paymentId = crypto.randomUUID();
+      const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "") || "http://localhost:5173";
+      const callbackUrl = callback_url || `${frontendUrl}/payment-success/${paymentId}`;
 
-      const frontendUrl =
-        process.env.FRONTEND_URL?.replace(/\/$/, "") ||
-        "http://localhost:5173";
-
-      const callbackUrl =
-        callback_url ||
-        `${frontendUrl}/payment-success/${paymentId}`;
-
-      const link =
-        await razorpay.paymentLink.create({
-          amount: Math.round(Number(amount) * 100),
-          currency: "INR",
-
-          callback_url: callbackUrl,
-          callback_method: "get",
-
-          notes: {
-            paymentId,
-            learningPathId,
-            courseIds: courseIds.join(","),
-          },
-        });
+      const link = await razorpay.paymentLink.create({
+        amount: Math.round(Number(amount) * 100),
+        currency: "INR",
+        callback_url: callbackUrl,
+        callback_method: "get",
+        notes: {
+          paymentId,
+          learningPathId,
+          courseIds: courseIds.join(","),
+        },
+      });
 
       const [row] = await db
         .insert(paymentLinksTable)
         .values({
           paymentId,
-          learningPathId, // ✅ Save Learning Path
-
+          learningPathId,
           courseIds,
-
           amount: amount.toString(),
-
           paymentLink: link.short_url,
-
           status: "pending",
-
-          expiresAt: new Date(
-            Date.now() +
-            7 * 24 * 60 * 60 * 1000
-          ),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         })
         .returning();
 
@@ -101,7 +89,10 @@ router.post(
           .where(eq(learningPathsTable.id, learningPathId));
       }
 
-      // Send email with Payment Link & Join Link to registered users
+      // =========================================
+      // SEND PAYMENT & LEARNING PATH EMAILS - UPDATED
+      // =========================================
+
       (async () => {
         try {
           let lpTitle = "Learning Path";
@@ -138,35 +129,55 @@ router.post(
 
           const validRecipients = recipients.filter((r) => r.email);
           const chunkSize = 5;
+
           for (let i = 0; i < validRecipients.length; i += chunkSize) {
             const chunk = validRecipients.slice(i, i + chunkSize);
             await Promise.all(
               chunk.map(async (recipient) => {
                 try {
-                  const html = getOfficialEmailTemplate({
-                    badgeTitle: "Enrollment & Payment Link",
+                  // 👇 Payment Email
+                  const paymentHtml = getPaymentEmailTemplate({
                     recipientName: recipient.fullName,
-                    headlineText: `A new payment link has been generated for <strong>"${lpTitle}"</strong> on ORN-AI. You can join the course or complete payment using the links below:`,
-                    learningPathTitle: lpTitle,
-                    learningPathDescription: lpDescription || undefined,
-                    amount: amount ? amount.toString() : undefined,
-                    joinUrl,
-                    paymentUrl,
-                    callToActionText: "Join Learning Path",
+                    amount: amount.toString(),
+                    paymentUrl: paymentUrl,
+                    invoiceNumber: `INV-${paymentId.slice(0, 8)}`,
+                    learningPathName: lpTitle,
+                    joinUrl: joinUrl,
                   });
+
                   await sendMailWithRetry({
                     from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
                     to: recipient.email,
-                    subject: `New Payment & Enrollment Link: ${lpTitle} - ORN-AI`,
-                    html,
+                    subject: `Payment Link Generated: ${lpTitle} - ORN-AI`,
+                    html: paymentHtml,
                   });
+
+                  // 👇 Learning Path Email
+                  const learningPathHtml = getLearningPathEmailTemplate({
+                    recipientName: recipient.fullName,
+                    username: recipient.fullName,
+                    password: "Your password", // Ya actual password agar store hai toh
+                    learningPathName: lpTitle,
+                    learningPathLink: joinUrl,
+                    joinUrl: frontendUrl,
+                  });
+
+                  await sendMailWithRetry({
+                    from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
+                    to: recipient.email,
+                    subject: `Your Learning Path is Ready: ${lpTitle} - ORN-AI`,
+                    html: learningPathHtml,
+                  });
+
+                  console.log(`[EMAIL SUCCESS] Sent payment & learning path emails to ${recipient.email}`);
                 } catch (err) {
-                  console.error(`[MAIL BROADCAST ERROR] for ${recipient.email}:`, err);
+                  console.error(`[MAIL ERROR] for ${recipient.email}:`, err);
                 }
               })
             );
             await new Promise((r) => setTimeout(r, 20));
           }
+
           console.log(`[PAYMENT LINK EMAIL] Sent to ${recipients.length} user(s) for learning path ${learningPathId}`);
         } catch (err) {
           console.error("[PAYMENT LINK EMAIL ERROR]", err);
@@ -180,16 +191,13 @@ router.post(
       });
     } catch (error: any) {
       console.error(error);
-
       return res.status(500).json({
-        error:
-          error?.error?.description ||
-          error?.message ||
-          "Failed to generate payment link",
+        error: error?.error?.description || error?.message || "Failed to generate payment link",
       });
     }
   }
 );
+
 /* =========================================
 CREATE ORDER
 ========================================= */
@@ -201,10 +209,7 @@ router.post(
     try {
       const { amount } = req.body;
 
-      if (
-        typeof amount !== "number" ||
-        amount <= 0
-      ) {
+      if (typeof amount !== "number" || amount <= 0) {
         res.status(400).json({
           error: "Invalid amount",
         });
@@ -225,19 +230,11 @@ router.post(
         key_id: process.env.RAZORPAY_KEY_ID,
       });
     } catch (error: any) {
-      console.error(
-        "CREATE ORDER ERROR =>",
-        error
-      );
-
+      console.error("CREATE ORDER ERROR =>", error);
       res.status(500).json({
-        error:
-          error?.error?.description ||
-          error?.message ||
-          "Failed to create order",
+        error: error?.error?.description || error?.message || "Failed to create order",
       });
     }
-
   }
 );
 
@@ -259,10 +256,7 @@ router.post(
         razorpay_signature,
       } = req.body;
 
-      if (
-        !paymentId ||
-        !razorpay_payment_id
-      ) {
+      if (!paymentId || !razorpay_payment_id) {
         return res.status(400).json({
           error: "Missing payment details",
         });
@@ -273,26 +267,51 @@ router.post(
         .set({
           status: "paid",
           paidAt: new Date(),
-
           studentName,
           studentEmail,
           studentPhone,
-
-          razorpayPaymentId:
-            razorpay_payment_id,
+          razorpayPaymentId: razorpay_payment_id,
         })
-        .where(
-          eq(
-            paymentLinksTable.paymentId,
-            paymentId
-          )
-        )
+        .where(eq(paymentLinksTable.paymentId, paymentId))
         .returning();
 
       if (!payment) {
         return res.status(404).json({
           error: "Payment not found",
         });
+      }
+
+      // =========================================
+      // SEND PAYMENT SUCCESS EMAIL - UPDATED
+      // =========================================
+
+      try {
+        const [learningPath] = await db
+          .select()
+          .from(learningPathsTable)
+          .where(eq(learningPathsTable.id, payment.learningPathId));
+
+        const lpTitle = learningPath?.title || "Learning Path";
+
+        const paymentHtml = getPaymentEmailTemplate({
+          recipientName: studentName || "Learner",
+          amount: payment.amount,
+          paymentUrl: payment.paymentLink,
+          invoiceNumber: `INV-${paymentId.slice(0, 8)}`,
+          learningPathName: lpTitle,
+          joinUrl: `${process.env.FRONTEND_URL || "http://localhost:5173"}/join/${payment.learningPathId}`,
+        });
+
+        await sendMailWithRetry({
+          from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
+          to: studentEmail || payment.studentEmail,
+          subject: `Payment Confirmation: ${lpTitle} - ORN-AI`,
+          html: paymentHtml,
+        });
+
+        console.log(`[EMAIL SUCCESS] Payment confirmation sent to ${studentEmail || payment.studentEmail}`);
+      } catch (mailError) {
+        console.error("[PAYMENT VERIFY EMAIL ERROR]", mailError);
       }
 
       res.status(200).json({
@@ -302,13 +321,16 @@ router.post(
       });
     } catch (error) {
       console.error(error);
-
       res.status(500).json({
         error: "Verification failed",
       });
     }
   }
 );
+
+/* =========================================
+LIST PAYMENTS
+========================================= */
 
 router.get(
   "/payment/list",
@@ -327,13 +349,16 @@ router.get(
       });
     } catch (error) {
       console.error(error);
-
       res.status(500).json({
         error: "Failed to fetch payments",
       });
     }
   }
 );
+
+/* =========================================
+GET PAYMENT BY COURSE
+========================================= */
 
 router.get(
   "/payment/course/:courseId",
@@ -342,14 +367,10 @@ router.get(
   async (req, res): Promise<void> => {
     try {
       const courseId = req.params.courseId;
-
       const rows = await db
         .select()
         .from(paymentLinksTable);
-
-      const payments = rows.filter((p) =>
-        p.courseIds.includes(courseId)
-      );
+      const payments = rows.filter((p) => p.courseIds.includes(courseId));
 
       res.status(200).json({
         success: true,
@@ -362,6 +383,11 @@ router.get(
     }
   }
 );
+
+/* =========================================
+GET MY COURSES BY PAYMENT
+========================================= */
+
 router.get(
   "/my-courses/:paymentId",
   async (req, res) => {
@@ -370,12 +396,7 @@ router.get(
     const [payment] = await db
       .select()
       .from(paymentLinksTable)
-      .where(
-        eq(
-          paymentLinksTable.paymentId,
-          paymentId
-        )
-      );
+      .where(eq(paymentLinksTable.paymentId, paymentId));
 
     if (!payment) {
       return res.status(404).json({
@@ -389,6 +410,11 @@ router.get(
     });
   }
 );
+
+/* =========================================
+GET STUDENTS COURSES
+========================================= */
+
 router.get(
   "/payment/students-courses",
   requireAuth,
@@ -427,13 +453,17 @@ router.get(
       });
     } catch (error) {
       console.error(error);
-
       res.status(500).json({
         error: "Failed to fetch data",
       });
     }
   }
 );
+
+/* =========================================
+GET PAYMENT BY ID
+========================================= */
+
 router.get(
   "/payment/:paymentId",
   async (req, res) => {
@@ -443,12 +473,7 @@ router.get(
       const [payment] = await db
         .select()
         .from(paymentLinksTable)
-        .where(
-          eq(
-            paymentLinksTable.paymentId,
-            paymentId
-          )
-        );
+        .where(eq(paymentLinksTable.paymentId, paymentId));
 
       if (!payment) {
         return res.status(404).json({
@@ -462,7 +487,6 @@ router.get(
       });
     } catch (error) {
       console.error(error);
-
       res.status(500).json({
         error: "Failed to fetch payment",
       });
@@ -471,8 +495,9 @@ router.get(
 );
 
 /* =========================================
-SEND PAYMENT & JOIN LINK EMAIL TO REGISTERED USERS
+SEND PAYMENT & JOIN LINK EMAIL - UPDATED
 ========================================= */
+
 router.post(
   "/payment/send-link-email",
   requireAuth,
@@ -541,31 +566,46 @@ router.post(
         : `${frontendUrl}/learning-paths`;
 
       let sentCount = 0;
+
       for (const recipient of recipients) {
         try {
-          const html = getOfficialEmailTemplate({
-            badgeTitle: "Enrollment & Payment Link",
+          // 👇 Payment Email
+          const paymentHtml = getPaymentEmailTemplate({
             recipientName: recipient.fullName,
-            headlineText: `Here is your official Payment & Enrollment Link for <strong>"${lpTitle}"</strong> on ORN-AI:`,
-            learningPathTitle: lpTitle,
-            learningPathDescription: lpDescription || undefined,
-            amount: amount ? amount.toString() : undefined,
-            joinUrl,
+            amount: amount || "0",
             paymentUrl: paymentLink,
-            callToActionText: "Join Learning Path",
+            invoiceNumber: `INV-${paymentId?.slice(0, 8) || Date.now().toString().slice(-8)}`,
+            learningPathName: lpTitle,
+            joinUrl: joinUrl,
           });
 
-          const info = await sendMailWithRetry({
-            from: `"ORN-AI" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
+          await sendMailWithRetry({
+            from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
             to: recipient.email,
-            subject: `Enrollment & Payment Link: ${lpTitle} - ORN-AI`,
-            html,
+            subject: `Payment Link: ${lpTitle} - ORN-AI`,
+            html: paymentHtml,
           });
 
-          console.log("MAIL SENT:", info);
+          // 👇 Learning Path Email
+          const learningPathHtml = getLearningPathEmailTemplate({
+            recipientName: recipient.fullName,
+            username: recipient.fullName,
+            password: "Your password", // Ya actual password agar store hai toh
+            learningPathName: lpTitle,
+            learningPathLink: joinUrl,
+            joinUrl: frontendUrl,
+          });
+
+          await sendMailWithRetry({
+            from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
+            to: recipient.email,
+            subject: `Your Learning Path is Ready: ${lpTitle} - ORN-AI`,
+            html: learningPathHtml,
+          });
+
+          console.log(`[EMAIL SUCCESS] Sent payment & learning path emails to ${recipient.email}`);
           sentCount++;
 
-          // 350ms delay to prevent SMTP 421 connection rate limit
           await new Promise((r) => setTimeout(r, 350));
         } catch (mErr) {
           console.error(`[SEND EMAIL ERROR for ${recipient.email}]:`, mErr);

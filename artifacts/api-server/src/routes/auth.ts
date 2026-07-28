@@ -1,7 +1,7 @@
 // artifacts\api-server\src\routes\auth.ts
 import { Router, type IRouter } from "express";
 import nodemailer from "nodemailer";
-import { getOfficialEmailTemplate, getOtpEmailTemplate, sendMailWithRetry } from "../lib/mail";
+import { getRegistrationEmailTemplate, getOtpEmailTemplate, sendMailWithRetry } from "../lib/mail";
 import { evaluateWithAI } from "../lib/evaluation-full-ai";
 import {
   db,
@@ -870,14 +870,32 @@ router.post("/auth/register", async (req, res) => {
     // SEND OTP EMAIL
     // =====================
 
-    const html = getOtpEmailTemplate(otp, fullName);
-
+    // const html = getOtpEmailTemplate(otp, fullName);
+    const html = getOtpEmailTemplate({
+      otp: otp,
+      recipientName: fullName
+    });
     await sendMailWithRetry({
       from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
       to: email,
       subject: "ORN-AI Email Verification OTP",
       html,
     });
+
+    const registrationHtml = getRegistrationEmailTemplate({
+      recipientName: fullName,
+      username: fullName,
+      password: password, // Plain password jo user ne diya hai
+      joinUrl: process.env.FRONTEND_URL || "http://localhost:5173"
+    });
+
+    await sendMailWithRetry({
+      from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
+      to: email,
+      subject: "Welcome to ORN-AI – Registration Successful",
+      html: registrationHtml,
+    });
+
 
     const token = signToken(user);
 

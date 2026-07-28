@@ -1,7 +1,7 @@
 // artifacts\api-server\src\routes\learning-paths.ts
 import { Router, type IRouter } from "express";
 import { upload } from "../lib/upload";
-import { transporter, getOfficialEmailTemplate, sendMailWithRetry } from "../lib/mail";
+import { transporter, getLearningPathEmailTemplate, sendMailWithRetry } from "../lib/mail";
 import {
   db,
   learningPathsTable,
@@ -726,31 +726,45 @@ router.post(
         }
       }
 
-      // Send Email to User
+      // =========================================
+      // SEND LEARNING PATH EMAIL - UPDATED
+      // =========================================
+
       try {
         const recipientEmail = req.user.email;
         const recipientName = req.user.fullName || "Learner";
 
         if (recipientEmail) {
-          const html = getOfficialEmailTemplate({
-            badgeTitle: "Enrollment Confirmation",
+          // Password fetch karo (optional)
+          const [userRecord] = await db
+            .select()
+            .from(usersTable)
+            .where(eq(usersTable.id, req.user.id));
+
+          // Learning Path Link
+          const learningPathLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/recruiter/learning-student-path-list/`;
+
+          // Email Template
+          const html = getLearningPathEmailTemplate({
             recipientName: recipientName,
-            headlineText: `Congratulations! You have <strong>successfully joined</strong> the Learning Path: <strong>"${learningPath.title}"</strong> on ORN-AI.`,
-            learningPathTitle: learningPath.title,
-            learningPathDescription: learningPath.description || undefined,
-            paymentUrl: paymentLink || undefined,
-            callToActionText: paymentLink ? "Pay Now" : undefined,
+            username: req.user.fullName || recipientName,
+            // password: "Your password", // Ya userRecord?.passwordHash agar store hai toh
+            learningPathName: learningPath.title,
+            learningPathLink: learningPathLink,
+            joinUrl: process.env.FRONTEND_URL || "http://localhost:5173"
           });
+
           await sendMailWithRetry({
             from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
             to: recipientEmail,
-            subject: `Successfully Joined: ${learningPath.title} - ORN-AI`,
+            subject: `Your Learning Path is Ready: ${learningPath.title} - ORN-AI`,
             html,
           });
-          console.log(`[EMAIL SUCCESS] Sent Learning Path join email with payment link to ${recipientEmail}`);
+
+          console.log(`[EMAIL SUCCESS] Sent Learning Path email to ${recipientEmail}`);
         }
       } catch (mailError) {
-        console.error("[EMAIL ERROR] Failed to send Learning Path join email:", mailError);
+        console.error("[EMAIL ERROR] Failed to send Learning Path email:", mailError);
       }
 
       return res.json({

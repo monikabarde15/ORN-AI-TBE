@@ -3,7 +3,14 @@ import { Router, type IRouter } from "express";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { evaluateWithAI } from "../lib/evaluation-full-ai";
 import { s3 } from "../lib/s3";
-import { getOfficialEmailTemplate, sendMailWithRetry } from "../lib/mail";
+import {
+  getRegistrationEmailTemplate,
+  getLearningPathEmailTemplate,
+  getOtpEmailTemplate,
+  getPaymentEmailTemplate,
+  sendMailWithRetry,
+  formatCleanName
+} from "../lib/mail";
 import multer from "multer";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import {
@@ -208,22 +215,64 @@ router.post(
         message: `${row.fullName} registered as ${row.targetRole}`,
       });
       const passwordHash = await hashPassword(parsed.data.password);
-      const html = getOfficialEmailTemplate({
-        badgeTitle: "Welcome to ORN-AI",
-        recipientName: row.fullName,
-        headlineText: `Thank you for registering with us. We are delighted to have you join our growing network of professionals across global markets! Your login email is <strong>${row.email}</strong> and your password is <strong>${parsed.data.password}</strong>.`,
-        learningPathTitle: "Account Registration & Candidate Portal Access",
-        learningPathDescription: "ORN-AI is a Talent Conditioning and Career-Readiness Platform supporting job seekers, candidates and consultants through assessment, upskilling, and hands-on learning.",
-        joinUrl: process.env.FRONTEND_URL || "https://orn-ai.com/",
-        callToActionText: "Access ORN-AI Portal",
-      });
+      //       const html = getOfficialEmailTemplate({
+      //         badgeTitle: "Welcome to ORN-AI",
+      //         recipientName: row.fullName,
+      //         headlineText: `Thank you for registering with us. We are delighted to have you join our growing network of professionals across global markets!
+      // <div style="background:#F8FAFC;border:1px solid #CBD5E1;border-left:5px solid #2563EB;border-radius:10px;padding:22px;margin:24px 0;">
+      //   <h3 style="margin:0 0 14px 0;color:#0F172A;font-size:17px;font-weight:700;">Your Account Login Credentials</h3>
+      //   <table width="100%" cellpadding="0" cellspacing="0" style="font-size:15px;color:#334155;line-height:1.8;">
+      //     <tr>
+      //       <td style="padding:6px 0;width:150px;font-weight:600;color:#64748B;">Username:</td>
+      //       <td style="padding:6px 0;font-weight:700;color:#1E40AF;">${row.fullName}</td>
+      //     </tr>
+      //     <tr>
+      //       <td style="padding:6px 0;width:150px;font-weight:600;color:#64748B;">Email Address:</td>
+      //       <td style="padding:6px 0;font-weight:700;color:#1E40AF;">${row.email}</td>
+      //     </tr>
+      //     <tr>
+      //       <td style="padding:6px 0;width:150px;font-weight:600;color:#64748B;">Password:</td>
+      //       <td style="padding:6px 0;font-weight:700;color:#1E40AF;">${parsed.data.password}</td>
+      //     </tr>
+      //   </table>
+      // </div>`,
+      //         learningPathTitle: "Account Registration & Candidate Portal Access",
+      //         learningPathDescription: "ORN-AI is a Talent Conditioning and Career-Readiness Platform supporting job seekers, candidates and consultants through assessment, upskilling, and hands-on learning.",
+      //         joinUrl: process.env.FRONTEND_URL || "https://orn-ai.com/",
+      //         callToActionText: "Access ORN-AI Portal",
+      //       });
+      // ============================================
+      // SEND REGISTRATION EMAIL - WITH ERROR HANDLING
+      // ============================================
 
-      await sendMailWithRetry({
-        from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
-        to: row.email,
-        subject: "Welcome to ORN-AI – Registration Successful",
-        html,
-      });
+      try {
+        const html = getRegistrationEmailTemplate({
+          recipientName: row.fullName,
+          username: row.fullName,
+          password: parsed.data.password,
+          joinUrl: process.env.FRONTEND_URL || "http://localhost:5173"
+        });
+
+        await sendMailWithRetry({
+          from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
+          to: row.email,
+          subject: "Welcome to ORN-AI – Registration Successful",
+          html,
+        });
+
+        console.log(`✅ Registration email sent to ${row.email}`);
+      } catch (mailError) {
+        // ✅ Mail fail hua toh sirf log karo, response fail mat karo
+        console.error(`❌ Failed to send registration email to ${row.email}:`, mailError);
+
+        // ✅ Option: Store in database that email failed
+        await db.insert(activityTable).values({
+          kind: "email_failed",
+          candidateName: row.fullName,
+          country: row.country,
+          message: `Registration email failed for ${row.email}: ${mailError instanceof Error ? mailError.message : String(mailError)}`,
+        });
+      }
       const existingUser = await findUserByEmail(row.email);
 
       if (!existingUser) {
