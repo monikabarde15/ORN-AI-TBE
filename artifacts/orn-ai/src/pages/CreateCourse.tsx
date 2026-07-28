@@ -1819,7 +1819,7 @@ toast.success(
 
   return (
     <Shell>
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-6">
       <Toaster />
 
       {/* =======================================================

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export const useVideoPlayer = (lessonId: string) => {
+export const useVideoPlayer = (
+    lessonId: string,
+    onLessonCompleted?: (lessonId: string) => void
+) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -14,7 +17,7 @@ export const useVideoPlayer = (lessonId: string) => {
     const [showControls, setShowControls] = useState(true);
     const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const [resumeTime, setResumeTime] =useState<number | null>(null);
+    const [resumeTime, setResumeTime] = useState<number | null>(null);
     const [showResumePrompt, setShowResumePrompt] = useState(false);
 
     const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -197,12 +200,14 @@ export const useVideoPlayer = (lessonId: string) => {
 
             if (
                 video.duration &&
-                video.currentTime >
-                video.duration - 30
+                video.currentTime >= video.duration - 1
             ) {
                 localStorage.removeItem(
                     `lesson-progress-${lessonId}`
                 );
+                if (onLessonCompleted && lessonId) {
+                    onLessonCompleted(lessonId);
+                }
             }
         };
 
@@ -212,11 +217,19 @@ export const useVideoPlayer = (lessonId: string) => {
 
         const onPlay = () => setIsPlaying(true);
         const onPause = () => setIsPlaying(false);
+        const onEnded = () => {
+            setIsPlaying(false);
+            localStorage.removeItem(`lesson-progress-${lessonId}`);
+            if (onLessonCompleted && lessonId) {
+                onLessonCompleted(lessonId);
+            }
+        };
 
         video.addEventListener("timeupdate", updateTime);
         video.addEventListener("loadedmetadata", updateDuration);
         video.addEventListener("play", onPlay);
         video.addEventListener("pause", onPause);
+        video.addEventListener("ended", onEnded);
 
         return () => {
             video.removeEventListener("timeupdate", updateTime);
@@ -226,10 +239,11 @@ export const useVideoPlayer = (lessonId: string) => {
             );
             video.removeEventListener("play", onPlay);
             video.removeEventListener("pause", onPause);
+            video.removeEventListener("ended", onEnded);
         };
 
 
-    }, []);
+    }, [lessonId, onLessonCompleted]);
 
     useEffect(() => {
         const handleFullscreenChange = () => {

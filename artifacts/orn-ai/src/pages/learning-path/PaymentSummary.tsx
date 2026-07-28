@@ -1,11 +1,15 @@
+import { useState } from "react";
 import {
   CreditCard,
   Wallet,
   Copy,
   ExternalLink,
+  User2,
+  UserPlus ,
 } from "lucide-react";
 
 import { toast } from "sonner";
+import AddCandidatePaymentModal, { CandidateUser } from "./AddCandidatePaymentModal";
 
 interface Props {
   subtotal: number;
@@ -24,6 +28,7 @@ export default function PaymentSummary({
   generatePaymentLink,
   showRemoveButton = true,
 }: Props) {
+  const [isAddCandidateOpen, setIsAddCandidateOpen] = useState(false);
 
   const copyLink =
     async () => {
@@ -180,7 +185,7 @@ export default function PaymentSummary({
           </div>
 
         )}
-        {showRemoveButton && (
+        {/* {showRemoveButton && (
           <button
             onClick={
               generatePaymentLink
@@ -204,9 +209,42 @@ export default function PaymentSummary({
             />
             Generate Payment Link
           </button>
-        )}
+        )} */}
+
+        <button
+            onClick={() => setIsAddCandidateOpen(true)}
+            className="
+              mt-5
+              flex
+              w-full
+              items-center
+              justify-center
+              gap-2
+              rounded-2xl
+              bg-[#1652A0]
+              hover:bg-[#124282]
+              py-4
+              font-semibold
+              text-white
+              shadow-sm
+              transition-colors
+            "
+          > 
+            <UserPlus 
+              size={18}
+            />
+            Add Candidate
+          </button>
       </div>
 
+      <AddCandidatePaymentModal
+        open={isAddCandidateOpen}
+        onClose={() => setIsAddCandidateOpen(false)}
+        onSend={(selectedCandidates: CandidateUser[]) => {
+          toast.success(`Added ${selectedCandidates.length} candidate(s)`);
+          generatePaymentLink();
+        }}
+      />
     </div>
   );
 }

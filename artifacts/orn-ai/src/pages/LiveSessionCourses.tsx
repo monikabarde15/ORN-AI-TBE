@@ -192,7 +192,7 @@ export default function LiveSessionsDashboard() {
           {/* Header */}
           <div className="mb-8">
 
-            <h1 className="text-4xl font-bold">
+            <h1 className="text-3xl font-bold">
               Live Sessions Dashboard
             </h1>
 

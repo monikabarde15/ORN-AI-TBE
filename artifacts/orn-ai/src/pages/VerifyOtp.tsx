@@ -10,11 +10,12 @@ export default function VerifyOtp() {
   const email = sessionStorage.getItem("verifyEmail");
   const handleVerify = async () => {
   try {
-    const API_URL = import.meta.env.VITE_API_BASE_URL;
+    const rawApiUrl = String(import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
+    const API_URL = rawApiUrl ? (rawApiUrl.endsWith("/api") ? rawApiUrl : `${rawApiUrl}/api`) : "/api";
 
     // OTP Verify
     const res = await fetch(
-      `${API_URL}api/auth/verify-email`,
+      `${API_URL}/auth/verify-email`,
       {
         method: "POST",
         headers: {
@@ -45,7 +46,7 @@ export default function VerifyOtp() {
 
     // Generate Evaluation
     const evalRes = await fetch(
-      `${API_URL}api/candidates/${data.candidateId}/evaluation`,
+      `${API_URL}/candidates/${data.candidateId}/evaluation`,
       {
         method: "POST",
         credentials: "include",
@@ -76,25 +77,38 @@ export default function VerifyOtp() {
 };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100">
-      <Card className="w-[420px]">
-        <CardHeader>
-          <CardTitle>Verify OTP</CardTitle>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <Card className="w-full max-w-md bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+        <CardHeader className="border-b border-gray-100 bg-[#1652A0] text-white p-6">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-bold text-lg text-white">ORN</span>
+            <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded font-semibold">AI</span>
+          </div>
+          <CardTitle className="text-xl font-bold text-white">Verify Your OTP</CardTitle>
         </CardHeader>
 
-        <CardContent className="space-y-4">
-          <p className="text-sm text-gray-500">
-            OTP sent to <strong>{email}</strong>
+        <CardContent className="space-y-4 p-6">
+          <p className="text-sm text-gray-600">
+            Enter the 6-digit verification code sent to <strong className="text-gray-900">{email || "your email"}</strong>
           </p>
 
-          <Input
-            placeholder="Enter 6 digit OTP"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-          />
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+              Verification Code
+            </label>
+            <Input
+              placeholder="Enter 6-digit OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-base text-gray-900 focus:border-[#1652A0] focus:ring-2 focus:ring-[#1652A0]/20"
+            />
+          </div>
 
-          <Button className="w-full" onClick={handleVerify}>
-            Verify OTP
+          <Button
+            className="w-full bg-[#1652A0] hover:bg-[#124282] text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors"
+            onClick={handleVerify}
+          >
+            Verify OTP & Continue
           </Button>
         </CardContent>
       </Card>

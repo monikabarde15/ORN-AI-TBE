@@ -320,9 +320,9 @@ const QuizPlayer = ({ lecture, onQuizCompleted }: QuizPlayerProps) => {
                 className={`
                   w-2 h-2 rounded-full transition-all duration-200
                   ${currentQuestion === index
-                    ? "bg-red-600 w-6"
+                    ? "bg-[#1652A0] w-6"
                     : answers[index] !== undefined
-                    ? "bg-green-500"
+                    ? "bg-emerald-500"
                     : "bg-gray-300"
                   }
                 `}
@@ -339,7 +339,7 @@ const QuizPlayer = ({ lecture, onQuizCompleted }: QuizPlayerProps) => {
               px-6 sm:px-8 py-2 sm:py-2.5 rounded-lg
               text-sm font-semibold transition-all duration-200 w-full sm:w-auto
               ${allAnswered
-                ? "bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-md"
+                ? "bg-[#1652A0] hover:bg-[#124282] text-white shadow-sm hover:shadow-md"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }
             `}
@@ -354,7 +354,7 @@ const QuizPlayer = ({ lecture, onQuizCompleted }: QuizPlayerProps) => {
               flex items-center gap-2 px-6 sm:px-8 py-2 sm:py-2.5 rounded-lg
               text-sm font-semibold transition-all duration-200 w-full sm:w-auto justify-center
               ${isAnswered
-                ? "bg-gray-900 hover:bg-gray-800 text-white shadow-sm hover:shadow-md"
+                ? "bg-[#1652A0] hover:bg-[#124282] text-white shadow-sm hover:shadow-md"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }
             `}

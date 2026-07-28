@@ -160,11 +160,11 @@ export default function CourseCategoryManagement() {
 
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-4xl font-bold">
+            <h1 className="text-3xl font-bold">
               Course Categories
             </h1>
 
-            <p className="text-slate-500 mt-2">
+            <p className="text-m text-muted-foreground mt-2">
               Manage Course Categories
             </p>
           </div>
@@ -172,7 +172,7 @@ export default function CourseCategoryManagement() {
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
             <div className="bg-white rounded-2xl border shadow-sm p-6">
-              <p className="text-xs uppercase text-gray-500">
+              <p className="text-xs uppercase text-muted-foreground">
                 Total Categories
               </p>
               <h2 className="text-4xl font-bold mt-3">
@@ -181,7 +181,7 @@ export default function CourseCategoryManagement() {
             </div>
 
             <div className="bg-white rounded-2xl border shadow-sm p-6">
-              <p className="text-xs uppercase text-gray-500">
+              <p className="text-xs uppercase text-muted-foreground">
                 Active
               </p>
               <h2 className="text-4xl font-bold mt-3">
@@ -190,7 +190,7 @@ export default function CourseCategoryManagement() {
             </div>
 
             <div className="bg-white rounded-2xl border shadow-sm p-6">
-              <p className="text-xs uppercase text-gray-500">
+              <p className="text-xs uppercase text-muted-foreground">
                 Inactive
               </p>
               <h2 className="text-4xl font-bold mt-3">
@@ -199,7 +199,7 @@ export default function CourseCategoryManagement() {
             </div>
 
             <div className="bg-white rounded-2xl border shadow-sm p-6">
-              <p className="text-xs uppercase text-gray-500">
+              <p className="text-xs uppercase text-muted-foreground">
                 New This Month
               </p>
               <h2 className="text-4xl font-bold mt-3">
@@ -212,7 +212,7 @@ export default function CourseCategoryManagement() {
           <div className="bg-white border rounded-2xl p-4 mb-6 flex justify-between gap-4">
             <div className="relative w-full max-w-xl">
               <Search
-                className="absolute left-3 top-3 text-gray-400"
+                className="absolute left-3 top-3 text-muted-foreground"
                 size={18}
               />
 

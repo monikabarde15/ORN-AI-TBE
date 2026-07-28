@@ -195,7 +195,7 @@ export default function SidebarContent({
                 Add Candidate
               </Link>
             )}
-            <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Containt Management
             </div>
             {hasPermission("Blogs") && (
@@ -217,7 +217,7 @@ export default function SidebarContent({
               hasPermission("Live Training Sessions")
             ) && (
                 <>
-                  <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     LMS & Learning Ecosystem
                   </div>
 
@@ -293,7 +293,7 @@ export default function SidebarContent({
             {/* Career Transformation */}
             {hasPermission("Training Pipeline") && (
               <>
-                <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Career Transformation
                 </div>
 
@@ -318,7 +318,7 @@ export default function SidebarContent({
               hasPermission("Settings")
             ) && (
                 <>
-                  <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Platform
                   </div>
 
@@ -365,7 +365,7 @@ export default function SidebarContent({
             {/* Candidate Management */}
             {hasPermission("Permissions") && (
               <>
-                <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Candidate Management
                 </div>
 
@@ -383,7 +383,7 @@ export default function SidebarContent({
             {/* Role & Permissions */}
             {hasPermission("Permissions") && (
               <>
-                <div className="px-3 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Role & Permissions
                 </div>
 

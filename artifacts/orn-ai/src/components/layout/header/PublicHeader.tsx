@@ -192,7 +192,7 @@ export default function PublicHeader({
         <div className="flex items-center gap-3">
           {user == null && (
             <Link href="/register">
-              <Button className="gap-2">
+              <Button className="gap-2 bg-[#1652A0] hover:bg-[#124282] text-white font-semibold shadow-sm transition-colors">
                 <UserPlus className="size-4" />
                 Join Talent Pool
               </Button>

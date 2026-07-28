@@ -8,10 +8,11 @@ interface VideoPlayerProps {
 
     onPreviousLesson?: () => void;
     onNextLesson?: () => void;
+    onLessonCompleted?: (lessonId: string) => void;
 }
 
 const VideoPlayer = ({
-    videoUrl, lessonId,onPreviousLesson,onNextLesson,
+    videoUrl, lessonId, onPreviousLesson, onNextLesson, onLessonCompleted,
 }: VideoPlayerProps) => {
     const {
         videoRef,
@@ -41,7 +42,7 @@ const VideoPlayer = ({
         resumeTime,
         resumePlayback,
         startOver,
-    } = useVideoPlayer(lessonId);
+    } = useVideoPlayer(lessonId, onLessonCompleted);
 
     return (
         <div
