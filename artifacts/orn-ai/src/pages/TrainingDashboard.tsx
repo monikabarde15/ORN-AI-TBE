@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Shell } from "@/components/layout/Shell";
 import {
@@ -369,7 +369,7 @@ export default function TrainingDashboard() {
                   {assignments.map((a) => (
                     <Link
                       key={a.id}
-                      href={`/candidate/${a.candidateId}/training`}
+                      href={`/candidate/${a.candidateId}/learning-student-path-list`}
                       className="flex items-center gap-4 py-4 first:pt-0 last:pb-0 hover-elevate active-elevate-2 -mx-2 px-2 rounded-md transition-colors"
                       data-testid={`row-training-${a.id}`}
                     >

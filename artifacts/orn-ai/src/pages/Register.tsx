@@ -1,5 +1,5 @@
 // artifacts\orn-ai\src\pages\Register.tsx
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +25,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { CountryCombobox } from "@/components/ui/CountryCombobox";
 import countryList from "country-list-with-dial-code-and-flag";
 import {
   Loader2,
@@ -138,10 +139,6 @@ export default function Register() {
   const [languageInput, setLanguageInput] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [currentLocationInput, setCurrentLocationInput] = useState("");
-  const [countryInput, setCountryInput] = useState("");
-  const [currentLocationFocused, setCurrentLocationFocused] = useState(false);
-  const [countryFocused, setCountryFocused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: regions } = useListRegions({
@@ -186,8 +183,6 @@ export default function Register() {
     },
   });
 
-  console.log("regions data =>", regions);
-
   const phase1 = Array.isArray((regions as any)?.phase1)
     ? (regions as any).phase1
     : [];
@@ -197,27 +192,6 @@ export default function Register() {
     : [];
 
   const allCountries = [...phase1, ...phase2];
-  const availableCountries = countryList.getAll().map((country) => ({
-    code: country.countryCode,
-    name: country.name,
-    flag: country.flag,
-  }));
-
-  const filteredCurrentLocationCountries = availableCountries.filter((country) => {
-    const query = currentLocationInput.trim().toLowerCase();
-    return (
-      country.name.toLowerCase().includes(query) ||
-      country.code.toLowerCase().includes(query)
-    );
-  });
-
-  const filteredResidenceCountries = availableCountries.filter((country) => {
-    const query = countryInput.trim().toLowerCase();
-    return (
-      country.name.toLowerCase().includes(query) ||
-      country.code.toLowerCase().includes(query)
-    );
-  });
 
   // ----- Skills helpers -----
   const addSkill = () => {
@@ -762,68 +736,26 @@ export default function Register() {
                         </p>
 
                         {/* CURRENT LOCATION */}
+                        {/* CURRENT LOCATION */}
                         <FormField
                           control={form.control}
                           name="currentLocation"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>
-                                Current Location *
-                              </FormLabel>
-
+                            <FormItem className="flex flex-col">
+                              <FormLabel>Current Location *</FormLabel>
                               <FormControl>
-                                <div className="relative">
-                                  <Input
-                                    placeholder="Search current location…"
-                                    value={currentLocationInput}
-                                    onChange={(event) => {
-                                      setCurrentLocationInput(event.target.value);
-                                      if (field.value) {
-                                        const currentName = availableCountries.find((c) => c.code === field.value)?.name;
-                                        if (currentName !== event.target.value) {
-                                          field.onChange("");
-                                        }
-                                      }
-                                    }}
-                                    onFocus={() => setCurrentLocationFocused(true)}
-                                    onBlur={() => setTimeout(() => setCurrentLocationFocused(false), 150)}
-                                    autoComplete="off"
-                                  />
-
-                                  {currentLocationFocused && (
-                                    <div className="absolute left-0 right-0 z-20 max-h-72 overflow-auto rounded-b-md border border-border bg-popover shadow-lg">
-                                      {filteredCurrentLocationCountries.length > 0 ? (
-                                        filteredCurrentLocationCountries.map((c) => (
-                                          <button
-                                            type="button"
-                                            key={c.code}
-                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-                                            onMouseDown={(event) => event.preventDefault()}
-                                            onClick={() => {
-                                              field.onChange(c.code);
-                                              setCurrentLocationInput(c.name);
-                                              setCurrentLocationFocused(false);
-                                            }}
-                                          >
-                                            <span className="font-mono text-xs text-muted-foreground">{c.flag}</span>
-                                            <span>{c.name}</span>
-                                          </button>
-                                        ))
-                                      ) : (
-                                        <div className="px-3 py-3 text-sm text-muted-foreground">
-                                          No countries match your search.
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
+                                <CountryCombobox
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="Search current location…"
+                                  searchPlaceholder="Search country by name or code..."
+                                />
                               </FormControl>
-
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        {/* COUNTRY OF RESIDENCE */}
+                        {/* CITY */}
                         <FormField
                           control={form.control}
                           name="city"
@@ -838,58 +770,20 @@ export default function Register() {
                           )}
                         />
 
+                        {/* COUNTRY OF RESIDENCE */}
                         <FormField
                           control={form.control}
                           name="country"
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="flex flex-col">
                               <FormLabel>Country of Residence *</FormLabel>
                               <FormControl>
-                                <div className="relative">
-                                  <Input
-                                    placeholder="Search country of residence…"
-                                    value={countryInput}
-                                    onChange={(event) => {
-                                      setCountryInput(event.target.value);
-                                      if (field.value) {
-                                        const currentName = allCountries.find((c) => c.code === field.value)?.name;
-                                        if (currentName !== event.target.value) {
-                                          field.onChange("");
-                                        }
-                                      }
-                                    }}
-                                    onFocus={() => setCountryFocused(true)}
-                                    onBlur={() => setTimeout(() => setCountryFocused(false), 150)}
-                                    autoComplete="off"
-                                  />
-
-                                  {countryFocused && (
-                                    <div className="absolute left-0 right-0 z-20 max-h-72 overflow-auto rounded-b-md border border-border bg-popover shadow-lg">
-                                      {filteredResidenceCountries.length > 0 ? (
-                                        filteredResidenceCountries.map((c) => (
-                                          <button
-                                            type="button"
-                                            key={c.code}
-                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-                                            onMouseDown={(event) => event.preventDefault()}
-                                            onClick={() => {
-                                              field.onChange(c.code);
-                                              setCountryInput(c.name);
-                                              setCountryFocused(false);
-                                            }}
-                                          >
-                                            <span className="font-mono text-xs text-muted-foreground">{c.flag}</span>
-                                            <span>{c.name}</span>
-                                          </button>
-                                        ))
-                                      ) : (
-                                        <div className="px-3 py-3 text-sm text-muted-foreground">
-                                          No countries match your search.
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
+                                <CountryCombobox
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="Search country of residence…"
+                                  searchPlaceholder="Search country by name or code..."
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

@@ -185,6 +185,7 @@ export function Shell({
     location.startsWith("/admin") ||
     location.startsWith("/profile") ||
     location.startsWith("/candidate") ||
+    location.startsWith("/training") ||
     candidateRoutes.some((route) =>
       location.startsWith(route)
     ) ||
