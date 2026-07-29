@@ -513,6 +513,9 @@ importers:
       d3-time:
         specifier: ^3.1.0
         version: 3.1.0
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       html2canvas:
         specifier: ^1.4.1
         version: 1.4.1

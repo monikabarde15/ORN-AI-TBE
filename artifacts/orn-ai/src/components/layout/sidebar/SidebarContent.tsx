@@ -113,14 +113,14 @@ export default function SidebarContent({
               <GraduationCap className="size-4" />
              Learning Path
             </Link>
-            <Link
+            {/* <Link
               href="/recruiter/test-assignment"
               onClick={onNavigate}
               className={linkClass(location === "/recruiter/learning-student-path-list")}
             >
               <GraduationCap className="size-4" />
              Assignment
-            </Link>
+            </Link> */}
 
             <Link
               href="/recruiter/student-live-session"
