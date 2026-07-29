@@ -579,7 +579,7 @@ if (loading) {
         <Shell>
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <div className="h-10 w-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <div className="h-10 w-10 border-4 border-blue-800 border-t-transparent rounded-full animate-spin mx-auto"></div>
                     <p className="mt-4 text-sm text-slate-500">
                         Loading Assessments...
                     </p>
@@ -602,7 +602,7 @@ if (loading) {
                         </div>
                         <button
                             onClick={handleCreateNewAssessment}
-                            className="px-5 py-2.5 bg-indigo-900 hover:bg-indigo-800 text-white rounded-lg text-sm font-semibold transition flex items-center space-x-2 shadow-sm self-start"
+                            className="px-5 py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-sm font-semibold transition flex items-center space-x-2 shadow-sm self-start"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -623,7 +623,7 @@ if (loading) {
                                 >
                                     <div>
                                         <div className="flex justify-between items-start">
-                                            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">
+                                            <span className="text-xs font-bold text-blue-800 bg-indigo-50 px-2 py-1 rounded-md">
                                                 {assessment.category}
                                             </span>
                                             <span className={`text-xs px-2.5 py-0.5 rounded-full border font-medium ${assessment.isPublished
@@ -634,7 +634,7 @@ if (loading) {
                                             </span>
                                         </div>
 
-                                        <h3 className="text-lg font-bold text-slate-800 mt-4 group-hover:text-indigo-600 transition truncate">
+                                        <h3 className="text-lg font-bold text-slate-800 mt-4 group-hover:text-blue-800 transition truncate">
                                             {assessment.name}
                                         </h3>
                                         <p className="text-slate-500 text-xs mt-1.5 line-clamp-2 h-8">
@@ -762,7 +762,7 @@ if (loading) {
                                         : activeAssessment.isPublished
                                         ? "bg-emerald-50 text-emerald-700"
                                         : isPublishAllowed
-                                        ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                                        ? "bg-blue-900 text-white hover:bg-blue-800"
                                         : "bg-slate-100 text-slate-400"
                                 }`}
                             >
@@ -790,7 +790,7 @@ if (loading) {
                                 <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">Assessment Questions</h3>
                                 <button
                                     onClick={handleAddQuestion}
-                                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition font-bold text-xs flex items-center space-x-1"
+                                    className="p-1.5 text-blue-900 hover:bg-indigo-50 rounded-lg transition font-bold text-xs flex items-center space-x-1"
                                 >
                                     <span>+ Add</span>
                                 </button>
@@ -803,13 +803,13 @@ if (loading) {
                                     placeholder="Search questions..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-blue-900"
                                 />
                                 <div className="grid grid-cols-2 gap-2">
                                     <select
                                         value={filterDifficulty}
                                         onChange={(e) => setFilterDifficulty(e.target.value)}
-                                        className="px-2 py-1 border border-slate-200 rounded-lg text-xs text-slate-500 focus:outline-none focus:border-indigo-500"
+                                        className="px-2 py-1 border border-slate-200 rounded-lg text-xs text-slate-500 focus:outline-none focus:border-blue-900"
                                     >
                                         <option value="All">All Diff.</option>
                                         <option value="Easy">Easy</option>
@@ -819,7 +819,7 @@ if (loading) {
                                     <select
                                         value={filterStatus}
                                         onChange={(e) => setFilterStatus(e.target.value)}
-                                        className="px-2 py-1 border border-slate-200 rounded-lg text-xs text-slate-500 focus:outline-none focus:border-indigo-500"
+                                        className="px-2 py-1 border border-slate-200 rounded-lg text-xs text-slate-500 focus:outline-none focus:border-blue-900"
                                     >
                                         <option value="All">All Stats.</option>
                                         <option value="Draft">Draft</option>
@@ -844,7 +844,7 @@ if (loading) {
                                             }`}
                                     >
                                         <div className="flex justify-between items-start text-[10px]">
-                                            <span className="font-bold text-indigo-600">Question {idx + 1}</span>
+                                            <span className="font-bold text-blue-900">Question {idx + 1}</span>
                                             <div className="flex space-x-1">
                                                 <span className={`px-1.5 py-0.5 rounded font-semibold ${q.difficulty === 'Easy' ? 'bg-emerald-50 text-emerald-700' : q.difficulty === 'Medium' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
                                                     }`}>{q.difficulty}</span>
@@ -871,7 +871,7 @@ if (loading) {
                                         <p className="text-xs">No questions matched filters.</p>
                                         <button
                                             onClick={handleAddQuestion}
-                                            className="text-xs text-indigo-600 font-bold hover:underline"
+                                            className="text-xs text-blue-900 font-bold hover:underline"
                                         >
                                             + Add First Question
                                         </button>
@@ -965,7 +965,7 @@ if (loading) {
                                                 </label>
                                                 <button
                                                     onClick={handleAddOption}
-                                                    className="text-xs text-indigo-600 hover:text-indigo-700 font-bold"
+                                                    className="text-xs text-blue-900 hover:text-blue-800 font-bold"
                                                 >
                                                     + Add Option Choice
                                                 </button>
@@ -979,7 +979,7 @@ if (loading) {
                                                             name="builder_correct_option"
                                                             checked={activeQuestion.correctOptionIndex === optIdx}
                                                             onChange={() => handleUpdateQuestionField('correctOptionIndex', optIdx)}
-                                                            className="text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                                                            className="text-blue-900 focus:ring-blue-800 w-4 h-4 cursor-pointer"
                                                             title="Mark as correct answer"
                                                         />
                                                         <input
@@ -1072,7 +1072,7 @@ if (loading) {
                                                     toast.error("Failed to publish question");
                                                 }
                                             }}
-                                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition"
+                                                className="px-4 py-2 bg-blue-900 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition"
                                             >
                                                 Publish Question
                                             </button>
@@ -1090,7 +1090,7 @@ if (loading) {
                                     </div>
                                     <button
                                         onClick={handleAddQuestion}
-                                        className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition"
+                                        className="px-4 py-2 bg-blue-900 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition"
                                     >
                                         + Add First Question
                                     </button>
@@ -1106,7 +1106,7 @@ if (loading) {
                                 <div className="pt-4 border-t mt-4">
                                     <button
                                         onClick={saveAssessment}
-                                        className="w-full bg-indigo-600 text-white py-2 rounded-lg"
+                                        className="w-full bg-blue-900 text-white py-2 rounded-lg"
                                     >
                                         Save Assessment
                                     </button>
