@@ -25,6 +25,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { CountryCombobox } from "@/components/ui/CountryCombobox";
 import countryList from "country-list-with-dial-code-and-flag";
 import {
   Loader2,
@@ -138,10 +139,6 @@ export default function Register() {
   const [languageInput, setLanguageInput] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [currentLocationInput, setCurrentLocationInput] = useState("");
-  const [countryInput, setCountryInput] = useState("");
-  const [currentLocationFocused, setCurrentLocationFocused] = useState(false);
-  const [countryFocused, setCountryFocused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: regions } = useListRegions({
@@ -186,8 +183,6 @@ export default function Register() {
     },
   });
 
-  console.log("regions data =>", regions);
-
   const phase1 = Array.isArray((regions as any)?.phase1)
     ? (regions as any).phase1
     : [];
@@ -197,71 +192,6 @@ export default function Register() {
     : [];
 
   const allCountries = [...phase1, ...phase2];
-  const availableCountries = useMemo(() => {
-    return countryList
-      .getAll()
-      .map((c) => ({
-        code: c.countryCode,
-        name: c.name,
-        flag: c.flag,
-        nameLower: c.name.toLowerCase(),
-        codeLower: c.countryCode.toLowerCase(),
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, []);
-
-  useEffect(() => {
-    const locCode = form.getValues("currentLocation");
-    if (locCode) {
-      const match = availableCountries.find((c) => c.code === locCode || c.name === locCode);
-      if (match && match.name !== currentLocationInput) {
-        setCurrentLocationInput(match.name);
-      }
-    }
-    const resCode = form.getValues("country");
-    if (resCode) {
-      const match = availableCountries.find((c) => c.code === resCode || c.name === resCode);
-      if (match && match.name !== countryInput) {
-        setCountryInput(match.name);
-      }
-    }
-  }, [step]);
-
-  const getFilteredCountries = useCallback((input: string) => {
-    const query = input.trim().toLowerCase();
-    
-    if (!query) {
-      return availableCountries;
-    }
-
-    const filtered = availableCountries.filter(
-      (c) => c.nameLower.includes(query) || c.codeLower.includes(query)
-    );
-
-    return filtered.sort((a, b) => {
-      const aExact = a.nameLower === query || a.codeLower === query;
-      const bExact = b.nameLower === query || b.codeLower === query;
-      if (aExact && !bExact) return -1;
-      if (!aExact && bExact) return 1;
-
-      const aStarts = a.nameLower.startsWith(query);
-      const bStarts = b.nameLower.startsWith(query);
-      if (aStarts && !bStarts) return -1;
-      if (!aStarts && bStarts) return 1;
-
-      return a.name.localeCompare(b.name);
-    });
-  }, [availableCountries]);
-
-  const filteredCurrentLocationCountries = useMemo(
-    () => getFilteredCountries(currentLocationInput),
-    [currentLocationInput, getFilteredCountries]
-  );
-
-  const filteredResidenceCountries = useMemo(
-    () => getFilteredCountries(countryInput),
-    [countryInput, getFilteredCountries]
-  );
 
   // ----- Skills helpers -----
   const addSkill = () => {
@@ -806,73 +736,26 @@ export default function Register() {
                         </p>
 
                         {/* CURRENT LOCATION */}
+                        {/* CURRENT LOCATION */}
                         <FormField
                           control={form.control}
                           name="currentLocation"
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>
-                                Current Location *
-                              </FormLabel>
-
+                            <FormItem className="flex flex-col">
+                              <FormLabel>Current Location *</FormLabel>
                               <FormControl>
-                                <div className="relative">
-                                  <Input
-                                    placeholder="Search current location…"
-                                    value={currentLocationInput}
-                                    onChange={(event) => {
-                                      const val = event.target.value;
-                                      setCurrentLocationInput(val);
-                                      const q = val.trim().toLowerCase();
-                                      const match = availableCountries.find((c) => c.nameLower === q || c.codeLower === q);
-                                      if (match) {
-                                        field.onChange(match.code);
-                                      } else if (field.value) {
-                                        field.onChange("");
-                                      }
-                                    }}
-                                    onFocus={(e) => {
-                                      e.target.select();
-                                      setCurrentLocationFocused(true);
-                                    }}
-                                    onBlur={() => setTimeout(() => setCurrentLocationFocused(false), 200)}
-                                    autoComplete="off"
-                                  />
-
-                                  {currentLocationFocused && (
-                                    <div className="absolute left-0 right-0 z-50 max-h-72 overflow-auto rounded-b-md border border-border bg-popover shadow-lg">
-                                      {filteredCurrentLocationCountries.length > 0 ? (
-                                        filteredCurrentLocationCountries.map((c) => (
-                                          <button
-                                            type="button"
-                                            key={c.code}
-                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                                            onMouseDown={(event) => {
-                                              event.preventDefault();
-                                              field.onChange(c.code);
-                                              setCurrentLocationInput(c.name);
-                                              setCurrentLocationFocused(false);
-                                            }}
-                                          >
-                                            <span className="font-mono text-xs text-muted-foreground">{c.flag}</span>
-                                            <span>{c.name}</span>
-                                          </button>
-                                        ))
-                                      ) : (
-                                        <div className="px-3 py-3 text-sm text-muted-foreground">
-                                          No countries match your search.
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
+                                <CountryCombobox
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="Search current location…"
+                                  searchPlaceholder="Search country by name or code..."
+                                />
                               </FormControl>
-
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        {/* COUNTRY OF RESIDENCE */}
+                        {/* CITY */}
                         <FormField
                           control={form.control}
                           name="city"
@@ -887,63 +770,20 @@ export default function Register() {
                           )}
                         />
 
+                        {/* COUNTRY OF RESIDENCE */}
                         <FormField
                           control={form.control}
                           name="country"
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="flex flex-col">
                               <FormLabel>Country of Residence *</FormLabel>
                               <FormControl>
-                                <div className="relative">
-                                  <Input
-                                    placeholder="Search country of residence…"
-                                    value={countryInput}
-                                    onChange={(event) => {
-                                      const val = event.target.value;
-                                      setCountryInput(val);
-                                      const q = val.trim().toLowerCase();
-                                      const match = availableCountries.find((c) => c.nameLower === q || c.codeLower === q);
-                                      if (match) {
-                                        field.onChange(match.code);
-                                      } else if (field.value) {
-                                        field.onChange("");
-                                      }
-                                    }}
-                                    onFocus={(e) => {
-                                      e.target.select();
-                                      setCountryFocused(true);
-                                    }}
-                                    onBlur={() => setTimeout(() => setCountryFocused(false), 200)}
-                                    autoComplete="off"
-                                  />
-
-                                  {countryFocused && (
-                                    <div className="absolute left-0 right-0 z-50 max-h-72 overflow-auto rounded-b-md border border-border bg-popover shadow-lg">
-                                      {filteredResidenceCountries.length > 0 ? (
-                                        filteredResidenceCountries.map((c) => (
-                                          <button
-                                            type="button"
-                                            key={c.code}
-                                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                                            onMouseDown={(event) => {
-                                              event.preventDefault();
-                                              field.onChange(c.code);
-                                              setCountryInput(c.name);
-                                              setCountryFocused(false);
-                                            }}
-                                          >
-                                            <span className="font-mono text-xs text-muted-foreground">{c.flag}</span>
-                                            <span>{c.name}</span>
-                                          </button>
-                                        ))
-                                      ) : (
-                                        <div className="px-3 py-3 text-sm text-muted-foreground">
-                                          No countries match your search.
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
+                                <CountryCombobox
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="Search country of residence…"
+                                  searchPlaceholder="Search country by name or code..."
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

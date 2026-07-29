@@ -1,7 +1,9 @@
+// artifacts\orn-ai\src\pages\RecruiterAddCandidate.tsx
 import { useRef, useState } from "react";
 import { useLocation } from "wouter";
 import countryList from "country-list-with-dial-code-and-flag";
 import { Shell } from "@/components/layout/Shell";
+import { CountryCombobox } from "@/components/ui/CountryCombobox";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -392,64 +394,22 @@ export default function RecruiterAddCandidate() {
                 <div className={fieldClass}>
                   <div className="space-y-2">
                     <Label>Current Location *</Label>
-                    <Input
-                      list="current-location-countries"
-                      value={locationSearch}
+                    <CountryCombobox
+                      value={currentLocation}
+                      onChange={(code) => setCurrentLocation(code)}
                       placeholder="Search current location..."
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        setLocationSearch(next);
-                        const match = COUNTRIES.find(
-                          (item) =>
-                            item.name.toLowerCase() === next.toLowerCase() ||
-                            item.code.toLowerCase() === next.toLowerCase()
-                        );
-                        if (match) setCurrentLocation(match.code);
-                      }}
-                      onBlur={() => {
-                        if (currentLocation) {
-                          setLocationSearch(countryName(currentLocation));
-                        }
-                      }}
+                      searchPlaceholder="Search country by name or code..."
                     />
-                    <datalist id="current-location-countries">
-                      {COUNTRIES.map((item) => (
-                        <option key={item.code} value={item.name}>
-                          {item.code}
-                        </option>
-                      ))}
-                    </datalist>
                   </div>
 
                   <div className="space-y-2">
                     <Label>Country of Residence *</Label>
-                    <Input
-                      list="residence-countries"
-                      value={countrySearch}
+                    <CountryCombobox
+                      value={country}
+                      onChange={(code) => setCountry(code)}
                       placeholder="Search country of residence..."
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        setCountrySearch(next);
-                        const match = COUNTRIES.find(
-                          (item) =>
-                            item.name.toLowerCase() === next.toLowerCase() ||
-                            item.code.toLowerCase() === next.toLowerCase()
-                        );
-                        if (match) setCountry(match.code);
-                      }}
-                      onBlur={() => {
-                        if (country) {
-                          setCountrySearch(countryName(country));
-                        }
-                      }}
+                      searchPlaceholder="Search country by name or code..."
                     />
-                    <datalist id="residence-countries">
-                      {COUNTRIES.map((item) => (
-                        <option key={item.code} value={item.name}>
-                          {item.code}
-                        </option>
-                      ))}
-                    </datalist>
                   </div>
 
                   <div className="space-y-2">
