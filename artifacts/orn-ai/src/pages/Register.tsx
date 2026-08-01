@@ -24,7 +24,6 @@ import {
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { CountryCombobox } from "@/components/ui/CountryCombobox";
 import countryList from "country-list-with-dial-code-and-flag";
 import {
@@ -64,6 +63,16 @@ const VISA_LABELS: Record<(typeof VISA_VALUES)[number], string> = {
   requires_sponsorship: "Requires Sponsorship",
   student_visa: "Student Visa",
 };
+
+const CAREER_OPTIONS = [
+  "Freelance",
+  "Permanent",
+  "Contract",
+  "Fixed Term",
+  "Contract-to-Hire",
+] as const;
+
+const WORK_MODES = ["Remote", "Hybrid", "Onsite"] as const;
 
 const PHONE_PATTERN = /^\+?[1-9]\d{6,14}$/;
 const STRONG_PASSWORD_MESSAGE = "Use 8+ characters with uppercase, lowercase, number, and special character";
@@ -1120,28 +1129,16 @@ export default function Register() {
                           )}
                         />
 
-                        {/* Career Preference (multi-select dropdown) */}
-                        <FormField
-                          control={form.control}
-                          name="careerPreference"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Career & Employment Preference *</FormLabel>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button variant={field.value.length ? "default" : "outline"}>
-                                    {field.value.length > 0 ? field.value.join(", ") : "Select preferences"}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent>
-                                  {[
-                                    "Freelance",
-                                    "Permanent",
-                                    "Contract",
-                                    "Fixed Term",
-                                    "Contract-to-Hire",
-                                  ].map((opt) => (
-                                    <div key={opt} className="flex items-center gap-3 py-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <FormField
+                            control={form.control}
+                            name="careerPreference"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Career & Employment Preference *</FormLabel>
+                                <div className="space-y-2">
+                                  {CAREER_OPTIONS.map((opt) => (
+                                    <label key={opt} className="flex items-center gap-2 text-sm cursor-pointer">
                                       <Checkbox
                                         checked={field.value.includes(opt)}
                                         onCheckedChange={(v) => {
@@ -1149,36 +1146,24 @@ export default function Register() {
                                           else field.onChange(field.value.filter((v2: string) => v2 !== opt));
                                         }}
                                       />
-                                      <div>{opt}</div>
-                                    </div>
+                                      {opt}
+                                    </label>
                                   ))}
-                                </PopoverContent>
-                              </Popover>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-                        {/* Preferred Work Mode (multi-select dropdown) */}
-                        <FormField
-                          control={form.control}
-                          name="preferredWorkMode"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Preferred Work Mode *</FormLabel>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button variant={field.value.length ? "default" : "outline"}>
-                                    {field.value.length > 0 ? field.value.join(", ") : "Select work modes"}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent>
-                                  {[
-                                    "Remote",
-                                    "Hybrid",
-                                    "Onsite",
-                                  ].map((opt) => (
-                                    <div key={opt} className="flex items-center gap-3 py-2">
+                          <FormField
+                            control={form.control}
+                            name="preferredWorkMode"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Preferred Work Mode *</FormLabel>
+                                <div className="space-y-2">
+                                  {WORK_MODES.map((opt) => (
+                                    <label key={opt} className="flex items-center gap-2 text-sm cursor-pointer">
                                       <Checkbox
                                         checked={field.value.includes(opt)}
                                         onCheckedChange={(v) => {
@@ -1186,15 +1171,15 @@ export default function Register() {
                                           else field.onChange(field.value.filter((v2: string) => v2 !== opt));
                                         }}
                                       />
-                                      <div>{opt}</div>
-                                    </div>
+                                      {opt}
+                                    </label>
                                   ))}
-                                </PopoverContent>
-                              </Popover>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
 
                         {/* Expected Salary */}
                         <FormField
