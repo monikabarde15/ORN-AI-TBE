@@ -1116,8 +1116,6 @@ router.post("/auth/login", async (req, res) => {
     password: string;
   }>;
 
-  // console.log("BODY =>", req.body);
-
   const email = (body.email ?? "").trim().toLowerCase();
   const password = body.password ?? "";
 
@@ -1135,8 +1133,7 @@ router.post("/auth/login", async (req, res) => {
     });
   }
 
-  const ok = true;
-  //await verifyPassword(password, user.passwordHash);
+  const ok = await verifyPassword(password, user.passwordHash);
 
   if (!ok) {
     return res.status(401).json({
@@ -1159,6 +1156,76 @@ router.post("/auth/login", async (req, res) => {
   return res.status(200).json({
     user: publicUser(user),
   });
+});
+
+router.put("/auth/change-password", requireAuth, async (req, res) => {
+  try {
+    const newPassword =
+      typeof req.body?.newPassword === "string"
+        ? req.body.newPassword
+        : typeof req.body?.password === "string"
+          ? req.body.password
+          : "";
+
+    const targetUserId =
+      typeof req.body?.userId === "string"
+        ? req.body.userId
+        : req.user?.id;
+
+    if (!targetUserId) {
+      return res.status(400).json({
+        success: false,
+        error: "User ID is required",
+      });
+    }
+
+    if (!newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: "New password is required",
+      });
+    }
+
+    if (req.user?.role !== "admin" && req.user?.role !== "super_admin" && req.user?.id !== targetUserId) {
+      return res.status(403).json({
+        success: false,
+        error: "You can only change your own password",
+      });
+    }
+
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        error: STRONG_PASSWORD_MESSAGE,
+      });
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+    const [updatedUser] = await db
+      .update(usersTable)
+      .set({ passwordHash })
+      .where(eq(usersTable.id, targetUserId))
+      .returning({ id: usersTable.id });
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Password changed successfully",
+      userId: targetUserId,
+    });
+  } catch (error: any) {
+    console.error("CHANGE PASSWORD ERROR", error);
+    return res.status(500).json({
+      success: false,
+      error: error?.message || "Unable to update password",
+    });
+  }
 });
 
 router.post("/auth/logout", async (req, res) => {

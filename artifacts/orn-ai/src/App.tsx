@@ -69,6 +69,7 @@ import LearningPathManage from "./pages/LearningPathManage";
 import LearningPathStudentViewManage from "./pages/LearningPathStudentViewManage";
 import { MCQAdminPanel } from "./pages/MCQAdminPanel";
 import CandidateMaskedCV from "@/pages/CandidateMaskedCV";
+import ChangePassword from "@/pages/ChangePassword";
 import Profile from "@/pages/Profile";
 
 const queryClient = new QueryClient({
@@ -116,6 +117,11 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/candidate/:id/upload" component={CandidateUpload} />
       <Route path="/candidate/:id/evaluation" component={CandidateEvaluation} />
+      <Route path="/candidate/:id/change-password">
+        <ProtectedRoute roles={["candidate", "recruiter", "admin"]}>
+          <ChangePassword />
+        </ProtectedRoute>
+      </Route>
       <Route path="/candidate/:id/learning-student-path-list" component={CandidateTraining} />
       <Route path="/cyber-security" component={Pricing} />
       <Route path="/data-science-ai" component={DataScientce} />

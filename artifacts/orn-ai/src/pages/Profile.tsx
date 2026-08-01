@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/use-auth";
 import api from "../../services/api";
 import countryList from "country-list-with-dial-code-and-flag";
 import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { avatarForName } from "@/lib/avatar";
 
 const STRONG_PASSWORD_MESSAGE = "Use 8+ characters with uppercase, lowercase, number, and special character";
 const isStrongPassword = (value: string) =>
@@ -27,6 +29,7 @@ export default function Profile() {
 
   const candidate = current.candidate;
   const isCandidate = Boolean(candidate);
+  const profileAvatarUrl = candidate?.avatarUrl || avatarForName(candidate?.fullName || current.fullName || "User");
   const value = (item: unknown) => Array.isArray(item) ? item.join(", ") || "—" : String(item ?? "—");
   const countryName = (item: unknown) => {
     const raw = String(item ?? "");
@@ -43,7 +46,7 @@ export default function Profile() {
   ] : [["Email", current.email], ["Mobile Number", current.mobile], ["Username", current.username], ["Company", current.company], ["Department", current.department], ["Designation", current.designation], ["Country", current.country], ["State", current.state], ["City", current.city], ["Status", current.status]];
   const startEditing = () => {
     const source = candidate || current;
-    setForm({ ...source, fullName: source.fullName || current.fullName, mobile: source.phone || current.mobile, email: source.email || current.email, password: "", confirmPassword: "" });
+    setForm({ ...source, fullName: source.fullName || current.fullName, mobile: source.phone || current.mobile, email: source.email || current.email });
     setEditing(true);
   };
   const updateField = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
@@ -52,11 +55,6 @@ export default function Profile() {
     try {
       const nameParts = String(form.fullName || "").trim().split(/\s+/);
       const payload: any = { email: form.email, mobile: form.mobile, fullName: form.fullName, firstName: nameParts[0] || "", lastName: nameParts.slice(1).join(" "), username: form.username, company: form.company, department: form.department, designation: form.designation, country: form.country, state: form.state, city: form.city, role: current.role };
-      if (form.password || form.confirmPassword) {
-        if (form.password !== form.confirmPassword) throw new Error("Passwords do not match");
-        if (!isStrongPassword(String(form.password))) throw new Error(STRONG_PASSWORD_MESSAGE);
-        payload.password = form.password;
-      }
       if (isCandidate) {
         const listFields = ["languagesKnown", "skills", "interestedSkills", "careerPreference", "preferredWorkMode"];
         const candidateProfile: any = { fullName: form.fullName, email: form.email, phone: form.mobile, currentLocation: form.currentLocation, country: form.country, city: form.city, currentRole: form.currentRole, preferredRole: form.preferredRole, targetRole: form.preferredRole, yearsExperience: Number(form.yearsExperience) || 0, englishLevel: form.englishLevel, visaStatus: form.visaStatus, euWorkEligible: Boolean(form.euWorkEligible), linkedinUrl: form.linkedinUrl, expectedSalary: form.expectedSalary, availability: form.availability, languagesKnown: form.languagesKnown, skills: form.skills, interestedSkills: form.interestedSkills, careerPreference: form.careerPreference, preferredWorkMode: form.preferredWorkMode };
@@ -72,18 +70,24 @@ export default function Profile() {
     } finally { setSaving(false); }
   };
   const editFields = isCandidate
-    ? [["fullName", "Full Name"], ["email", "Email"], ["mobile", "Phone"], ["currentLocation", "Current Location"], ["country", "Country of Residence"], ["city", "City"], ["currentRole", "Current Role"], ["preferredRole", "Preferred Role"], ["yearsExperience", "Years of Experience"], ["englishLevel", "English Level"], ["visaStatus", "Visa Status"], ["linkedinUrl", "LinkedIn URL"], ["expectedSalary", "Expected Salary"], ["availability", "Availability"], ["languagesKnown", "Languages"], ["skills", "Skills"], ["interestedSkills", "Interested Skills"], ["careerPreference", "Career Preference"], ["preferredWorkMode", "Preferred Work Mode"], ["password", "New Password"], ["confirmPassword", "Confirm New Password"]]
-    : [["fullName", "Full Name"], ["email", "Email"], ["mobile", "Mobile Number"], ["username", "Username"], ["company", "Company"], ["department", "Department"], ["designation", "Designation"], ["country", "Country"], ["state", "State"], ["city", "City"], ["password", "New Password"], ["confirmPassword", "Confirm New Password"]];
+    ? [["fullName", "Full Name"], ["email", "Email"], ["mobile", "Phone"], ["currentLocation", "Current Location"], ["country", "Country of Residence"], ["city", "City"], ["currentRole", "Current Role"], ["preferredRole", "Preferred Role"], ["yearsExperience", "Years of Experience"], ["englishLevel", "English Level"], ["visaStatus", "Visa Status"], ["linkedinUrl", "LinkedIn URL"], ["expectedSalary", "Expected Salary"], ["availability", "Availability"], ["languagesKnown", "Languages"], ["skills", "Skills"], ["interestedSkills", "Interested Skills"], ["careerPreference", "Career Preference"], ["preferredWorkMode", "Preferred Work Mode"]]
+    : [["fullName", "Full Name"], ["email", "Email"], ["mobile", "Mobile Number"], ["username", "Username"], ["company", "Company"], ["department", "Department"], ["designation", "Designation"], ["country", "Country"], ["state", "State"], ["city", "City"]];
 
   return (
     <Shell>
       <div className="mx-auto max-w-6xl p-6">
         <div className={`mb-6 overflow-hidden rounded-2xl border ${isCandidate ? "border-blue-300 bg-gradient-to-r from-[#10194d] via-[#172b70] to-[#2456a6]" : "border-blue-300 bg-gradient-to-r from-[#0d173f] via-[#172b70] to-[#1d467f]"} p-7 text-white shadow-lg`}>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">ORN-AI {isCandidate ? "Candidate Profile" : "Employee Profile"}</p>
-              <h1 className="text-3xl font-bold">{candidate?.fullName || current.fullName || "My Profile"}</h1>
-              <p className="mt-2 text-white/80">{isCandidate ? "Your complete professional candidate profile" : "Your complete employee account details"}</p>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-4">
+              <Avatar className="size-16">
+                <AvatarImage src={profileAvatarUrl} alt={candidate?.fullName || current.fullName || "Profile avatar"} />
+                <AvatarFallback>{(candidate?.fullName || current.fullName || "User").split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">ORN-AI {isCandidate ? "Candidate Profile" : "Employee Profile"}</p>
+                <h1 className="text-3xl font-bold">{candidate?.fullName || current.fullName || "My Profile"}</h1>
+                <p className="mt-2 text-white/80">{isCandidate ? "Your complete professional candidate profile" : "Your complete employee account details"}</p>
+              </div>
             </div>
             <button className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-100" onClick={startEditing}>{editing ? "Viewing Profile" : "Edit Profile"}</button>
           </div>

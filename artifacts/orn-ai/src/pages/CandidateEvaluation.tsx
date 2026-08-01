@@ -1,9 +1,14 @@
 // artifacts\orn-ai\src\pages\CandidateEvaluation.tsx
-import { useParams, Link } from "wouter";
+import { useState } from "react";
+import { useLocation, useParams, Link } from "wouter";
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/use-auth";
+import api from "../../services/api";
+import { avatarForName } from "@/lib/avatar";
 import {
   useGetCandidate,
   getGetCandidateQueryKey,
@@ -250,6 +255,9 @@ function ScoreRing({
 
 export default function CandidateEvaluation() {
   const { id } = useParams<{ id: string }>();
+  const [location] = useLocation();
+  const queryParams = new URLSearchParams(location.split("?")[1] || "");
+  const initialTab = queryParams.get("tab") === "changePassword" ? "changePassword" : "evaluation";
 
   const { data: candidate, isLoading: isLoadingCandidate } = useGetCandidate(id || "", {
     query: { enabled: !!id, queryKey: getGetCandidateQueryKey(id || "") },
@@ -263,8 +271,55 @@ export default function CandidateEvaluation() {
     query: { enabled: !!id, queryKey: getGetSkillGapQueryKey(id || "") },
   });
 
-  console.log("candidate :==" , candidate);
-console.log("CV URL:", candidate?.cv?.url);
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<"evaluation" | "changePassword">(initialTab);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+
+  const profileAvatarUrl =
+    candidate?.avatarUrl || avatarForName(candidate?.fullName || "User");
+
+  const minPasswordMessage = "Use 8+ characters with uppercase, lowercase, number, and special character";
+
+  const handlePasswordSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordMessage(null);
+    setPasswordError(null);
+
+    if (!newPassword || !confirmPassword) {
+      setPasswordError("Please enter and confirm your new password.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
+    if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/\d/.test(newPassword) || !/[^A-Za-z0-9]/.test(newPassword)) {
+      setPasswordError(minPasswordMessage);
+      return;
+    }
+    if (!user?.id) {
+      setPasswordError("Unable to identify current user.");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      await api.put(`/api/auth/change-password`, { password: newPassword });
+      setPasswordMessage("Password changed successfully.");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      setPasswordError(err?.response?.data?.error || err?.response?.data?.message || err?.message || "Failed to update password.");
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   if (!id || isLoadingCandidate || isLoadingEvaluation) {
     return (
       <Shell>
@@ -329,17 +384,11 @@ console.log("CV URL:", candidate?.cv?.url);
               {/* Identity */}
               <div className="flex items-start gap-5">
                 <div className="size-20 md:size-24 rounded-2xl bg-muted border overflow-hidden shrink-0">
-                  {candidate.avatarUrl ? (
-                    <img
-                      src={candidate.avatarUrl}
-                      alt={candidate.fullName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[#1652A0]/10 text-[#1652A0] text-2xl font-bold">
-                      {candidate.fullName.charAt(0)}
-                    </div>
-                  )}
+                  <img
+                    src={profileAvatarUrl}
+                    alt={candidate.fullName}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#1652A0] mb-1">
@@ -446,7 +495,7 @@ console.log("CV URL:", candidate?.cv?.url);
                 <div className="text-2xl font-bold tracking-tight">{readiness.label}</div>
                 <div className="text-sm opacity-90 mt-0.5 max-w-2xl">{readiness.description}</div>
               </div>
-                  {readiness.label === "Recruiter Ready" ? (
+              {readiness.label === "Recruiter Ready" ? (
                 <div className="flex flex-col sm:flex-row gap-2 shrink-0">
                   <Link href={`/recruiter/learning-student-path-list`}>
                     <Button variant="outline" className="gap-2 w-full">
@@ -472,377 +521,446 @@ console.log("CV URL:", candidate?.cv?.url);
           </div>
         </motion.div>
 
-        {/* ============ 5 SCORE CARDS ============ */}
-        <div className="mb-10">
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-bold tracking-tight">Score Breakdown</h2>
-              <p className="text-sm text-muted-foreground">
-                Five dimensions, each scored 0–100 by the ORN-AI engine.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {SCORE_CARDS.map((card, i) => {
-              const value = scores[card.id];
-              const colors = card.invert ? priorityColor(value) : scoreColor(value);
-              const Icon = card.icon;
-              return (
-                <motion.div
-                  key={card.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.06 + 0.1 }}
-                  className="bg-background rounded-xl border shadow-sm p-5 flex flex-col"
-                >
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <div
-                      className={`size-9 rounded-lg flex items-center justify-center ${colors.bg}`}
-                    >
-                      <Icon className={`size-4 ${colors.text}`} />
-                    </div>
-                    <ScoreRing score={value} ringClass={colors.ring} />
-                  </div>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                    0{i + 1}
-                  </div>
-                  <div className="text-sm font-bold leading-tight mb-1">{card.label}</div>
-                  <div className="text-xs text-muted-foreground mb-3 flex-1">{card.blurb}</div>
-                  <div className="flex items-baseline justify-between mb-1.5">
-                    <div className="text-2xl font-bold tabular-nums leading-none">
-                      {value}
-                      <span className="text-xs text-muted-foreground font-normal ml-0.5">/100</span>
-                    </div>
-                    <div className={`text-[10px] font-semibold uppercase tracking-wider ${colors.text}`}>
-                      {colors.label}
-                    </div>
-                  </div>
-                  <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                    <motion.div
-                      className={`h-full ${colors.bar} rounded-full`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${value}%` }}
-                      transition={{ duration: 0.9, delay: i * 0.06 + 0.2, ease: "easeOut" }}
-                    />
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <Button
+            size="sm"
+            variant={activeTab === "evaluation" ? "secondary" : "ghost"}
+            onClick={() => setActiveTab("evaluation")}
+          >
+            Evaluation
+          </Button>
+          <Button
+            size="sm"
+            variant={activeTab === "changePassword" ? "secondary" : "ghost"}
+            onClick={() => setActiveTab("changePassword")}
+          >
+            Change Password
+          </Button>
         </div>
 
-        {/* ============ ANALYSIS GRID ============ */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Radar */}
-          <Card className="lg:col-span-1 border shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Target className="size-4 text-primary" /> Dimension Profile
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Visual fingerprint across all 5 axes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[260px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarData}>
-                    <PolarGrid stroke="hsl(var(--border))" />
-                    <PolarAngleAxis
-                      dataKey="subject"
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                    />
-                    <PolarRadiusAxis
-                      angle={30}
-                      domain={[0, 100]}
-                      tick={false}
-                      axisLine={false}
-                    />
-                    <Radar
-                      name="Candidate"
-                      dataKey="value"
-                      stroke="hsl(var(--primary))"
-                      fill="hsl(var(--primary))"
-                      fillOpacity={0.3}
-                      strokeWidth={2}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Insights */}
-          <Card className="lg:col-span-2 border shadow-sm">
+        {activeTab === "changePassword" && (
+          <Card className="mb-8 border shadow-sm">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Sparkles className="size-4 text-primary" /> AI-Generated Insights
-              </CardTitle>
+              <CardTitle className="text-base">Change Password</CardTitle>
               <CardDescription className="text-xs">
-                Market positioning, comp band, and time-to-ready
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {evaluation.insights.map((insight, i) => {
-                const tone =
-                  insight.severity === "strength"
-                    ? { dot: "bg-emerald-500", chip: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" }
-                    : insight.severity === "opportunity"
-                      ? { dot: "bg-blue-500", chip: "bg-blue-500/10 text-blue-700 dark:text-blue-400" }
-                      : { dot: "bg-amber-500", chip: "bg-amber-500/10 text-amber-700 dark:text-amber-400" };
-                return (
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                    key={i}
-                    className="flex gap-3 p-4 rounded-xl border bg-muted/20"
-                  >
-                    <div className={`size-2 rounded-full mt-2 shrink-0 ${tone.dot}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold text-sm">{insight.title}</h4>
-                        <span
-                          className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${tone.chip}`}
-                        >
-                          {insight.severity}
-                        </span>
-                      </div>
-                      <p className="text-muted-foreground text-sm leading-relaxed">
-                        {insight.detail}
-                      </p>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* ============ STRENGTHS / GAPS / UPSKILLING ============ */}
-        <div className="grid md:grid-cols-3 gap-6 mt-6">
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <CheckCircle2 className="size-4 text-emerald-500" /> Key Strengths
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2.5">
-                {evaluation.strengths.map((strength, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <CheckCircle2 className="size-4 text-emerald-500 mt-0.5 shrink-0" />
-                    <span>{strength}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertCircle className="size-4 text-amber-500" /> Identified Gaps
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {evaluation.gaps.length > 0 ? (
-                <ul className="space-y-2.5">
-                  {evaluation.gaps.map((gap, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <div className="size-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
-                      <span className="text-muted-foreground">{gap}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">
-                  No significant gaps identified.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/20 shadow-sm bg-primary/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <TrendingUp className="size-4 text-primary" /> Recommended Upskilling
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {evaluation.recommendedUpskilling.length > 0 ? (
-                <ul className="space-y-2.5">
-                  {evaluation.recommendedUpskilling.map((skill, i) => (
-                    <li key={i} className="flex items-center gap-2.5 text-sm font-medium">
-                      <div className="size-6 rounded-md bg-background border flex items-center justify-center text-[11px] font-bold shrink-0 text-primary">
-                        {i + 1}
-                      </div>
-                      <span>{skill}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">
-                  Candidate is ready. No immediate upskilling required.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* ============ CLASSIFICATION + DOWNLOADS ============ */}
-        <div className="grid md:grid-cols-2 gap-6 mt-6">
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Sparkles className="size-4 text-primary" /> Talent Classification
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Engine verdict on next best action
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-3">
-                <Badge
-                  className={`text-sm px-3 py-1.5 font-semibold ${
-                    evaluation.classification === "recruiter_ready"
-                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
-                      : evaluation.classification === "needs_upskilling"
-                        ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30"
-                        : evaluation.classification === "needs_reskilling"
-                          ? "bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-500/30"
-                          : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30"
-                  }`}
-                  variant="outline"
-                >
-                  {evaluation.classification.replace(/_/g, " ")}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  Career gap risk: {scores.gap}/100
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Download className="size-4 text-primary" /> Generated CVs
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Full and recruiter-masked PDF, generated from the latest profile
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              <a
-                // href={getDownloadFullCvUrl(candidate.id)}
-                href={candidate?.cv?.url}
-                target="_blank"
-                rel="noreferrer"
-                download
-              >
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Download className="size-4" /> Full CV
-                </Button>
-              </a>
-             <Link href={`/candidate/${candidate.id}/masked-cv`}>
-  <Button variant="outline" size="sm" className="gap-2">
-    <FileText className="size-4" /> Masked CV
-  </Button>
-</Link>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* ============ SKILL GAP ============ */}
-        {skillGap && (
-          <Card className="border shadow-sm mt-6">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ListChecks className="size-4 text-primary" /> Skill Gap vs.{" "}
-                {skillGap.targetRole}
-              </CardTitle>
-              <CardDescription className="text-xs">
-                {skillGap.matched.length} of {skillGap.required.length} required skills
-                matched ({skillGap.matchPct}%)
+                Update the candidate account password securely from the evaluation view.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-primary rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${skillGap.matchPct}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                />
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
+              {passwordError && (
+                <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  {passwordError}
+                </div>
+              )}
+              {passwordMessage && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                  {passwordMessage}
+                </div>
+              )}
+              <form className="space-y-4" onSubmit={handlePasswordSubmit}>
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                    Matched ({skillGap.matched.length})
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {skillGap.matched.length === 0 ? (
-                      <span className="text-xs italic text-muted-foreground">
-                        None matched yet.
-                      </span>
-                    ) : (
-                      skillGap.matched.map((s) => (
-                        <Badge
-                          key={s}
-                          variant="outline"
-                          className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 font-normal"
-                        >
-                          {s}
-                        </Badge>
-                      ))
-                    )}
-                  </div>
+                  <label className="text-sm font-medium text-slate-700">New Password</label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    placeholder="Enter a new password"
+                    className="mt-2"
+                  />
                 </div>
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                    Missing ({skillGap.missing.length})
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {skillGap.missing.length === 0 ? (
-                      <span className="text-xs italic text-muted-foreground">
-                        No gaps identified for this role.
-                      </span>
-                    ) : (
-                      skillGap.missing.map((s) => (
-                        <Badge
-                          key={s}
-                          variant="outline"
-                          className="bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30 font-normal"
-                        >
-                          {s}
-                        </Badge>
-                      ))
-                    )}
-                  </div>
+                  <label className="text-sm font-medium text-slate-700">Confirm New Password</label>
+                  <Input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    placeholder="Repeat the new password"
+                    className="mt-2"
+                  />
                 </div>
-              </div>
+                <p className="text-xs text-muted-foreground">{minPasswordMessage}</p>
+                <Button type="submit" className="mt-2" disabled={passwordSaving}>
+                  {passwordSaving ? "Saving..." : "Update password"}
+                </Button>
+              </form>
             </CardContent>
           </Card>
         )}
 
-        {/* ============ FOOTER METADATA ============ */}
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground border-t pt-6">
-          <div>
-            Evaluated{" "}
-            {new Date(evaluation.evaluatedAt).toLocaleString(undefined, {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })}{" "}
-            · Engine v1.0 (deterministic demo)
-          </div>
-          <Link href="/recruiter">
-            <Button variant="ghost" size="sm" className="gap-2">
-              Browse other candidates <ArrowRight className="size-3.5" />
-            </Button>
-          </Link>
-        </div>
+        {activeTab === "evaluation" && (
+          <>
+            {/* ============ 5 SCORE CARDS ============ */}
+            <div className="mb-10">
+              <div className="flex items-end justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight">Score Breakdown</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Five dimensions, each scored 0–100 by the ORN-AI engine.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                {SCORE_CARDS.map((card, i) => {
+                  const value = scores[card.id];
+                  const colors = card.invert ? priorityColor(value) : scoreColor(value);
+                  const Icon = card.icon;
+                  return (
+                    <motion.div
+                      key={card.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.06 + 0.1 }}
+                      className="bg-background rounded-xl border shadow-sm p-5 flex flex-col"
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div
+                          className={`size-9 rounded-lg flex items-center justify-center ${colors.bg}`}
+                        >
+                          <Icon className={`size-4 ${colors.text}`} />
+                        </div>
+                        <ScoreRing score={value} ringClass={colors.ring} />
+                      </div>
+                      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                        0{i + 1}
+                      </div>
+                      <div className="text-sm font-bold leading-tight mb-1">{card.label}</div>
+                      <div className="text-xs text-muted-foreground mb-3 flex-1">{card.blurb}</div>
+                      <div className="flex items-baseline justify-between mb-1.5">
+                        <div className="text-2xl font-bold tabular-nums leading-none">
+                          {value}
+                          <span className="text-xs text-muted-foreground font-normal ml-0.5">/100</span>
+                        </div>
+                        <div className={`text-[10px] font-semibold uppercase tracking-wider ${colors.text}`}>
+                          {colors.label}
+                        </div>
+                      </div>
+                      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                        <motion.div
+                          className={`h-full ${colors.bar} rounded-full`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${value}%` }}
+                          transition={{ duration: 0.9, delay: i * 0.06 + 0.2, ease: "easeOut" }}
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ============ ANALYSIS GRID ============ */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Radar */}
+              <Card className="lg:col-span-1 border shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Target className="size-4 text-primary" /> Dimension Profile
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Visual fingerprint across all 5 axes
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[260px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarData}>
+                        <PolarGrid stroke="hsl(var(--border))" />
+                        <PolarAngleAxis
+                          dataKey="subject"
+                          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                        />
+                        <PolarRadiusAxis
+                          angle={30}
+                          domain={[0, 100]}
+                          tick={false}
+                          axisLine={false}
+                        />
+                        <Radar
+                          name="Candidate"
+                          dataKey="value"
+                          stroke="hsl(var(--primary))"
+                          fill="hsl(var(--primary))"
+                          fillOpacity={0.3}
+                          strokeWidth={2}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Insights */}
+              <Card className="lg:col-span-2 border shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Sparkles className="size-4 text-primary" /> AI-Generated Insights
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Market positioning, comp band, and time-to-ready
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {evaluation.insights.map((insight, i) => {
+                    const tone =
+                      insight.severity === "strength"
+                        ? { dot: "bg-emerald-500", chip: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" }
+                        : insight.severity === "opportunity"
+                          ? { dot: "bg-blue-500", chip: "bg-blue-500/10 text-blue-700 dark:text-blue-400" }
+                          : { dot: "bg-amber-500", chip: "bg-amber-500/10 text-amber-700 dark:text-amber-400" };
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.08 }}
+                        key={i}
+                        className="flex gap-3 p-4 rounded-xl border bg-muted/20"
+                      >
+                        <div className={`size-2 rounded-full mt-2 shrink-0 ${tone.dot}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-sm">{insight.title}</h4>
+                            <span
+                              className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${tone.chip}`}
+                            >
+                              {insight.severity}
+                            </span>
+                          </div>
+                          <p className="text-muted-foreground text-sm leading-relaxed">
+                            {insight.detail}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* ============ STRENGTHS / GAPS / UPSKILLING ============ */}
+            <div className="grid md:grid-cols-3 gap-6 mt-6">
+              <Card className="border shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <CheckCircle2 className="size-4 text-emerald-500" /> Key Strengths
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2.5">
+                    {evaluation.strengths.map((strength, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="size-4 text-emerald-500 mt-0.5 shrink-0" />
+                        <span>{strength}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <AlertCircle className="size-4 text-amber-500" /> Identified Gaps
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {evaluation.gaps.length > 0 ? (
+                    <ul className="space-y-2.5">
+                      {evaluation.gaps.map((gap, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
+                          <div className="size-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                          <span className="text-muted-foreground">{gap}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      No significant gaps identified.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/20 shadow-sm bg-primary/5">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <TrendingUp className="size-4 text-primary" /> Recommended Upskilling
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {evaluation.recommendedUpskilling.length > 0 ? (
+                    <ul className="space-y-2.5">
+                      {evaluation.recommendedUpskilling.map((skill, i) => (
+                        <li key={i} className="flex items-center gap-2.5 text-sm font-medium">
+                          <div className="size-6 rounded-md bg-background border flex items-center justify-center text-[11px] font-bold shrink-0 text-primary">
+                            {i + 1}
+                          </div>
+                          <span>{skill}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      Candidate is ready. No immediate upskilling required.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* ============ CLASSIFICATION + DOWNLOADS ============ */}
+            <div className="grid md:grid-cols-2 gap-6 mt-6">
+              <Card className="border shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Sparkles className="size-4 text-primary" /> Talent Classification
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Engine verdict on next best action
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-3">
+                    <Badge
+                      className={`text-sm px-3 py-1.5 font-semibold ${evaluation.classification === "recruiter_ready"
+                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+                          : evaluation.classification === "needs_upskilling"
+                            ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30"
+                            : evaluation.classification === "needs_reskilling"
+                              ? "bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-500/30"
+                              : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30"
+                        }`}
+                      variant="outline"
+                    >
+                      {evaluation.classification.replace(/_/g, " ")}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      Career gap risk: {scores.gap}/100
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Download className="size-4 text-primary" /> Generated CVs
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Full and recruiter-masked PDF, generated from the latest profile
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-wrap gap-2">
+                  <a
+                    // href={getDownloadFullCvUrl(candidate.id)}
+                    href={candidate?.cv?.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    download
+                  >
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Download className="size-4" /> Full CV
+                    </Button>
+                  </a>
+                  <Link href={`/candidate/${candidate.id}/masked-cv`}>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <FileText className="size-4" /> Masked CV
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* ============ SKILL GAP ============ */}
+            {skillGap && (
+              <Card className="border shadow-sm mt-6">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ListChecks className="size-4 text-primary" /> Skill Gap vs.{" "}
+                    {skillGap.targetRole}
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {skillGap.matched.length} of {skillGap.required.length} required skills
+                    matched ({skillGap.matchPct}%)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-primary rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${skillGap.matchPct}%` }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                    />
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                        Matched ({skillGap.matched.length})
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {skillGap.matched.length === 0 ? (
+                          <span className="text-xs italic text-muted-foreground">
+                            None matched yet.
+                          </span>
+                        ) : (
+                          skillGap.matched.map((s) => (
+                            <Badge
+                              key={s}
+                              variant="outline"
+                              className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 font-normal"
+                            >
+                              {s}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                        Missing ({skillGap.missing.length})
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {skillGap.missing.length === 0 ? (
+                          <span className="text-xs italic text-muted-foreground">
+                            No gaps identified for this role.
+                          </span>
+                        ) : (
+                          skillGap.missing.map((s) => (
+                            <Badge
+                              key={s}
+                              variant="outline"
+                              className="bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30 font-normal"
+                            >
+                              {s}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ============ FOOTER METADATA ============ */}
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground border-t pt-6">
+              <div>
+                Evaluated{" "}
+                {new Date(evaluation.evaluatedAt).toLocaleString(undefined, {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}{" "}
+                · Engine v1.0 (deterministic demo)
+              </div>
+              <Link href="/recruiter">
+                <Button variant="ghost" size="sm" className="gap-2">
+                  Browse other candidates <ArrowRight className="size-3.5" />
+                </Button>
+              </Link>
+            </div>
+          </>
+        )}
       </div>
     </Shell>
   );
