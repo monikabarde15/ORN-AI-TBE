@@ -60,7 +60,22 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+const fetchWithAuth = async <T>(url: string, options?: RequestInit): Promise<T> => {
+  const token = localStorage.getItem("token");
+  const headers = new Headers(options?.headers);
 
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const newOptions = {
+    ...options,
+    headers,
+  };
+
+  // Yeh customFetch aapki existing api call hai
+  return customFetch<T>(url, newOptions);
+};
 /**
  * @summary Register a new user account (candidate, recruiter or admin)
  */
@@ -154,18 +169,29 @@ export const getAuthLoginUrl = () => {
   return `/api/auth/login`;
 };
 
+// export const authLogin = async (
+//   authLoginRequest: AuthLoginRequest,
+//   options?: RequestInit,
+// ): Promise<AuthSession> => {
+//   return customFetch<AuthSession>(getAuthLoginUrl(), {
+//     ...options,
+//     method: "POST",
+//     headers: { "Content-Type": "application/json", ...options?.headers },
+//     body: JSON.stringify(authLoginRequest),
+//   });
+// };
 export const authLogin = async (
   authLoginRequest: AuthLoginRequest,
   options?: RequestInit,
 ): Promise<AuthSession> => {
-  return customFetch<AuthSession>(getAuthLoginUrl(), {
+  // ✅ CHANGE: customFetch -> fetchWithAuth
+  return fetchWithAuth<AuthSession>(getAuthLoginUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(authLoginRequest),
   });
 };
-
 export const getAuthLoginMutationOptions = <
   TError = ErrorType<unknown>,
   TContext = unknown,
@@ -240,13 +266,19 @@ export const getAuthLogoutUrl = () => {
   return `/api/auth/logout`;
 };
 
+// export const authLogout = async (options?: RequestInit): Promise<void> => {
+//   return customFetch<void>(getAuthLogoutUrl(), {
+//     ...options,
+//     method: "POST",
+//   });
+// };
 export const authLogout = async (options?: RequestInit): Promise<void> => {
-  return customFetch<void>(getAuthLogoutUrl(), {
+  // ✅ CHANGE: customFetch -> fetchWithAuth
+  return fetchWithAuth<void>(getAuthLogoutUrl(), {
     ...options,
     method: "POST",
   });
 };
-
 export const getAuthLogoutMutationOptions = <
   TError = ErrorType<unknown>,
   TContext = unknown,
@@ -319,15 +351,23 @@ export const getAuthMeUrl = () => {
   return `/api/auth/me`;
 };
 
+// export const authMe = async (
+//   options?: RequestInit,
+// ): Promise<AuthUser | null> => {
+//   return customFetch<AuthUser | null>(getAuthMeUrl(), {
+//     ...options,
+//     method: "GET",
+//   });
+// };
 export const authMe = async (
   options?: RequestInit,
 ): Promise<AuthUser | null> => {
-  return customFetch<AuthUser | null>(getAuthMeUrl(), {
+  // ✅ CHANGE: customFetch -> fetchWithAuth
+  return fetchWithAuth<AuthUser | null>(getAuthMeUrl(), {
     ...options,
     method: "GET",
   });
 };
-
 export const getAuthMeQueryKey = () => {
   return [`/api/auth/me`] as const;
 };

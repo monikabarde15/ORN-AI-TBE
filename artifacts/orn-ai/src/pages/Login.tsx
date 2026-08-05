@@ -62,6 +62,53 @@ export default function Login() {
     }
   }, [user, isLoading]);
 
+  // async function onSubmit(values: FormValues) {
+  //   setSubmitting(true);
+
+  //   try {
+  //     const session = await login(values);
+
+  //     toast({
+  //       title: "Welcome back",
+  //       description: `Signed in as ${session.user.email}`,
+  //     });
+
+  //     const params = new URLSearchParams(window.location.search);
+  //     const redirect = params.get("redirect");
+
+  //     if (redirect) {
+  //       window.location.href = redirect;
+  //       return;
+  //     } else {
+  //       const role = session.user.role;
+  //       if (role === "admin") {
+  //         window.location.href = "/admin";
+  //       } else if (role === "recruiter") {
+  //         window.location.href = "/recruiter";
+  //       } else if (role === "candidate" && session.user.candidateId) {
+  //         window.location.href = `/candidate/${session.user.candidateId}/evaluation`;
+  //       } else {
+  //         window.location.href = "/";
+  //       }
+  //     }
+  //   } catch (err) {
+  //     const message =
+  //       err instanceof ApiError &&
+  //         typeof err.data === "object" &&
+  //         err.data &&
+  //         "message" in err.data
+  //         ? String((err.data as { message?: string }).message)
+  //         : "Invalid email or password";
+
+  //     toast({
+  //       title: "Sign-in failed",
+  //       description: message,
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setSubmitting(false);
+  //   }
+  // }
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
 
@@ -76,22 +123,27 @@ export default function Login() {
       const params = new URLSearchParams(window.location.search);
       const redirect = params.get("redirect");
 
+      // 🟢 FIX 1: Direct login ke baad redirect, isLoading ka wait mat karein
+      let targetPath = "/";
       if (redirect) {
-        window.location.href = redirect;
-        return;
+        targetPath = redirect;
       } else {
         const role = session.user.role;
         if (role === "admin") {
-          window.location.href = "/admin";
+          targetPath = "/admin";
         } else if (role === "recruiter") {
-          window.location.href = "/recruiter";
+          targetPath = "/recruiter";
         } else if (role === "candidate" && session.user.candidateId) {
-          window.location.href = `/candidate/${session.user.candidateId}/evaluation`;
-        } else {
-          window.location.href = "/";
+          targetPath = `/candidate/${session.user.candidateId}/evaluation`;
         }
       }
+
+      // 🟢 FIX 2: window.location.href ki jagah `navigate` use karein (Fast redirect)
+      navigate(targetPath);
+      // window.location.href = targetPath; // <-- Isko hata dijiye
+
     } catch (err) {
+      // ... error handling same rahega
       const message =
         err instanceof ApiError &&
           typeof err.data === "object" &&
@@ -109,7 +161,6 @@ export default function Login() {
       setSubmitting(false);
     }
   }
-
   // Show loading state while checking authentication
   if (isLoading) {
     return (
