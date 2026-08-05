@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,6 @@ export default function VerifyOtp() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [resending, setResending] = useState(false);
   const [, setLocation] = useLocation();
-
-  const isSubmittingRef = useRef(false);
 
   const email = sessionStorage.getItem("verifyEmail");
   const pendingCv = sessionStorage.getItem("pendingCv");
@@ -45,12 +43,8 @@ export default function VerifyOtp() {
     return rawApiUrl ? (rawApiUrl.endsWith("/api") ? rawApiUrl : `${rawApiUrl}/api`) : "/api";
   };
 
+  // ✅ Verify - ONLY on button click
   const handleVerify = async () => {
-    if (isSubmittingRef.current) {
-      console.log("Already submitting, skipping...");
-      return;
-    }
-
     if (!otp || otp.length !== 6) {
       toast.error("Please enter a valid 6-digit OTP");
       return;
@@ -61,7 +55,6 @@ export default function VerifyOtp() {
       return;
     }
 
-    isSubmittingRef.current = true;
     setIsVerifying(true);
     const API_URL = getApiUrl();
 
@@ -82,7 +75,6 @@ export default function VerifyOtp() {
       if (!res.ok) {
         toast.error(data.error || "OTP verification failed");
         setIsVerifying(false);
-        isSubmittingRef.current = false;
         return;
       }
 
@@ -150,13 +142,11 @@ export default function VerifyOtp() {
       sessionStorage.removeItem("verifyEmail");
       sessionStorage.removeItem("candidateCode");
 
-      // ✅ FORCE PAGE REFRESH - Option 1: window.location.href
-      console.log("🔄 Redirecting with force refresh...");
+      // ✅ Redirect after verification
+      console.log("🔄 Redirecting...");
 
-      // ✅ Small delay then redirect with force refresh
       setTimeout(() => {
         if (candidateId) {
-          // ✅ Force full page refresh
           window.location.href = `/candidate/${candidateId}/evaluation`;
         } else {
           window.location.href = `/dashboard`;
@@ -167,18 +157,17 @@ export default function VerifyOtp() {
       console.error("Verification error:", error);
       toast.error("Something went wrong. Please try again.");
       setIsVerifying(false);
-      isSubmittingRef.current = false;
-    } finally {
-      setTimeout(() => {
-        setIsVerifying(false);
-        isSubmittingRef.current = false;
-      }, 2000);
     }
   };
 
+  // ✅ Resend OTP - ONLY resend, NO auto-verify
   const handleResend = async () => {
     if (!email) {
       toast.error("Email address not found. Please register again.");
+      return;
+    }
+
+    if (resending) {
       return;
     }
 
@@ -197,18 +186,22 @@ export default function VerifyOtp() {
 
       if (!res.ok) {
         toast.error(data.error || "Failed to resend OTP");
+        setResending(false);
         return;
       }
 
-      toast.success("A new 6-digit OTP code has been sent to your email!");
+      toast.success("New OTP sent to your email!");
 
+      // ✅ ONLY set OTP if returned (for development)
       if (data.otp) {
         setOtp(data.otp);
       }
+
+      setResending(false);
+
     } catch (err) {
-      console.error(err);
+      console.error("Resend error:", err);
       toast.error("Failed to resend OTP");
-    } finally {
       setResending(false);
     }
   };
@@ -217,17 +210,6 @@ export default function VerifyOtp() {
     const value = e.target.value.replace(/\D/g, "").slice(0, 6);
     setOtp(value);
   };
-
-  // Auto-submit on 6 digits
-  useEffect(() => {
-    if (otp.length === 6 && !isSubmittingRef.current) {
-      console.log("🔄 Auto-submitting OTP...");
-      const timer = setTimeout(() => {
-        handleVerify();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [otp]);
 
   return (
     <Shell>
@@ -261,6 +243,9 @@ export default function VerifyOtp() {
                 disabled={isVerifying}
                 autoFocus
               />
+              <p className="text-xs text-gray-400 mt-1">
+                Enter the 6-digit code sent to your email
+              </p>
             </div>
 
             <Button
