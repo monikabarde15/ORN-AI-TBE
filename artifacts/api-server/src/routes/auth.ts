@@ -937,6 +937,53 @@ router.post("/auth/register", async (req, res) => {
 
 
 });
+// router.post("/auth/resend-otp", async (req, res) => {
+//   try {
+//     const email = (req.body.email || "").trim().toLowerCase();
+//     if (!email) {
+//       return res.status(400).json({ error: "Email is required" });
+//     }
+
+//     const user = await findUserByEmail(email);
+//     if (!user) {
+//       return res.status(404).json({ error: "User not found" });
+//     }
+
+//     if (user.isEmailVerified) {
+//       return res.status(400).json({ error: "Email already verified" });
+//     }
+
+//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+//     await db
+//       .update(usersTable)
+//       .set({
+//         emailOtp: otp,
+//         emailOtpExpiry: otpExpiry,
+//       })
+//       .where(eq(usersTable.id, user.id));
+
+//     const html = getOtpEmailTemplate(otp, user.fullName);
+
+//     await sendMailWithRetry({
+//       from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
+//       to: email,
+//       subject: "ORN-AI Email Verification OTP",
+//       html,
+//     });
+
+//     return res.json({
+//       success: true,
+//       message: "New OTP sent successfully",
+//     });
+//   } catch (err: any) {
+//     console.error("RESEND OTP ERROR =>", err);
+//     return res.status(500).json({
+//       error: err?.message || "Failed to resend OTP",
+//     });
+//   }
+// });
 router.post("/auth/resend-otp", async (req, res) => {
   try {
     const email = (req.body.email || "").trim().toLowerCase();
@@ -964,7 +1011,11 @@ router.post("/auth/resend-otp", async (req, res) => {
       })
       .where(eq(usersTable.id, user.id));
 
-    const html = getOtpEmailTemplate(otp, user.fullName);
+    // ✅ FIX: Object pass karo, do parameters nahi
+    const html = getOtpEmailTemplate({
+      otp: otp,
+      recipientName: user.fullName
+    });
 
     await sendMailWithRetry({
       from: `"ORN-AI" <${process.env.SMTP_USER || "connect@orn-ai.co.uk"}>`,
@@ -976,6 +1027,7 @@ router.post("/auth/resend-otp", async (req, res) => {
     return res.json({
       success: true,
       message: "New OTP sent successfully",
+      otp: otp, 
     });
   } catch (err: any) {
     console.error("RESEND OTP ERROR =>", err);
@@ -984,7 +1036,6 @@ router.post("/auth/resend-otp", async (req, res) => {
     });
   }
 });
-
 router.post("/auth/verify-email", async (req, res) => {
   try {
     const { email, otp } = req.body;
