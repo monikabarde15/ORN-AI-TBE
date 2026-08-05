@@ -1,4 +1,3 @@
-// artifacts\orn-ai\src\pages\Register.tsx
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
@@ -55,7 +54,6 @@ const VISA_VALUES = [
   "student_visa",
 ] as const;
 
-
 const VISA_LABELS: Record<(typeof VISA_VALUES)[number], string> = {
   eu_citizen: "EU Citizen",
   work_permit: "Work Permit",
@@ -74,7 +72,8 @@ const CAREER_OPTIONS = [
 
 const WORK_MODES = ["Remote", "Hybrid", "Onsite"] as const;
 
-const PHONE_PATTERN = /^\+?[1-9]\d{6,14}$/;
+// ✅ FIXED: Phone validation
+const PHONE_PATTERN = /^\+?[0-9]{7,15}$/;
 const STRONG_PASSWORD_MESSAGE = "Use 8+ characters with uppercase, lowercase, number, and special character";
 
 const isStrongPassword = (value: string) =>
@@ -86,7 +85,7 @@ const isStrongPassword = (value: string) =>
 
 const isValidPhone = (value: string) => {
   const normalized = value.trim().replace(/[\s().-]/g, "");
-  return PHONE_PATTERN.test(normalized) && !/^(\+?)(\d)\2+$/.test(normalized);
+  return PHONE_PATTERN.test(normalized);
 };
 
 // ----- Schema -----
@@ -96,7 +95,13 @@ const formSchema = z.object({
   middleName: z.string().optional(),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().trim().email("Please enter a valid email address").max(254, "Email address is too long"),
-  phone: z.string().trim().refine(isValidPhone, "Enter a valid phone number with 7 to 15 digits"),
+  phone: z.string()
+    .min(1, "Phone number is required")
+    .transform(val => val.replace(/[\s().-]/g, ''))
+    .refine(
+      (val) => /^\+?[0-9]{7,15}$/.test(val),
+      "Enter a valid phone number with 7-15 digits (e.g., +48123456789)"
+    ),
   linkedinUrl: z.string().url("Please enter a valid LinkedIn URL").or(z.literal("")),
 
   // Step 2
@@ -134,7 +139,6 @@ const STEPS = [
   { id: 1, title: "Personal Details", icon: User, fields: ["firstName", "middleName", "lastName", "email", "phone", "linkedinUrl"] as const },
   { id: 2, title: "Location & Eligibility", icon: Globe2, fields: ["currentLocation", "city", "country", "visaStatus", "euWorkEligible"] as const },
   { id: 3, title: "Professional Profile & Career Preferences", icon: Wrench, fields: ["currentRole", "preferredRole", "yearsOfExperience", "skills", "interestedSkills", "languagesKnown", "careerPreference", "preferredWorkMode", "expectedSalary", "availability"] as const },
-  // { id: 4, title: "Language Readiness", icon: Languages, fields: ["englishLevel"] as const },
   { id: 4, title: "AI CV Evaluation & Account Setup", icon: FileUp, fields: ["password", "gdprConsent"] as const },
 ] as const;
 
@@ -227,25 +231,19 @@ export default function Register() {
     );
   };
 
-  // Interested skills helpers (behaves like Top Skills)
   const addInterestedSkill = () => {
     const value = interestedSkillInput.trim();
     if (!value) return;
-    const current = form.getValues("preferredCountries");
-    // Use a separate field 'interestedSkills' stored in preferredCountries temporarily
-    const existing = (form.getValues("preferredCountries") || []) as string[];
-    if (existing.includes(value)) {
+    const current = form.getValues("interestedSkills") || [];
+    if (current.includes(value)) {
       setInterestedSkillInput("");
       return;
     }
-    if (existing.length >= 20) {
+    if (current.length >= 20) {
       toast.error("Max 20 items");
       return;
     }
-    // store interested skills in 'preferredCountries' is not ideal; better to add new field
-    // but to keep changes minimal, we'll create and manage 'interestedSkills' as a form value
-    const curr = (form.getValues("interestedSkills") || []) as string[];
-    form.setValue("interestedSkills", [...curr, value], { shouldValidate: true });
+    form.setValue("interestedSkills", [...current, value], { shouldValidate: true });
     setInterestedSkillInput("");
   };
 
@@ -258,7 +256,6 @@ export default function Register() {
     );
   };
 
-  // Languages helpers (behave like Top Skills)
   const addLanguage = () => {
     const value = languageInput.trim();
     if (!value) return;
@@ -312,9 +309,11 @@ export default function Register() {
     if (e.dataTransfer.files?.[0]) handleFileSelected(e.dataTransfer.files[0]);
   };
 
-  // ----- Final submit -----
+  // ----- ✅ UPDATED: Final submit with NO auto-login -----
   const [authPending, setAuthPending] = useState(false);
+
   const handleFinalSubmit = async () => {
+    // ✅ Step 1: Validate all form fields
     const valid = await form.trigger();
 
     if (!valid) {
@@ -334,6 +333,7 @@ export default function Register() {
       .join(" ");
 
     try {
+      // ✅ Step 2: Register user (NO auto-login)
       const response = await auth.register({
         email: values.email,
         password: values.password,
@@ -364,33 +364,41 @@ export default function Register() {
         },
       });
 
-      // Registration successful
-      const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
-
-      if (file && response.candidateId) {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        console.log("API:", API_BASE_URL);
-
-        await axios.post(
-          `${API_BASE_URL}/api/candidates/${response.candidateId}/cv`,
-          formData,
-          {
-            withCredentials: true,
-          }
-        );
+      // ✅ Step 3: Store CV in sessionStorage for later upload
+      if (file) {
+        try {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const base64Data = e.target?.result as string;
+            sessionStorage.setItem("pendingCv", base64Data);
+            sessionStorage.setItem("pendingCvName", file.name);
+            sessionStorage.setItem("pendingCandidateId", response.candidateId);
+            console.log("✅ CV stored in sessionStorage for later upload");
+          };
+          reader.onerror = (error) => {
+            console.error("❌ Failed to read CV file:", error);
+            toast.warning("CV will need to be uploaded later.");
+          };
+          reader.readAsDataURL(file);
+        } catch (cvError) {
+          console.error("❌ CV storage error:", cvError);
+          toast.warning("CV will need to be uploaded later.");
+        }
       }
 
-      // Save email & candidate code for OTP page
+      // ✅ Step 4: Save email & candidate code for OTP page
       sessionStorage.setItem("verifyEmail", response.email);
       sessionStorage.setItem("candidateCode", response.candidateCode);
 
-      // Redirect to OTP Verification page
+      // ✅ Step 5: Show success message
+      toast.success("Registration successful! Please verify your email.");
+
+      // ✅ Step 6: Redirect to OTP Verification page (NO auto-login)
       setLocation("/verify-otp");
 
       return;
     } catch (err) {
+      // ✅ Step 7: Error handling
       const message =
         err instanceof ApiError &&
           typeof err.data === "object" &&
@@ -402,6 +410,7 @@ export default function Register() {
             : "Something went wrong. Please try again.";
 
       toast.error(message);
+      console.error("Registration error:", err);
     } finally {
       setAuthPending(false);
     }
@@ -492,10 +501,6 @@ export default function Register() {
                       {values.preferredRole} · {values.yearsOfExperience} yrs
                     </span>
                   </div>
-                  {/* <div className="flex items-center gap-2">
-                    <Languages className="size-4 text-muted-foreground" />
-                    <span>English {values.englishLevel}</span>
-                  </div> */}
                 </div>
               </div>
 
@@ -713,8 +718,22 @@ export default function Register() {
                               <FormItem>
                                 <FormLabel>Phone Number *</FormLabel>
                                 <FormControl>
-                                  <Input type="tel" inputMode="tel" autoComplete="tel" placeholder="+48 600 000 000" {...field} />
+                                  <Input
+                                    type="tel"
+                                    inputMode="tel"
+                                    autoComplete="tel"
+                                    placeholder="+48123456789"
+                                    {...field}
+                                    onChange={(e) => {
+                                      // Clean the input - remove spaces, dots, hyphens, parentheses
+                                      const cleaned = e.target.value.replace(/[\s().-]/g, '');
+                                      field.onChange(cleaned);
+                                    }}
+                                  />
                                 </FormControl>
+                                <FormDescription>
+                                  Enter with country code (e.g., +48123456789)
+                                </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -744,7 +763,6 @@ export default function Register() {
                           Helps recruiters match you with roles you're legally allowed to take.
                         </p>
 
-                        {/* CURRENT LOCATION */}
                         {/* CURRENT LOCATION */}
                         <FormField
                           control={form.control}
@@ -834,7 +852,6 @@ export default function Register() {
                           )}
                         />
 
-
                         {currentLocation && (
                           <FormField
                             control={form.control}
@@ -883,7 +900,6 @@ export default function Register() {
                         )}
                       </div>
                     )}
-
 
                     {/* ===== Step 3:Professional Profile & Career Preferences  ===== */}
                     {step === 3 && (

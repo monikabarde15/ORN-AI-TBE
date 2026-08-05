@@ -49,18 +49,41 @@ const router: IRouter = Router();
 // administrator-created user flow. Keep these checks at the API boundary so
 // clients cannot bypass them by posting directly to this route.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PHONE_PATTERN = /^\+?[1-9]\d{6,14}$/;
+// const PHONE_PATTERN = /^\+?[1-9]\d{6,14}$/;
+
+// function normalizePhone(value: unknown): string {
+//   return String(value ?? "").trim().replace(/[\s().-]/g, "");
+// }
+
+// function isValidPhone(value: unknown): boolean {
+//   const phone = normalizePhone(value);
+
+//   return PHONE_PATTERN.test(phone) && !/^(\+?)(\d)\2+$/.test(phone);
+// }
+const PHONE_PATTERN = /^\+?[0-9]{7,15}$/;  // ✅ Fixed pattern
 
 function normalizePhone(value: unknown): string {
-  return String(value ?? "").trim().replace(/[\s().-]/g, "");
+  if (!value) return '';
+  return String(value)
+    .trim()
+    .replace(/[\s().-]/g, '');
 }
 
 function isValidPhone(value: unknown): boolean {
   const phone = normalizePhone(value);
-
-  return PHONE_PATTERN.test(phone) && !/^(\+?)(\d)\2+$/.test(phone);
+  
+  if (!phone || phone.length < 7) return false;
+  
+  const cleaned = phone.replace(/[^\d+]/g, '');
+  
+  if (!/^\+?[0-9]/.test(cleaned)) return false;
+  
+  const digitCount = cleaned.replace(/\+/g, '').length;
+  
+  if (digitCount < 7 || digitCount > 15) return false;
+  
+  return true;
 }
-
 function isValidEmail(value: string): boolean {
   return value.length <= 254 && EMAIL_PATTERN.test(value);
 }
@@ -897,11 +920,11 @@ router.post("/auth/register", async (req, res) => {
     });
 
 
-    const token = signToken(user);
+    // const token = signToken(user);
 
-    setAuthCookie(res, token);
+    // setAuthCookie(res, token);
 
-    req.user = publicUser(user);
+    // req.user = publicUser(user);
 
     return res.status(201).json({
 
@@ -984,6 +1007,7 @@ router.post("/auth/register", async (req, res) => {
 //     });
 //   }
 // });
+// auth.ts - Updated resend-otp
 router.post("/auth/resend-otp", async (req, res) => {
   try {
     const email = (req.body.email || "").trim().toLowerCase();
@@ -996,10 +1020,14 @@ router.post("/auth/resend-otp", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    // ✅ ONLY block if email is verified
     if (user.isEmailVerified) {
-      return res.status(400).json({ error: "Email already verified" });
+      return res.status(400).json({ 
+        error: "Email already verified. Please login." 
+      });
     }
 
+    // ✅ Allow resend even if OTP exists (overwrite old OTP)
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -1011,7 +1039,6 @@ router.post("/auth/resend-otp", async (req, res) => {
       })
       .where(eq(usersTable.id, user.id));
 
-    // ✅ FIX: Object pass karo, do parameters nahi
     const html = getOtpEmailTemplate({
       otp: otp,
       recipientName: user.fullName
@@ -1027,7 +1054,7 @@ router.post("/auth/resend-otp", async (req, res) => {
     return res.json({
       success: true,
       message: "New OTP sent successfully",
-      otp: otp, 
+      otp: otp, // Development only
     });
   } catch (err: any) {
     console.error("RESEND OTP ERROR =>", err);
@@ -1036,83 +1063,208 @@ router.post("/auth/resend-otp", async (req, res) => {
     });
   }
 });
+// router.post("/auth/verify-email", async (req, res) => {
+//   try {
+//     const { email, otp } = req.body;
+
+//     const user = await findUserByEmail(
+//       email.trim().toLowerCase()
+//     );
+
+//     if (!user) {
+//       return res.status(404).json({
+//         error: "User not found",
+//       });
+//     }
+
+//     if (user.isEmailVerified) {
+//       return res.status(400).json({
+//         error: "Email already verified",
+//       });
+//     }
+
+//     if (user.emailOtp !== otp) {
+//       return res.status(400).json({
+//         error: "Invalid OTP",
+//       });
+//     }
+
+//     if (
+//       !user.emailOtpExpiry ||
+//       new Date() > user.emailOtpExpiry
+//     ) {
+//       return res.status(400).json({
+//         error: "OTP expired",
+//       });
+//     }
+
+//     await db
+//       .update(usersTable)
+//       .set({
+//         isEmailVerified: true,
+//         emailOtp: null,
+//         emailOtpExpiry: null,
+//       })
+//       .where(eq(usersTable.id, user.id));
+
+//     let candidateId = user.candidateId;
+
+//     if (candidateId) {
+//       const [candidate] = await db
+//         .select()
+//         .from(candidatesTable)
+//         .where(eq(candidatesTable.id, candidateId));
+
+//       if (
+//         candidate &&
+//         candidate.cv &&
+//         !candidate.evaluation
+//       ) {
+//         try {
+//           console.log("====================================");
+//           console.log("AI EVALUATION INPUT");
+//           console.log("====================================");
+
+//           console.log("Candidate ID:", candidate.id);
+//           console.log("Name:", candidate.fullName);
+//           console.log("Email:", candidate.email);
+//           console.log("Target Role:", candidate.targetRole);
+//           console.log("Skills:", candidate.skills);
+//           console.log("Years Experience:", candidate.yearsExperience);
+
+//           console.log("CV DATA:");
+//           console.dir(candidate.cv, { depth: null });
+
+//           console.log(
+//             "CV JSON:",
+//             JSON.stringify(candidate.cv, null, 2)
+//           );
+
+//           const result = await evaluateWithAI({
+//             id: candidate.id,
+//             fullName: candidate.fullName,
+//             email: candidate.email,
+//             englishLevel: candidate.englishLevel,
+//             visaStatus: candidate.visaStatus,
+//             yearsExperience: candidate.yearsExperience,
+//             euWorkEligible: candidate.euWorkEligible,
+//             targetRole: candidate.targetRole,
+//             country: candidate.country,
+//             skills: candidate.skills,
+//             careerGapMonths: candidate.careerGapMonths ?? 0,
+//             cv: candidate.cv as any,
+//             resumeText: (candidate.cv as any)?.rawText ?? null,
+//             resumeAnalysis: (candidate.cv as any)?.resumeAnalysis ?? null,
+//           });
+//           await db
+//             .update(candidatesTable)
+//             .set({
+//               evaluation: result,
+//             })
+//             .where(eq(candidatesTable.id, candidate.id));
+//         } catch (e) {
+//           console.error(
+//             "AI Evaluation Failed:",
+//             e
+//           );
+//         }
+//       }
+//     }
+
+//     const token = signToken(user);
+
+//     setAuthCookie(res, token);
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Email verified successfully",
+//       candidateId,
+//     });
+//   } catch (err: any) {
+//     console.error(err);
+
+//     return res.status(500).json({
+//       error: err.message,
+//     });
+//   }
+// });
 router.post("/auth/verify-email", async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const user = await findUserByEmail(
-      email.trim().toLowerCase()
-    );
+    // ✅ Validate input
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        error: "Email and OTP are required"
+      });
+    }
+
+    const user = await findUserByEmail(email.trim().toLowerCase());
 
     if (!user) {
       return res.status(404).json({
-        error: "User not found",
+        success: false,
+        error: "User not found"
       });
     }
 
+    // ✅ If already verified, auto-login
     if (user.isEmailVerified) {
-      return res.status(400).json({
-        error: "Email already verified",
+      const token = signToken(user);
+      setAuthCookie(res, token);
+      req.user = publicUser(user);
+
+      return res.status(200).json({
+        success: true,
+        message: "Email already verified. Logging you in...",
+        user: publicUser(user),
+        candidateId: user.candidateId,
+        redirectTo: "/dashboard"
       });
     }
 
+    // ✅ Check OTP
     if (user.emailOtp !== otp) {
       return res.status(400).json({
-        error: "Invalid OTP",
+        success: false,
+        error: "Invalid OTP"
       });
     }
 
-    if (
-      !user.emailOtpExpiry ||
-      new Date() > user.emailOtpExpiry
-    ) {
+    // ✅ Check OTP expiry
+    if (!user.emailOtpExpiry || new Date() > user.emailOtpExpiry) {
       return res.status(400).json({
-        error: "OTP expired",
+        success: false,
+        error: "OTP expired. Please request a new OTP."
       });
     }
 
-    await db
+    // ✅ Update user - mark email as verified
+    const [updatedUser] = await db
       .update(usersTable)
       .set({
         isEmailVerified: true,
         emailOtp: null,
         emailOtpExpiry: null,
       })
-      .where(eq(usersTable.id, user.id));
+      .where(eq(usersTable.id, user.id))
+      .returning();
 
-    let candidateId = user.candidateId;
+    // ✅ Auto-login user after OTP verification
+    const token = signToken(updatedUser);
+    setAuthCookie(res, token);
+    req.user = publicUser(updatedUser);
 
-    if (candidateId) {
-      const [candidate] = await db
-        .select()
-        .from(candidatesTable)
-        .where(eq(candidatesTable.id, candidateId));
+    // ✅ AI evaluation (optional)
+    if (updatedUser.candidateId) {
+      try {
+        const [candidate] = await db
+          .select()
+          .from(candidatesTable)
+          .where(eq(candidatesTable.id, updatedUser.candidateId));
 
-      if (
-        candidate &&
-        candidate.cv &&
-        !candidate.evaluation
-      ) {
-        try {
-          console.log("====================================");
-          console.log("AI EVALUATION INPUT");
-          console.log("====================================");
-
-          console.log("Candidate ID:", candidate.id);
-          console.log("Name:", candidate.fullName);
-          console.log("Email:", candidate.email);
-          console.log("Target Role:", candidate.targetRole);
-          console.log("Skills:", candidate.skills);
-          console.log("Years Experience:", candidate.yearsExperience);
-
-          console.log("CV DATA:");
-          console.dir(candidate.cv, { depth: null });
-
-          console.log(
-            "CV JSON:",
-            JSON.stringify(candidate.cv, null, 2)
-          );
-
+        if (candidate && candidate.cv && !candidate.evaluation) {
           const result = await evaluateWithAI({
             id: candidate.id,
             fullName: candidate.fullName,
@@ -1129,35 +1281,31 @@ router.post("/auth/verify-email", async (req, res) => {
             resumeText: (candidate.cv as any)?.rawText ?? null,
             resumeAnalysis: (candidate.cv as any)?.resumeAnalysis ?? null,
           });
+
           await db
             .update(candidatesTable)
-            .set({
-              evaluation: result,
-            })
+            .set({ evaluation: result })
             .where(eq(candidatesTable.id, candidate.id));
-        } catch (e) {
-          console.error(
-            "AI Evaluation Failed:",
-            e
-          );
         }
+      } catch (e) {
+        console.error("AI Evaluation Failed:", e);
+        // Don't fail verification if AI evaluation fails
       }
     }
 
-    const token = signToken(user);
-
-    setAuthCookie(res, token);
-
+    // ✅ Return success with user data
     return res.status(200).json({
       success: true,
       message: "Email verified successfully",
-      candidateId,
+      user: publicUser(updatedUser),
+      candidateId: updatedUser.candidateId, // ✅ FIXED: using updatedUser.candidateId
     });
-  } catch (err: any) {
-    console.error(err);
 
+  } catch (err: any) {
+    console.error("VERIFY EMAIL ERROR:", err);
     return res.status(500).json({
-      error: err.message,
+      success: false,
+      error: err.message || "Internal server error"
     });
   }
 });
