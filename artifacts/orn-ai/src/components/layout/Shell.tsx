@@ -103,12 +103,20 @@ console.log('user=',user);
         )}
 
         {user?.candidateId && (
-          <Link href={`/candidate/${user.candidateId}/evaluation`}>
-            <DropdownMenuItem className="cursor-pointer gap-2">
-              <UserIcon className="size-4" />
-              My Evaluation
-            </DropdownMenuItem>
-          </Link>
+          <>
+            <Link href={`/candidate/${user.candidateId}/evaluation`}>
+              <DropdownMenuItem className="cursor-pointer gap-2">
+                <UserIcon className="size-4" />
+                My Evaluation
+              </DropdownMenuItem>
+            </Link>
+            <Link href={`/candidate/${user.candidateId}/change-password`}>
+              <DropdownMenuItem className="cursor-pointer gap-2">
+                <UserIcon className="size-4" />
+                Change Password
+              </DropdownMenuItem>
+            </Link>
+          </>
         )}
 
         <DropdownMenuItem

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,7 +29,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function Login() {
   const [, navigate] = useLocation();
-  const { login } = useAuth();
+  const { user, login, isLoading } = useAuth(); // Add user and isLoading from useAuth
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
 
@@ -38,58 +38,148 @@ export default function Login() {
     defaultValues: { email: "", password: "" },
   });
 
+  // Check if user is already authenticated and redirect
+  useEffect(() => {
+    if (!isLoading && user) {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect");
+
+      if (redirect) {
+        window.location.href = redirect;
+        return;
+      }
+
+      const role = user.role;
+      if (role === "admin") {
+        window.location.href = "/admin";
+      } else if (role === "recruiter") {
+        window.location.href = "/recruiter";
+      } else if (role === "candidate" && user.candidateId) {
+        window.location.href = `/candidate/${user.candidateId}/evaluation`;
+      } else {
+        window.location.href = "/";
+      }
+    }
+  }, [user, isLoading]);
+
+  // async function onSubmit(values: FormValues) {
+  //   setSubmitting(true);
+
+  //   try {
+  //     const session = await login(values);
+
+  //     toast({
+  //       title: "Welcome back",
+  //       description: `Signed in as ${session.user.email}`,
+  //     });
+
+  //     const params = new URLSearchParams(window.location.search);
+  //     const redirect = params.get("redirect");
+
+  //     if (redirect) {
+  //       window.location.href = redirect;
+  //       return;
+  //     } else {
+  //       const role = session.user.role;
+  //       if (role === "admin") {
+  //         window.location.href = "/admin";
+  //       } else if (role === "recruiter") {
+  //         window.location.href = "/recruiter";
+  //       } else if (role === "candidate" && session.user.candidateId) {
+  //         window.location.href = `/candidate/${session.user.candidateId}/evaluation`;
+  //       } else {
+  //         window.location.href = "/";
+  //       }
+  //     }
+  //   } catch (err) {
+  //     const message =
+  //       err instanceof ApiError &&
+  //         typeof err.data === "object" &&
+  //         err.data &&
+  //         "message" in err.data
+  //         ? String((err.data as { message?: string }).message)
+  //         : "Invalid email or password";
+
+  //     toast({
+  //       title: "Sign-in failed",
+  //       description: message,
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setSubmitting(false);
+  //   }
+  // }
   async function onSubmit(values: FormValues) {
-  setSubmitting(true);
+    setSubmitting(true);
 
-  try {
-    const session = await login(values);
+    try {
+      const session = await login(values);
 
-    toast({
-      title: "Welcome back",
-      description: `Signed in as ${session.user.email}`,
-    });
-    const params = new URLSearchParams(
-  window.location.search
-);
+      toast({
+        title: "Welcome back",
+        description: `Signed in as ${session.user.email}`,
+      });
 
-const redirect = params.get("redirect");
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect");
 
-console.log("REDIRECT =", redirect);
+      // 🟢 FIX 1: Direct login ke baad redirect, isLoading ka wait mat karein
+      let targetPath = "/";
+      if (redirect) {
+        targetPath = redirect;
+      } else {
+        const role = session.user.role;
+        if (role === "admin") {
+          targetPath = "/admin";
+        } else if (role === "recruiter") {
+          targetPath = "/recruiter";
+        } else if (role === "candidate" && session.user.candidateId) {
+          targetPath = `/candidate/${session.user.candidateId}/evaluation`;
+        }
+      }
 
-if (redirect) {
-  window.location.href = redirect;
-  return;
-}else{
-    const role = session.user.role;
+      // 🟢 FIX 2: window.location.href ki jagah `navigate` use karein (Fast redirect)
+      navigate(targetPath);
+      // window.location.href = targetPath; // <-- Isko hata dijiye
 
-    if (role === "admin") {
-      window.location.href = "/admin";
-    } else if (role === "recruiter") {
-      window.location.href = "/recruiter";
-    } else if (role === "candidate" && session.user.candidateId) {
-     window.location.href = `/candidate/${session.user.candidateId}/evaluation`;
-    } else {
-      window.location.href = "/";
+    } catch (err) {
+      // ... error handling same rahega
+      const message =
+        err instanceof ApiError &&
+          typeof err.data === "object" &&
+          err.data &&
+          "message" in err.data
+          ? String((err.data as { message?: string }).message)
+          : "Invalid email or password";
+
+      toast({
+        title: "Sign-in failed",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
     }
   }
-  } catch (err) {
-    const message =
-      err instanceof ApiError &&
-      typeof err.data === "object" &&
-      err.data &&
-      "message" in err.data
-        ? String((err.data as { message?: string }).message)
-        : "Invalid email or password";
-
-    toast({
-      title: "Sign-in failed",
-      description: message,
-      variant: "destructive",
-    });
-  } finally {
-    setSubmitting(false);
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <Shell>
+        <div className="flex-1 flex items-center justify-center py-16 px-4 bg-slate-50">
+          <Card className="w-full max-w-md bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+            <CardContent className="p-6 flex justify-center">
+              <Loader2 className="size-8 animate-spin text-[#1652A0]" />
+            </CardContent>
+          </Card>
+        </div>
+      </Shell>
+    );
   }
-}
+
+  // If user is already authenticated, don't show login form (redirect handled by useEffect)
+  if (user) {
+    return null;
+  }
 
   return (
     <Shell>

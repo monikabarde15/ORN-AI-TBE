@@ -11,6 +11,7 @@ import {
   sendMailWithRetry,
   formatCleanName
 } from "../lib/mail";
+import { avatarForName } from "../lib/avatar";
 import multer from "multer";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import {
@@ -158,14 +159,7 @@ router.post(
           ? submittedSkills.slice(0, 20)
           : pickSkillsFor(parsed.data.targetRole, Date.now());
 
-      const seed = Math.floor(Math.random() * 89) + 1;
-      const gender = seed % 2 === 0 ? "men" : "women";
-      const avatarUrl =
-        gender === "women"
-          ? "https://api.dicebear.com/10.x/personas/svg?seed=female"
-          : "https://api.dicebear.com/10.x/personas/svg?seed=male";
-
-      // const avatarUrl = `https://randomuser.me/api/portraits/${gender}/${seed}.jpg`;
+      const avatarUrl = avatarForName(parsed.data.fullName || parsed.data.email || "user");
 
       const { skills: _ignored, ...rest } = parsed.data;
 
