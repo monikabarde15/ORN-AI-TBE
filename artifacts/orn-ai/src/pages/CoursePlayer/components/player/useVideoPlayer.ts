@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { saveLessonPositionStorage } from "../../utils/progressStorage";
 
 export const useVideoPlayer = (
     lessonId: string,
     onLessonCompleted?: (lessonId: string) => void
 ) => {
+    const { user } = useAuth();
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 

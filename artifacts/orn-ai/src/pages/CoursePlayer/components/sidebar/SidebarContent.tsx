@@ -135,7 +135,8 @@ const SidebarContent = ({
           line-clamp-2
         "
           >
-            {course?.title ||
+            {course?.courseName ||
+              course?.title ||
               "Loading Course..."}
           </h2>
         </button>

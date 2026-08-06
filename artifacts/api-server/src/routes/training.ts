@@ -1547,6 +1547,56 @@ router.get(
   }
 );
 
+// ======================================================
+// COURSE PROGRESS (GET & POST)
+// ======================================================
+const userCourseProgressStore: Record<string, any> = {};
+
+router.get("/courses/:id/progress", async (req, res): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.id || req.headers["x-user-id"] || "guest";
+    const key = `${userId}_${id}`;
+    const progress = userCourseProgressStore[key] || {
+      completedLessons: {},
+      completedQuizzes: {},
+      lessonPositions: {},
+    };
+    res.json({ success: true, data: progress });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to get progress" });
+  }
+});
+
+router.post("/courses/:id/progress", async (req, res): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.id || req.headers["x-user-id"] || "guest";
+    const key = `${userId}_${id}`;
+    const existing = userCourseProgressStore[key] || {};
+    const updated = {
+      ...existing,
+      ...req.body,
+      completedLessons: {
+        ...(existing.completedLessons || {}),
+        ...(req.body.completedLessons || {}),
+      },
+      completedQuizzes: {
+        ...(existing.completedQuizzes || {}),
+        ...(req.body.completedQuizzes || {}),
+      },
+      lessonPositions: {
+        ...(existing.lessonPositions || {}),
+        ...(req.body.lessonPositions || {}),
+      },
+    };
+    userCourseProgressStore[key] = updated;
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to save progress" });
+  }
+});
+
 
 
 // ======================================================
