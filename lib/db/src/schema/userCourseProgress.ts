@@ -42,4 +42,4 @@ export type UserCourseProgressRow =
   typeof userCourseProgressTable.$inferSelect;
 
 export type InsertUserCourseProgressRow =
-  typeof userCourseProgressTable.$inferInsert;
+  typeof userCourseProgressTable.$inferInsert;//add this
