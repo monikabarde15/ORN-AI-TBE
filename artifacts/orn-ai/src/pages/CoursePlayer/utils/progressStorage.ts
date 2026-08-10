@@ -86,7 +86,9 @@ export const syncProgressWithServer = async (
 ): Promise<CourseProgressData> => {
   const localData = loadCourseProgress(userId, courseId);
   try {
-    const res = await api.get(`/api/courses/${courseId}/progress`);
+    const res = await api.get(`/api/courses/${courseId}/progress`, {
+      params: { userId: userId || undefined },
+    });
     if (res.data?.success && res.data?.data) {
       const serverData = res.data.data;
       const merged: CourseProgressData = {
@@ -151,9 +153,10 @@ export const saveCourseProgress = (
     });
 
     // Async sync to Backend API Database
-    api.post(`/api/courses/${courseId}/progress`, updated).catch((err) => {
+    api.post(`/api/courses/${courseId}/progress`, { ...updated, userId }).catch((err) => {
       console.warn("API progress sync notice:", err);
     });
+
 
     return updated;
   } catch (error) {

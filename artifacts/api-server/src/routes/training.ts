@@ -21,6 +21,7 @@ import {
   paymentLinksTable,
   learningPathsTable,
   liveSessionsTable,
+  userCourseProgressTable,
   type CandidateRow,
 } from "@workspace/db";
 import {
@@ -53,7 +54,8 @@ import {
   serializeTrainingAssignment,
   type LiveSessionState,
 } from "../lib/training";
-import { requireAuth, requireRole, requireCandidateAccess } from "../lib/auth";
+import { requireAuth, requireRole, requireCandidateAccess, attachUser } from "../lib/auth";
+
 
 // Add ai imports
 import { AI_CONFIG } from "../lib/ai/config";
@@ -1550,52 +1552,129 @@ router.get(
 // ======================================================
 // COURSE PROGRESS (GET & POST)
 // ======================================================
-const userCourseProgressStore: Record<string, any> = {};
-
-router.get("/courses/:id/progress", async (req, res): Promise<void> => {
+router.get("/courses/:id/progress", attachUser, async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id || req.headers["x-user-id"] || "guest";
-    const key = `${userId}_${id}`;
-    const progress = userCourseProgressStore[key] || {
-      completedLessons: {},
-      completedQuizzes: {},
-      lessonPositions: {},
-    };
-    res.json({ success: true, data: progress });
+    const userId = (req as any).user?.id || (req.headers["x-user-id"] as string) || (req.query.userId as string) || "guest";
+
+    const [existing] = await db
+      .select()
+      .from(userCourseProgressTable)
+      .where(
+        and(
+          eq(userCourseProgressTable.userId, userId),
+          eq(userCourseProgressTable.courseId, id)
+        )
+      )
+      .limit(1);
+
+    if (existing) {
+      res.json({
+        success: true,
+        data: {
+          completedLessons: existing.completedLessons || {},
+          completedQuizzes: existing.completedQuizzes || {},
+          lessonPositions: existing.lessonPositions || {},
+          lastActiveLessonId: existing.lastActiveLessonId || undefined,
+          lastContentMode: existing.lastContentMode || undefined,
+          finalAssessment: existing.finalAssessment || undefined,
+        },
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        completedLessons: {},
+        completedQuizzes: {},
+        lessonPositions: {},
+      },
+    });
   } catch (error) {
+    console.error("Failed to get course progress:", error);
     res.status(500).json({ success: false, message: "Failed to get progress" });
   }
 });
 
-router.post("/courses/:id/progress", async (req, res): Promise<void> => {
+router.post("/courses/:id/progress", attachUser, async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id || req.headers["x-user-id"] || "guest";
-    const key = `${userId}_${id}`;
-    const existing = userCourseProgressStore[key] || {};
-    const updated = {
-      ...existing,
-      ...req.body,
-      completedLessons: {
-        ...(existing.completedLessons || {}),
-        ...(req.body.completedLessons || {}),
-      },
-      completedQuizzes: {
-        ...(existing.completedQuizzes || {}),
-        ...(req.body.completedQuizzes || {}),
-      },
-      lessonPositions: {
-        ...(existing.lessonPositions || {}),
-        ...(req.body.lessonPositions || {}),
-      },
+    const userId = (req as any).user?.id || (req.headers["x-user-id"] as string) || req.body?.userId || "guest";
+
+    const [existing] = await db
+      .select()
+      .from(userCourseProgressTable)
+      .where(
+        and(
+          eq(userCourseProgressTable.userId, userId),
+          eq(userCourseProgressTable.courseId, id)
+        )
+      )
+      .limit(1);
+
+    const prevLessons = (existing?.completedLessons && typeof existing.completedLessons === "object") ? existing.completedLessons : {};
+    const prevQuizzes = (existing?.completedQuizzes && typeof existing.completedQuizzes === "object") ? existing.completedQuizzes : {};
+    const prevPositions = (existing?.lessonPositions && typeof existing.lessonPositions === "object") ? existing.lessonPositions : {};
+
+    const updatedLessons = {
+      ...prevLessons,
+      ...(req.body.completedLessons || {}),
     };
-    userCourseProgressStore[key] = updated;
-    res.json({ success: true, data: updated });
+    const updatedQuizzes = {
+      ...prevQuizzes,
+      ...(req.body.completedQuizzes || {}),
+    };
+    const updatedPositions = {
+      ...prevPositions,
+      ...(req.body.lessonPositions || {}),
+    };
+    const updatedLastActiveLessonId = req.body.lastActiveLessonId ?? existing?.lastActiveLessonId ?? null;
+    const updatedLastContentMode = req.body.lastContentMode ?? existing?.lastContentMode ?? null;
+    const updatedFinalAssessment = req.body.finalAssessment ?? existing?.finalAssessment ?? null;
+
+    if (existing) {
+      await db
+        .update(userCourseProgressTable)
+        .set({
+          completedLessons: updatedLessons,
+          completedQuizzes: updatedQuizzes,
+          lessonPositions: updatedPositions,
+          lastActiveLessonId: updatedLastActiveLessonId,
+          lastContentMode: updatedLastContentMode,
+          finalAssessment: updatedFinalAssessment,
+          updatedAt: new Date(),
+        })
+        .where(eq(userCourseProgressTable.id, existing.id));
+    } else {
+      await db.insert(userCourseProgressTable).values({
+        userId,
+        courseId: id,
+        completedLessons: updatedLessons,
+        completedQuizzes: updatedQuizzes,
+        lessonPositions: updatedPositions,
+        lastActiveLessonId: updatedLastActiveLessonId,
+        lastContentMode: updatedLastContentMode,
+        finalAssessment: updatedFinalAssessment,
+      });
+    }
+
+    const responseData = {
+      completedLessons: updatedLessons,
+      completedQuizzes: updatedQuizzes,
+      lessonPositions: updatedPositions,
+      lastActiveLessonId: updatedLastActiveLessonId || undefined,
+      lastContentMode: updatedLastContentMode || undefined,
+      finalAssessment: updatedFinalAssessment || undefined,
+    };
+
+    res.json({ success: true, data: responseData });
   } catch (error) {
+    console.error("Failed to save course progress:", error);
     res.status(500).json({ success: false, message: "Failed to save progress" });
   }
 });
+
 
 
 
