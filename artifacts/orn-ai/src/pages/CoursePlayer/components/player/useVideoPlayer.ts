@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-
+import { useAuth } from "@/hooks/use-auth"; // ✅ Import added
+import { saveLessonPositionStorage } from "../../utils/progressStorage";
 export const useVideoPlayer = (
     lessonId: string,
-    onLessonCompleted?: (lessonId: string) => void
+    onLessonCompleted?: (lessonId: string) => void,
+    courseId?: string // ✅ Added courseId as parameter
 ) => {
+    const { user } = useAuth(); // ✅ Get current user
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -45,20 +48,13 @@ export const useVideoPlayer = (
     const seek = useCallback(
         (percentage: number) => {
             if (!videoRef.current || !duration) return;
-
-
-            videoRef.current.currentTime =
-                (percentage / 100) * duration;
+            videoRef.current.currentTime = (percentage / 100) * duration;
         },
         [duration]
-
-
     );
 
     const changeVolume = useCallback((value: number) => {
         if (!videoRef.current) return;
-
-
         setVolume(value);
         videoRef.current.volume = value;
 
@@ -69,45 +65,31 @@ export const useVideoPlayer = (
             setIsMuted(false);
             videoRef.current.muted = false;
         }
-
-
     }, []);
 
     const toggleMute = useCallback(() => {
         if (!videoRef.current) return;
-
         const nextMuted = !isMuted;
-
         setIsMuted(nextMuted);
         videoRef.current.muted = nextMuted;
-
-
     }, [isMuted]);
 
     const toggleFullscreen = useCallback(async () => {
         if (!containerRef.current) return;
-
-
         if (!document.fullscreenElement) {
             await containerRef.current.requestFullscreen();
         } else {
             await document.exitFullscreen();
         }
-
-
     }, []);
 
     const changePlaybackRate = useCallback(
         (rate: number) => {
             if (!videoRef.current) return;
-
-
             videoRef.current.playbackRate = rate;
             setPlaybackRate(rate);
         },
         []
-
-
     );
 
     const handleMouseMove = () => {
@@ -124,16 +106,9 @@ export const useVideoPlayer = (
         }
     };
 
-    // Double Click Seek
-
-    const handleVideoDoubleClick = (
-        e: React.MouseEvent<HTMLVideoElement>
-    ) => {
+    const handleVideoDoubleClick = (e: React.MouseEvent<HTMLVideoElement>) => {
         if (!videoRef.current) return;
-
-        const rect =
-            e.currentTarget.getBoundingClientRect();
-
+        const rect = e.currentTarget.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
 
         if (clickX < rect.width / 2) {
@@ -143,29 +118,18 @@ export const useVideoPlayer = (
         }
     };
 
-    // Resume Functions
-
     const resumePlayback = () => {
-        if (
-            videoRef.current &&
-            resumeTime
-        ) {
-            videoRef.current.currentTime =
-                resumeTime;
+        if (videoRef.current && resumeTime) {
+            videoRef.current.currentTime = resumeTime;
         }
-
         setShowResumePrompt(false);
     };
 
     const startOver = () => {
-        localStorage.removeItem(
-            `lesson-progress-${lessonId}`
-        );
-
+        localStorage.removeItem(`lesson-progress-${lessonId}`);
         if (videoRef.current) {
             videoRef.current.currentTime = 0;
         }
-
         setShowResumePrompt(false);
     };
 
@@ -178,9 +142,7 @@ export const useVideoPlayer = (
     useEffect(() => {
         return () => {
             if (controlsTimeoutRef.current) {
-                clearTimeout(
-                    controlsTimeoutRef.current
-                );
+                clearTimeout(controlsTimeoutRef.current);
             }
         };
     }, []);
@@ -189,22 +151,22 @@ export const useVideoPlayer = (
         const video = videoRef.current;
         if (!video) return;
 
-
-        const updateTime = () => {
+                const updateTime = () => {
             setCurrentTime(video.currentTime);
+            localStorage.setItem(`lesson-progress-${lessonId}`, String(video.currentTime));
 
-            localStorage.setItem(
-                `lesson-progress-${lessonId}`,
-                String(video.currentTime)
-            );
+            // ✅ SCORE LOGIC: Progress % ko directly score bana do (0 se 100)
+            const watchPercent = video.duration ? (video.currentTime / video.duration) : 0;
+            const videoScore = Math.min(100, Math.round(watchPercent * 100)); // 4% = 4, 100% = 100
+console.log("🎯 [useVideoPlayer] Time:", Math.round(video.currentTime), "sec | Score:", videoScore);
+            // ✅ Database mein save karo (Jaise hi video aage badhe, score update hoga)
+            if (courseId && lessonId && user?.id) {
+                saveLessonPositionStorage(user?.id, courseId, lessonId, video.currentTime, videoScore);
+            }
 
-            if (
-                video.duration &&
-                video.currentTime >= video.duration - 1
-            ) {
-                localStorage.removeItem(
-                    `lesson-progress-${lessonId}`
-                );
+            // ✅ Green Tick logic: Jab video 100% pahunch jaye
+            if (video.duration && video.currentTime >= video.duration - 0.5) {
+                localStorage.removeItem(`lesson-progress-${lessonId}`);
                 if (onLessonCompleted && lessonId) {
                     onLessonCompleted(lessonId);
                 }
@@ -233,36 +195,20 @@ export const useVideoPlayer = (
 
         return () => {
             video.removeEventListener("timeupdate", updateTime);
-            video.removeEventListener(
-                "loadedmetadata",
-                updateDuration
-            );
+            video.removeEventListener("loadedmetadata", updateDuration);
             video.removeEventListener("play", onPlay);
             video.removeEventListener("pause", onPause);
             video.removeEventListener("ended", onEnded);
         };
-
-
-    }, [lessonId, onLessonCompleted]);
+    }, [lessonId, onLessonCompleted, courseId, user?.id]); // ✅ Added dependencies
 
     useEffect(() => {
         const handleFullscreenChange = () => {
             setIsFullscreen(!!document.fullscreenElement);
         };
 
-
-        document.addEventListener(
-            "fullscreenchange",
-            handleFullscreenChange
-        );
-
-        return () =>
-            document.removeEventListener(
-                "fullscreenchange",
-                handleFullscreenChange
-            );
-
-
+        document.addEventListener("fullscreenchange", handleFullscreenChange);
+        return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
     }, []);
 
     // Keyboard Shortcuts
@@ -275,21 +221,17 @@ export const useVideoPlayer = (
                     e.preventDefault();
                     playPause();
                     break;
-
                 case "arrowleft":
                     e.preventDefault();
                     skipBackward();
                     break;
-
                 case "arrowright":
                     e.preventDefault();
                     skipForward();
                     break;
-
                 case "m":
                     toggleMute();
                     break;
-
                 case "f":
                     toggleFullscreen();
                     break;
@@ -297,64 +239,41 @@ export const useVideoPlayer = (
         };
 
         window.addEventListener("keydown", handleKeyDown);
-
-        return () => {
-            window.removeEventListener(
-                "keydown",
-                handleKeyDown
-            );
-        };
-    }, [
-        playPause,
-        skipBackward,
-        skipForward,
-        toggleMute,
-        toggleFullscreen,
-    ]);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [playPause, skipBackward, skipForward, toggleMute, toggleFullscreen]);
 
     // Auto Play Next Video
-
     useEffect(() => {
         if (!videoRef.current) return;
-
         const video = videoRef.current;
 
         setCurrentTime(0);
         setDuration(0);
 
         video.play()
-            .then(() => {
-                setIsPlaying(true);
-            })
-            .catch(() => {
+            .then(() => setIsPlaying(true))
+            .catch((error) => {
+                if (error.name === 'AbortError' || error.message.includes('interrupted')) {
+                    console.warn("Video play was interrupted.");
+                } else {
+                    console.error("Video play error:", error);
+                }
                 setIsPlaying(false);
             });
-
     }, [lessonId]);
 
     // Restore Progress
     useEffect(() => {
-        const savedTime =
-            localStorage.getItem(
-                `lesson-progress-${lessonId}`
-            );
-
-        if (
-            savedTime &&
-            Number(savedTime) > 10
-        ) {
+        const savedTime = localStorage.getItem(`lesson-progress-${lessonId}`);
+        if (savedTime && Number(savedTime) > 10) {
             setResumeTime(Number(savedTime));
             setShowResumePrompt(true);
         }
     }, [lessonId]);
 
-    
-
     return {
         videoRef,
         containerRef,
-
-
         isPlaying,
         currentTime,
         duration,
@@ -364,7 +283,6 @@ export const useVideoPlayer = (
         playbackRate,
         progress,
         showControls,
-
         playPause,
         skipForward,
         skipBackward,
@@ -379,8 +297,5 @@ export const useVideoPlayer = (
         resumeTime,
         resumePlayback,
         startOver,
-
-
-
     };
 };
