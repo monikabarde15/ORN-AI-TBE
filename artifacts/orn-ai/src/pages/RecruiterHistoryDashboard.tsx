@@ -123,6 +123,22 @@ function scoreBg(score: number) {
   return "bg-rose-500";
 }
 
+function matchesSearch(candidate: Candidate, search: string) {
+  const terms = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return true;
+
+  const haystack = [
+    candidate.fullName,
+    candidate.email,
+    candidate.targetRole,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return terms.every((term) => haystack.includes(term));
+}
+
 // Debounce hook
 function useDebounce<T>(value: T, delay = 350): T {
   const [debounced, setDebounced] = useState(value);
@@ -220,7 +236,6 @@ export default function RecruiterHistoryDashboard() {
   });
 
   const queryParams = {
-    search: debouncedSearch || undefined,
     country: filters.country || undefined,
     role: filters.role || undefined,
     minReadiness: filters.minReadiness ? parseInt(filters.minReadiness) : undefined,
@@ -238,6 +253,7 @@ export default function RecruiterHistoryDashboard() {
   const filteredCandidates = useMemo(() => {
     if (!candidates) return [];
     const filtered = candidates.filter((c) => {
+      if (debouncedSearch && !matchesSearch(c, debouncedSearch)) return false;
       if (filters.statusFilter === "all") return true;
       const status = statuses[c.id];
       if (filters.statusFilter === "none") return !status;
@@ -263,7 +279,7 @@ export default function RecruiterHistoryDashboard() {
       }
     });
     return sorted;
-  }, [candidates, statuses, filters.statusFilter, sort]);
+  }, [candidates, debouncedSearch, statuses, filters.statusFilter, sort]);
 
   const selectedCandidate = useMemo(
     () => candidates?.find((c) => c.id === selectedId) ?? null,
@@ -886,18 +902,16 @@ function PipelineChip({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-        active
-          ? "bg-foreground text-background border-foreground"
-          : "bg-background text-foreground border-border hover:border-foreground/40"
-      }`}
+      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${active
+        ? "bg-foreground text-background border-foreground"
+        : "bg-background text-foreground border-border hover:border-foreground/40"
+        }`}
     >
       {dotClass && <span className={`size-1.5 rounded-full ${dotClass}`} />}
       <span>{label}</span>
       <span
-        className={`tabular-nums px-1.5 py-0 rounded text-[10px] ${
-          active ? "bg-background/20" : "bg-muted text-muted-foreground"
-        }`}
+        className={`tabular-nums px-1.5 py-0 rounded text-[10px] ${active ? "bg-background/20" : "bg-muted text-muted-foreground"
+          }`}
       >
         {count}
       </span>
@@ -921,9 +935,8 @@ function SortHeader({
     <button
       type="button"
       onClick={() => onSort(field)}
-      className={`inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition-colors ${
-        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-      }`}
+      className={`inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider transition-colors ${isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+        }`}
     >
       {children}
       {isActive ? (
@@ -980,8 +993,8 @@ function CandidateDetailSheet({
   const joinedValue = shouldHideContactDetails
     ? hiddenValue
     : new Date(candidate.createdAt).toLocaleDateString(undefined, {
-        dateStyle: "medium",
-      });
+      dateStyle: "medium",
+    });
 
   return (
     <Sheet open={!!candidate} onOpenChange={(o) => !o && onClose()}>
@@ -1100,17 +1113,17 @@ function CandidateDetailSheet({
                 <X className="size-4" /> Clear status
               </Button>
             )}
-             <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 col-span-2"
-            onClick={() =>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 col-span-2"
+              onClick={() =>
                 setLocation(`/candidate/${candidate.id}/masked-cv`)
-            }
-        >
-            <FileText className="size-4" />
-            View Masked CV
-        </Button>
+              }
+            >
+              <FileText className="size-4" />
+              View Masked CV
+            </Button>
           </div>
         </div>
 

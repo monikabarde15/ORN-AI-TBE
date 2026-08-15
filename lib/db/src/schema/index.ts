@@ -12,4 +12,4 @@ export * from "./userPermissionsTable";
 export * from "./learningPathEnrollmentsTable";
 export * from "./assessmentQuestionsTable";
 export * from "./assessmentsTable";
-export * from "./courseProgressTable";
+export * from "./userCourseProgress";

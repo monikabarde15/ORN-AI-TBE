@@ -21,7 +21,7 @@ import {
   paymentLinksTable,
   learningPathsTable,
   liveSessionsTable,
-  courseProgressTable,
+  userCourseProgressTable,
   type CandidateRow,
 } from "@workspace/db";
 import {
@@ -54,7 +54,8 @@ import {
   serializeTrainingAssignment,
   type LiveSessionState,
 } from "../lib/training";
-import { requireAuth, requireRole, requireCandidateAccess } from "../lib/auth";
+import { requireAuth, requireRole, requireCandidateAccess, attachUser } from "../lib/auth";
+
 
 // Add ai imports
 import { AI_CONFIG } from "../lib/ai/config";
@@ -242,11 +243,11 @@ router.post(
         .from(candidatesTable)
         .where(eq(candidatesTable.id, body.data.candidateId));
 
-      const recruiters = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.role, "recruiter"));
-      console.log("recruiters=", recruiters);
+        const recruiters = await db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.role, "recruiter"));
+          console.log("recruiters=",recruiters);
 
       if (!recruiters) {
         return res.status(404).json({
@@ -278,14 +279,14 @@ router.post(
       const courses =
         learningPath.courseIds?.length > 0
           ? await db
-            .select()
-            .from(coursesTable)
-            .where(
-              inArray(
-                coursesTable.id,
-                learningPath.courseIds
+              .select()
+              .from(coursesTable)
+              .where(
+                inArray(
+                  coursesTable.id,
+                  learningPath.courseIds
+                )
               )
-            )
           : [];
 
       // =====================================================
@@ -295,7 +296,7 @@ router.post(
       const program = {
         id: learningPath.id,
         name: learningPath.title,
-        trainingType: "upskilling",
+         trainingType: "upskilling",
         // trainingType: body.data.trainingType,
         recommendedPath: learningPath.title,
         deliveryMode: "hybrid",
@@ -307,7 +308,7 @@ router.post(
         })),
       };
 
-      // =====================================================
+     // =====================================================
       // Trainer = Logged In User
       // =====================================================
 
@@ -353,42 +354,42 @@ router.post(
       // Save Assignment
       // =====================================================
 
-      const [row] = await db
-        .insert(trainingAssignmentsTable)
-        .values({
-          candidateId: candidate.id,
+    const [row] = await db
+  .insert(trainingAssignmentsTable)
+  .values({
+    candidateId: candidate.id,
 
-          learningPathId: learningPath.id,
+    learningPathId: learningPath.id,
 
-          assessmentCategory,
+    assessmentCategory,
 
-          trainingType: program.trainingType,
+    trainingType: program.trainingType,
 
-          programId: program.id,
+    programId: program.id,
 
-          programName: program.name,
+    programName: program.name,
 
-          recommendedPath: program.recommendedPath,
+    recommendedPath: program.recommendedPath,
 
-          deliveryMode: program.deliveryMode,
+    deliveryMode: program.deliveryMode,
 
-          trainerId: req.user!.id,
+    trainerId: req.user!.id,
 
-          trainerName: req.user!.fullName,
+    trainerName: req.user!.fullName,
 
-          modules,
+    modules,
 
-          liveSessions,
+    liveSessions,
 
-          startDate,
+    startDate,
 
-          targetCompletionDate,
+    targetCompletionDate,
 
-          status: "not_started",
+    status: "not_started",
 
-          progressPct: 0,
-        })
-        .returning();
+    progressPct: 0,
+  })
+  .returning();
 
       if (!row) {
         return res.status(500).json({
@@ -1548,6 +1549,132 @@ router.get(
   }
 );
 
+// ======================================================
+// COURSE PROGRESS (GET & POST)
+// ======================================================
+router.get("/courses/:id/progress", attachUser, async (req, res): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.id || (req.headers["x-user-id"] as string) || (req.query.userId as string) || "guest";
+
+    const [existing] = await db
+      .select()
+      .from(userCourseProgressTable)
+      .where(
+        and(
+          eq(userCourseProgressTable.userId, userId),
+          eq(userCourseProgressTable.courseId, id)
+        )
+      )
+      .limit(1);
+
+    if (existing) {
+      res.json({
+        success: true,
+        data: {
+          completedLessons: existing.completedLessons || {},
+          completedQuizzes: existing.completedQuizzes || {},
+          lessonPositions: existing.lessonPositions || {},
+          lastActiveLessonId: existing.lastActiveLessonId || undefined,
+          lastContentMode: existing.lastContentMode || undefined,
+          finalAssessment: existing.finalAssessment || undefined,
+        },
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        completedLessons: {},
+        completedQuizzes: {},
+        lessonPositions: {},
+      },
+    });
+  } catch (error) {
+    console.error("Failed to get course progress:", error);
+    res.status(500).json({ success: false, message: "Failed to get progress" });
+  }
+});
+
+router.post("/courses/:id/progress", attachUser, async (req, res): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.id || (req.headers["x-user-id"] as string) || req.body?.userId || "guest";
+
+    const [existing] = await db
+      .select()
+      .from(userCourseProgressTable)
+      .where(
+        and(
+          eq(userCourseProgressTable.userId, userId),
+          eq(userCourseProgressTable.courseId, id)
+        )
+      )
+      .limit(1);
+
+    const prevLessons = (existing?.completedLessons && typeof existing.completedLessons === "object") ? existing.completedLessons : {};
+    const prevQuizzes = (existing?.completedQuizzes && typeof existing.completedQuizzes === "object") ? existing.completedQuizzes : {};
+    const prevPositions = (existing?.lessonPositions && typeof existing.lessonPositions === "object") ? existing.lessonPositions : {};
+
+    const updatedLessons = {
+      ...prevLessons,
+      ...(req.body.completedLessons || {}),
+    };
+    const updatedQuizzes = {
+      ...prevQuizzes,
+      ...(req.body.completedQuizzes || {}),
+    };
+    const updatedPositions = {
+      ...prevPositions,
+      ...(req.body.lessonPositions || {}),
+    };
+    const updatedLastActiveLessonId = req.body.lastActiveLessonId ?? existing?.lastActiveLessonId ?? null;
+    const updatedLastContentMode = req.body.lastContentMode ?? existing?.lastContentMode ?? null;
+    const updatedFinalAssessment = req.body.finalAssessment ?? existing?.finalAssessment ?? null;
+
+    if (existing) {
+      await db
+        .update(userCourseProgressTable)
+        .set({
+          completedLessons: updatedLessons,
+          completedQuizzes: updatedQuizzes,
+          lessonPositions: updatedPositions,
+          lastActiveLessonId: updatedLastActiveLessonId,
+          lastContentMode: updatedLastContentMode,
+          finalAssessment: updatedFinalAssessment,
+          updatedAt: new Date(),
+        })
+        .where(eq(userCourseProgressTable.id, existing.id));
+    } else {
+      await db.insert(userCourseProgressTable).values({
+        userId,
+        courseId: id,
+        completedLessons: updatedLessons,
+        completedQuizzes: updatedQuizzes,
+        lessonPositions: updatedPositions,
+        lastActiveLessonId: updatedLastActiveLessonId,
+        lastContentMode: updatedLastContentMode,
+        finalAssessment: updatedFinalAssessment,
+      });
+    }
+
+    const responseData = {
+      completedLessons: updatedLessons,
+      completedQuizzes: updatedQuizzes,
+      lessonPositions: updatedPositions,
+      lastActiveLessonId: updatedLastActiveLessonId || undefined,
+      lastContentMode: updatedLastContentMode || undefined,
+      finalAssessment: updatedFinalAssessment || undefined,
+    };
+
+    res.json({ success: true, data: responseData });
+  } catch (error) {
+    console.error("Failed to save course progress:", error);
+    res.status(500).json({ success: false, message: "Failed to save progress" });
+  }
+});
+
 
 
 
@@ -2269,125 +2396,15 @@ router.get(
       });
 
     } catch (error) {
+
       console.log(error);
+
       return res.status(500).json({
         success: false,
-        message: "Failed to load student data",
+        message:
+          "Failed to load student data",
       });
     }
   }
 );
-
-
-// ======================================================
-// COURSE PROGRESS (GET & POST) - WITH DATABASE PERSISTENCE
-// ======================================================
-
-router.get("/courses/:id/progress", async (req, res): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const userId = (req as any).user?.id || req.headers["x-user-id"] || "guest";
-
-    // Query from database
-    const [progress] = await db
-      .select()
-      .from(courseProgressTable)
-      .where(
-        and(
-          eq(courseProgressTable.userId, userId),
-          eq(courseProgressTable.courseId, id)
-        )
-      );
-
-    if (progress) {
-      res.json({
-        success: true,
-        data: {
-          completedLessons: progress.completedLessons || {},
-          completedQuizzes: progress.completedQuizzes || {},
-          lessonPositions: progress.lessonPositions || {},
-          lessonScores: progress.lessonScores || {},
-          quizScores: progress.quizScores || {},
-          totalScore: progress.totalScore || 0,
-          finalAssessment: progress.finalAssessment || null,
-        }
-      });
-    } else {
-      res.json({ success: true, data: null });
-    }
-  } catch (error) {
-    console.error("❌ GET PROGRESS ERROR:", error);
-    if (error instanceof Error) {
-      console.error("Stack:", error.stack);
-    }
-    res.status(500).json({ success: false, message: "Failed to get progress" });
-  }
-});
-
-router.post("/courses/:id/progress", async (req, res): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const userId = (req as any).user?.id || req.headers["x-user-id"] || "guest";
-    const body = req.body;
-
-    // Extract data from body
-    const completedLessons = body.completedLessons || {};
-    const completedQuizzes = body.completedQuizzes || {};
-    const lessonPositions = body.lessonPositions || {};
-    const lessonScores = body.lessonScores || {};
-    const quizScores = body.quizScores || {};
-    const totalScore = body.totalScore || 0;
-    const finalAssessment = body.finalAssessment || null;
-
-    // 🛑 FIX: Upsert into database (progressData hata diya gaya hai)
-    await db
-      .insert(courseProgressTable)
-      .values({
-        userId,
-        courseId: id,
-        // progressData: body,  <-- IS LINE KO HATA DIYA HAI (JSONB ERROR SE BACHNE KE LIYE)
-        completedLessons,
-        completedQuizzes,
-        lessonPositions,
-        lessonScores,
-        quizScores,
-        totalScore,
-        finalAssessment,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [courseProgressTable.userId, courseProgressTable.courseId],
-        set: {
-          // progressData: body,  <-- IS LINE KO BHI HATA DIYA HAI
-          completedLessons,
-          completedQuizzes,
-          lessonPositions,
-          lessonScores,
-          quizScores,
-          totalScore,
-          finalAssessment,
-          updatedAt: new Date(),
-        },
-      });
-
-    res.json({ success: true, data: body });
-  } catch (error) {
-    // 🛑 DETAILED ERROR LOGGING
-    console.error("=============================================");
-    console.error("🚨 POST PROGRESS CRASHED!");
-    console.error("Payload Received:", JSON.stringify(req.body, null, 2));
-    console.error("=============================================");
-
-    if (error instanceof Error) {
-      console.error("🔴 Error Name:", error.name);
-      console.error("🔴 Error Message:", error.message);
-      console.error("🔴 Stack Trace:", error.stack);
-    } else {
-      console.error("Unknown Error:", error);
-    }
-    console.error("=============================================");
-
-    res.status(500).json({ success: false, message: "Failed to save progress" });
-  }
-});
 export default router;

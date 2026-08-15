@@ -1,17 +1,17 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRoute } from "wouter";
-import { useAuth } from "@/hooks/use-auth"; // ✅ Already present
 import api from "../../../services/api";
 import { Shell } from "@/components/layout/Shell";
 import CourseSidebar from "./components/CourseSidebar";
 import ContentArea from "./components/ContentArea";
 import { useSidebar } from "./components/sidebar/useSidebar";
-
-// ✅ YEH 3 LINES ADD KARO (MISSING IMPORTS)
+import { useAuth } from "@/hooks/use-auth";
 import {
+  loadCourseProgress,
   syncProgressWithServer,
   markLessonCompletedStorage,
   markQuizCompletedStorage,
+  saveLastActiveStorage,
 } from "./utils/progressStorage";
 
 export type ContentMode = "about" | "lesson" | "quiz" | "finalAssessment";
@@ -51,7 +51,7 @@ interface Course {
 const CoursePlayer = () => {
   const [, params] = useRoute("/course/details/:id");
   const courseId = params?.id;
-  const { user } = useAuth(); // ✅ user ko yahan use kar rahe hain
+  const { user } = useAuth();
 
   // State
   const [course, setCourse] = useState<Course | null>(null);
@@ -74,12 +74,12 @@ const CoursePlayer = () => {
     );
   }, [sidebarCollapsed]);
 
-  // Fetch Course Data
+  // Fetch Course Data & Restore Saved Progress
   useEffect(() => {
     if (courseId) {
       fetchCourse();
     }
-  }, [courseId]);
+  }, [courseId, user?.id]);
 
   const fetchCourse = async () => {
     try {
@@ -96,9 +96,6 @@ const CoursePlayer = () => {
 
       setCourse(courseData);
 
-      // ✅ 1. BACKEND SE PROGRESS DATA FETCH KARO (HAR BAAR)
-      const savedProgress = await syncProgressWithServer(user?.id, courseData.id);
-
       if (courseData.category) {
         fetchCategory(courseData.category);
       } else {
@@ -106,16 +103,20 @@ const CoursePlayer = () => {
       }
       fetchRelatedCourses(courseData.id);
 
-      // ✅ 2. FORMAT SECTIONS WITH REAL BACKEND DATA
+      // Load persistent progress from Server API & localStorage
+      const savedProgress = await syncProgressWithServer(user?.id, courseData.id);
+
+      // Format sections with saved completion state
       const formattedSections: Section[] = courseData?.sections?.map(
         (section: any) => ({
           id: section.id || section._id,
           title: section.sectionName || section.title,
           lessons: section.lessons?.map((lesson: any) => {
             const lessonId = lesson.id || lesson._id;
-            // ✅ Sirf Backend se aaye hue completedLessons ko use karo
-            const isCompleted = !!savedProgress.completedLessons[lessonId];
-            const isQuizCompleted = !!savedProgress.completedQuizzes[lessonId];
+            const isCompleted =
+              !!savedProgress.completedLessons[lessonId] || !!lesson.completed;
+            const isQuizCompleted =
+              !!savedProgress.completedQuizzes[lessonId] || !!lesson.quizCompleted;
 
             return {
               id: lessonId,
@@ -124,8 +125,8 @@ const CoursePlayer = () => {
               duration: lesson.timeDuration || lesson.duration,
               videoUrl: lesson.videoUrl,
               pdfUrl: lesson.pdfUrl,
-              completed: isCompleted, // <-- BACKEND DATA SE SET KARO
-              quizCompleted: isQuizCompleted, // <-- BACKEND DATA SE SET KARO
+              completed: isCompleted,
+              quizCompleted: isQuizCompleted,
               quizzes: lesson.quizzes?.map((quiz: any) => ({
                 id: quiz.id || quiz._id,
                 question: quiz.question,
@@ -141,14 +142,50 @@ const CoursePlayer = () => {
 
       setSections(formattedSections);
 
-      // ✅ 3. AUTO EXPAND AND SET CURRENT LECTURE
-      if (formattedSections.length > 0) {
-        setExpandedSections([formattedSections[0].id]);
-        // Pehla incomplete lesson set karo, agar koi ho toh
-        const firstIncomplete = formattedSections.flatMap(s => s.lessons).find(l => !l.completed);
-        if (firstIncomplete) {
-          setCurrentLecture(firstIncomplete);
+      // Find all lessons array
+      const allLessons = formattedSections.flatMap((s) => s.lessons);
+
+      // Determine active lecture to auto-resume:
+      // If last active lesson was completed, move to the NEXT uncompleted lesson
+      let activeLesson: Lesson | null = null;
+
+      if (savedProgress.lastActiveLessonId) {
+        const lastLesson = allLessons.find((l) => l.id === savedProgress.lastActiveLessonId);
+        if (lastLesson) {
+          if (lastLesson.completed) {
+            // Find next uncompleted lesson after last active
+            const lastIdx = allLessons.findIndex((l) => l.id === lastLesson.id);
+            const nextUncompleted = allLessons.slice(lastIdx + 1).find((l) => !l.completed);
+            activeLesson = nextUncompleted || allLessons.find((l) => !l.completed) || lastLesson;
+          } else {
+            activeLesson = lastLesson;
+          }
         }
+      }
+
+      if (!activeLesson && allLessons.length > 0) {
+        // Find first incomplete lesson or default to first
+        activeLesson = allLessons.find((l) => !l.completed) || allLessons[0];
+      }
+
+      if (activeLesson) {
+        setCurrentLecture(activeLesson);
+        // Force lesson video player mode if watching lessons
+        const modeToSet =
+          savedProgress.lastContentMode && savedProgress.lastContentMode !== "about"
+            ? savedProgress.lastContentMode
+            : "lesson";
+        setContentMode(modeToSet);
+
+        // Expand parent section of active lesson
+        const parentSec = formattedSections.find((s) =>
+          s.lessons.some((l) => l.id === activeLesson?.id)
+        );
+        if (parentSec) {
+          setExpandedSections([parentSec.id]);
+        }
+      } else if (formattedSections.length > 0) {
+        setExpandedSections([formattedSections[0].id]);
       }
     } catch (err) {
       console.error("Course fetch error:", err);
@@ -195,84 +232,75 @@ const CoursePlayer = () => {
   };
 
   // Handlers
-  const handleLessonSelect = useCallback((lesson: Lesson) => {
-    setCurrentLecture(lesson);
-    setContentMode("lesson");
-  }, []);
+  const handleLessonSelect = useCallback(
+    (lesson: Lesson) => {
+      setCurrentLecture(lesson);
+      setContentMode("lesson");
+      if (courseId) {
+        saveLastActiveStorage(user?.id, courseId, lesson.id, "lesson");
+      }
+    },
+    [courseId, user?.id]
+  );
 
-  // const handleLessonCompleted = useCallback((lessonId: string) => {
-  //   // ✅ 1. BACKEND MEIN SAVE KARO
-  //   if (courseId) {
-  //     markLessonCompletedStorage(user?.id, courseId, lessonId);
-  //   }
+  const handleLessonCompleted = useCallback(
+    (lessonId: string) => {
+      setSections((prev) =>
+        prev.map((section) => ({
+          ...section,
+          lessons: section.lessons.map((item) =>
+            item.id === lessonId ? { ...item, completed: true } : item
+          ),
+        }))
+      );
 
-  //   // ✅ 2. FRONTEND STATE UPDATE KARO
-  //   setSections((prev) =>
-  //     prev.map((section) => ({
-  //       ...section,
-  //       lessons: section.lessons.map((item) =>
-  //         item.id === lessonId
-  //           ? { ...item, completed: true }
-  //           : item
-  //       ),
-  //     }))
-  //   );
+      setCurrentLecture((prev) =>
+        prev && prev.id === lessonId ? { ...prev, completed: true } : prev
+      );
 
-  //   setCurrentLecture((prev) =>
-  //     prev && prev.id === lessonId
-  //       ? { ...prev, completed: true }
-  //       : prev
-  //   );
-  // }, [courseId, user?.id]);
-  const handleLessonCompleted = useCallback((lessonId: string) => {
-    // ✅ 1. BACKEND MEIN SAVE KARO (Ye line missing thi)
-    if (courseId) {
-      markLessonCompletedStorage(user?.id, courseId, lessonId);
-    }
+      if (courseId) {
+        markLessonCompletedStorage(user?.id, courseId, lessonId);
+      }
+    },
+    [courseId, user?.id]
+  );
 
-    // ✅ 2. FRONTEND STATE UPDATE KARO
-    setSections((prev) =>
-      prev.map((section) => ({
-        ...section,
-        lessons: section.lessons.map((item) =>
-          item.id === lessonId
-            ? { ...item, completed: true }
-            : item
-        ),
-      }))
-    );
+  const handleQuizSelect = useCallback(
+    (lesson: Lesson) => {
+      setCurrentLecture(lesson);
+      setContentMode("quiz");
+      if (courseId) {
+        saveLastActiveStorage(user?.id, courseId, lesson.id, "quiz");
+      }
+    },
+    [courseId, user?.id]
+  );
 
-    setCurrentLecture((prev) =>
-      prev && prev.id === lessonId
-        ? { ...prev, completed: true }
-        : prev
-    );
-  }, [courseId, user?.id]);
-  const handleQuizSelect = useCallback((lesson: Lesson) => {
-    setCurrentLecture(lesson);
-    setContentMode("quiz");
-  }, []);
+  const handleQuizCompleted = useCallback(
+    (lessonId: string) => {
+      setSections((prev) =>
+        prev.map((section) => ({
+          ...section,
+          lessons: section.lessons.map((item) =>
+            item.id === lessonId
+              ? { ...item, quizCompleted: true, completed: true }
+              : item
+          ),
+        }))
+      );
 
-  const handleQuizCompleted = useCallback((lessonId: string) => {
-    setSections((prev) =>
-      prev.map((section) => ({
-        ...section,
-        lessons: section.lessons.map((item) =>
-          item.id === lessonId
-            ? { ...item, quizCompleted: true, completed: true }
-            : item
-        ),
-      }))
-    );
+      setCurrentLecture((prev) =>
+        prev && prev.id === lessonId
+          ? { ...prev, quizCompleted: true, completed: true }
+          : prev
+      );
 
-    setCurrentLecture((prev) =>
-      prev && prev.id === lessonId
-        ? { ...prev, quizCompleted: true, completed: true }
-        : prev
-    );
-
-    // Stay on quiz page - user clicks "Continue" to go back
-  }, []);
+      if (courseId) {
+        markQuizCompletedStorage(user?.id, courseId, lessonId);
+      }
+    },
+    [courseId, user?.id]
+  );
 
   const handleAboutSelect = useCallback(() => {
     setContentMode("about");
@@ -280,62 +308,99 @@ const CoursePlayer = () => {
 
   const handleFinalAssessment = useCallback(() => {
     setContentMode("finalAssessment");
-  }, []);
+    if (courseId && currentLecture) {
+      saveLastActiveStorage(user?.id, courseId, currentLecture.id, "finalAssessment");
+    }
+  }, [courseId, currentLecture, user?.id]);
 
   const videoLessons = sections
     .flatMap((section) => section.lessons)
     .filter((lesson) => lesson.videoUrl);
 
-  const currentLessonIndex = videoLessons.findIndex(
-    (lesson) => lesson.id === currentLecture?.id
-  );
+  const currentLessonIndex =
+    videoLessons.findIndex(
+      (lesson) =>
+        lesson.id === currentLecture?.id
+    );
 
-  const handleNextLesson = useCallback(() => {
-    const nextLesson = videoLessons[currentLessonIndex + 1];
+  const handleNextLesson =
+    useCallback(() => {
+      const nextLesson =
+        videoLessons[
+        currentLessonIndex + 1
+        ];
 
-    if (nextLesson) {
-      const parentSection = sections.find((section) =>
-        section.lessons.some((lesson) => lesson.id === nextLesson.id)
-      );
+      if (nextLesson) {
 
-      if (parentSection) {
-        setExpandedSections([parentSection.id]);
+        const parentSection =
+          sections.find((section) =>
+            section.lessons.some(
+              (lesson) =>
+                lesson.id === nextLesson.id
+            )
+          );
+
+        if (parentSection) {
+          setExpandedSections([
+            parentSection.id
+          ]);
+        }
+
+        handleLessonSelect(
+          nextLesson
+        );
       }
+    }, [
+      videoLessons,
+      currentLessonIndex,
+      handleLessonSelect,
+    ]);
 
-      handleLessonSelect(nextLesson);
-    }
-  }, [videoLessons, currentLessonIndex, handleLessonSelect, sections]);
+  const handlePreviousLesson =
+    useCallback(() => {
+      const previousLesson =
+        videoLessons[
+        currentLessonIndex - 1
+        ];
 
-  const handlePreviousLesson = useCallback(() => {
-    const previousLesson = videoLessons[currentLessonIndex - 1];
+      if (previousLesson) {
 
-    if (previousLesson) {
-      const parentSection = sections.find((section) =>
-        section.lessons.some((lesson) => lesson.id === previousLesson.id)
-      );
+        const parentSection =
+          sections.find((section) =>
+            section.lessons.some(
+              (lesson) =>
+                lesson.id === previousLesson.id
+            )
+          );
 
-      if (parentSection) {
-        setExpandedSections([parentSection.id]);
+        if (parentSection) {
+          setExpandedSections([
+            parentSection.id
+          ]);
+        }
+
+        handleLessonSelect(
+          previousLesson
+        );
       }
+    }, [
+      videoLessons,
+      currentLessonIndex,
+      handleLessonSelect,
+    ]);
+const fetchCategory = async (categoryId: string) => {
+  console.log("courseData", course);
+  try {
+    const res = await api.get(`/api/course-category/${categoryId}`);
 
-      handleLessonSelect(previousLesson);
+    if (res.data?.success) {
+      setCategoryName(res.data.data.name);
     }
-  }, [videoLessons, currentLessonIndex, handleLessonSelect, sections]);
-
-  const fetchCategory = async (categoryId: string) => {
-    console.log("courseData", course);
-    try {
-      const res = await api.get(`/api/course-category/${categoryId}`);
-
-      if (res.data?.success) {
-        setCategoryName(res.data.data.name);
-      }
-      console.log("Category API:", res.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
+    console.log("Category API:", res.data);
+  } catch (error) {
+    console.error(error);
+  }
+};
   // Loading State
   if (loading) {
     return (
@@ -397,13 +462,16 @@ const CoursePlayer = () => {
           course={course}
           lecture={currentLecture}
           relatedCourses={relatedCourses}
-          categoryName={categoryName}
+           categoryName={categoryName}
           onQuizCompleted={handleQuizCompleted}
           onLessonCompleted={handleLessonCompleted}
+
           sections={sections}
           currentLecture={currentLecture}
+
           expandedSections={expandedSections}
           setExpandedSections={setExpandedSections}
+
           onLessonSelect={handleLessonSelect}
           onQuizSelect={handleQuizSelect}
           onFinalAssessmentSelect={handleFinalAssessment}
