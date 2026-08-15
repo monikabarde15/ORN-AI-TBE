@@ -82,6 +82,33 @@ async function generateCandidateCode() {
   return `ORN-AI-C-${String(nextNumber).padStart(3, "0")}`;
 }
 
+function buildCandidateSearchFilters(search: string) {
+  const terms = search.trim().split(/\s+/).filter(Boolean);
+  if (!terms.length) return [];
+
+  return terms.map((term) => {
+    const pattern = `%${term}%`;
+    return sql`(
+      ${candidatesTable.fullName} ILIKE ${pattern}
+      OR ${candidatesTable.email} ILIKE ${pattern}
+      OR ${candidatesTable.targetRole} ILIKE ${pattern}
+      OR EXISTS (
+        SELECT 1 FROM users u
+        WHERE (
+          u.candidate_id = ${candidatesTable.id}
+          OR lower(u.email) = lower(${candidatesTable.email})
+        )
+        AND (
+          u.full_name ILIKE ${pattern}
+          OR u.first_name ILIKE ${pattern}
+          OR u.last_name ILIKE ${pattern}
+          OR CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name) ILIKE ${pattern}
+        )
+      )
+    )`;
+  });
+}
+
 router.get("/candidates", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
   const parsed = ListCandidatesQueryParams.safeParse(req.query);
   if (!parsed.success) {
@@ -99,10 +126,7 @@ router.get("/candidates", requireAuth, requireRole("recruiter", "admin"), async 
   if (typeof f.experienceMax === "number")
     filters.push(lte(candidatesTable.yearsExperience, f.experienceMax));
   if (f.search) {
-    const pattern = `%${f.search}%`;
-    filters.push(
-      sql`(${candidatesTable.fullName} ILIKE ${pattern} OR ${candidatesTable.email} ILIKE ${pattern} OR ${candidatesTable.targetRole} ILIKE ${pattern})`,
-    );
+    filters.push(...buildCandidateSearchFilters(f.search));
   }
   if (typeof f.minReadiness === "number") {
     filters.push(
