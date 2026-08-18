@@ -71,6 +71,7 @@ import { MCQAdminPanel } from "./pages/MCQAdminPanel";
 import CandidateMaskedCV from "@/pages/CandidateMaskedCV";
 import ChangePassword from "@/pages/ChangePassword";
 import Profile from "@/pages/Profile";
+import AdminAssignments from "@/pages/AdminAssignments";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -148,6 +149,11 @@ function Router() {
 
       <Route path="/recruiter/test-assignment"><MCQExamPortal /></Route>
       <Route path="/admin-test-assignment" component={MCQAdminPanel}/>
+      <Route path="/admin/assignments">
+        <ProtectedRoute roles={["recruiter", "admin"]}>
+          <AdminAssignments />
+        </ProtectedRoute>
+      </Route>
 
 
       <Route path="/recruiter/add">

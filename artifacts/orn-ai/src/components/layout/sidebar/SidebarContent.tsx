@@ -275,6 +275,17 @@ export default function SidebarContent({
                       )}
                     >
                       <UserPlus className="size-4" />
+                      Assessment
+                    </Link>
+
+                    <Link
+                      href="/admin/assignments"
+                      onClick={onNavigate}
+                      className={linkClass(
+                        location === "/admin/assignments" 
+                      )}
+                    >
+                      <UserPlus className="size-4" />
                       Assignment
                     </Link>
                   {/* )} */}
