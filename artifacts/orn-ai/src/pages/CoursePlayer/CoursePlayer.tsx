@@ -144,15 +144,10 @@ const CoursePlayer = () => {
         sections: formattedSections,
       });
 
-      // Filter out assessment sections from the visible syllabus sidebar and progress calculations
+      // Filter out quiz-only (assessment) sections from the visible syllabus sidebar and progress calculations
       const visibleSections = formattedSections.filter((section: any) => {
-        const name = (section.title || section.sectionName || "").toLowerCase();
-        return !(
-          name.includes("assessment") ||
-          name.includes("final") ||
-          name.includes("exam") ||
-          name.includes("assignment")
-        );
+        // A section is visible in the syllabus if it contains at least one lesson with video or PDF content
+        return section.lessons?.some((lesson: any) => lesson.videoUrl || lesson.pdfUrl);
       });
 
       setSections(visibleSections);

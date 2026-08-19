@@ -32,8 +32,8 @@ export function HeroSection() {
               transition={{ delay: 0.2, duration: 1 }}
               className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight"
             >
-             ORN-AI bridges Europe’s talent gap with {" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8358ff] to-[#39c6fa]">
+              ORN-AI bridges Europe’s talent gap with {" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#6E56CF] via-[#8E75F0] to-[#A48FFF]">
                  deployment-ready workforce capability.
               </span>
             </motion.h1>
@@ -54,9 +54,9 @@ export function HeroSection() {
             >
             <a href="/register">
               <motion.button
-                whileHover={{ scale: 1.05, backgroundColor: "rgb(23 13 62)" }}
+                whileHover={{ scale: 1.05, backgroundColor: "#2B234B" }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center px-8 py-3 bg-[#2e254d]  text-white font-bold rounded-xl shadow-lg transition-all group text-lg"
+                className="flex items-center px-8 py-3 bg-[#17122A] text-white font-bold rounded-xl shadow-lg transition-all group text-lg"
               >
                 Signup Now
                 <span className="ml-2 group-hover:translate-x-1 transition-transform text-xl">
@@ -116,7 +116,7 @@ export function HeroSection() {
                 duration: 3,
                 ease: "easeInOut",
               }}
-              className="absolute top-8 -left-4 p-4 bg-[#2e254d] bg-opacity-90 backdrop-blur-lg border border-primary/20 rounded-lg shadow-xl"
+              className="absolute top-8 -left-4 p-4 bg-[#17122A] bg-opacity-90 backdrop-blur-lg border border-primary/20 rounded-lg shadow-xl"
             >
             
               {/*<div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#8358ff] to-[#39c6fa]">
@@ -137,7 +137,7 @@ export function HeroSection() {
                 ease: "easeInOut",
                 delay: 1,
               }}
-              className="absolute bottom-8 -right-4 p-4 bg-[#2e254d] bg-opacity-90 backdrop-blur-lg border border-secondary/20 rounded-lg shadow-xl"
+              className="absolute bottom-8 -right-4 p-4 bg-[#17122A] bg-opacity-90 backdrop-blur-lg border border-secondary/20 rounded-lg shadow-xl"
             >
               <div className="flex gap-1 mb-1">
                 {[...Array(5)].map((_, i) => (

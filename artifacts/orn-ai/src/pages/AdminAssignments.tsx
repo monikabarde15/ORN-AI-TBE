@@ -106,25 +106,24 @@ export default function AdminAssignments() {
       
       let targetSubId = null;
 
-      // 1. Check if there is an assessment-related section (search in reverse to prioritize bottom sections)
+      // 1. Try to find an existing quiz-only section (no lessons with video or PDF)
       let targetSection = null;
       for (let i = sections.length - 1; i >= 0; i--) {
         const sec = sections[i];
-        const name = (sec.sectionName || "").toLowerCase();
-        if (
-          name.includes("assessment") ||
-          name.includes("final") ||
-          name.includes("exam") ||
-          name.includes("assignment")
-        ) {
+        const lessons = sec.lessons || [];
+        const hasLearningContent = lessons.some((l: any) => l.videoUrl || l.pdfUrl);
+        // If the section exists and has no videos/PDFs, it is our quiz/assessment section
+        if (!hasLearningContent && lessons.length > 0) {
           targetSection = sec;
           break;
         }
       }
 
-      // 2. Default to the last section if no keyword match is found
-      if (!targetSection && sections.length > 0) {
-        targetSection = sections[sections.length - 1];
+      // 2. If no quiz-only section found, check if there's any section named exactly "Final Assessment"
+      if (!targetSection) {
+        targetSection = sections.find(
+          (sec: any) => (sec.sectionName || "").toLowerCase() === "final assessment"
+        );
       }
 
       // 3. Resolve the target subsection (lesson) within that section
@@ -144,9 +143,9 @@ export default function AdminAssignments() {
           targetSubId = subRes.data.data.subSection[0]._id;
         }
       } else {
-        // 4. If the course has no sections at all, create an Assessment section and then a subsection
+        // 4. Create a new "Final Assessment" section and then a subsection
         const secRes = await api.post("/api/course/addSection", {
-          sectionName: "Assessment",
+          sectionName: "Final Assessment",
           courseId: selectedCourseId,
         });
         const newSecId = secRes.data.updatedCourse.courseContent[0]._id;

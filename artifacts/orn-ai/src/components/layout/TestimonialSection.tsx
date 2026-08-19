@@ -1,222 +1,350 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+﻿import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 
-const testimonials = [
-  {
-    quote: "I recently completed the 21-day learning module, and I must say, it exceeded my expectations! The course materials were detailed and easy to follow, and the self-practice labs allowed me to gain hands-on experience at my own pace. The Red Hat Linux High-Availability Cluster Lab was particularly impressive—it gave me the confidence to handle real-world scenarios.",
-    author: "Abhinav R.",
-    role: "Los Angeles, CA",
-    rating: 5,
-    company: "Tech Solutions Inc"
-  },
-  {
-    quote: "The training was exceptionally well-organized. I loved how every concept came with a real-world example. The WebSSH-based remote lab access made it easy for me to practice from anywhere in the world—even during my travel.",
-    author: "Nandini M.",
-    role: "Toronto, Canada",
-    rating: 5,
-    company: "Global IT Networks"
-  },
-  {
-    quote: "As someone shifting my career into Linux and Cloud, ORN-AI gave me exactly what I needed. The CV writing support and mock interviews helped me secure my first job abroad!.",
-    author: "Rahul S",
-    role: "Bangalore, India",
-    rating: 5,
-    company: "SysCloud Solutions"
-  },
-  {
-    quote: "The hands- Red Hat cluster lab was the best part. I could recreate failures, test fencing, and understand HA concepts deeply. No other platform has given me such realistic exposure.",
-    author: "Kimberly J.",
-    role: "Melbourne, Australia",
-    rating: 5,
-    company: "AeroTech Digital"
-  },
-  {
-    quote: "Very clean explanation style and detailed guidance! The instructors were always available and answered every doubt with clarity. The real-time troubleshooting sessions were a game changer.",
-    author: "Lisa Anderson",
-    role: "VP Marketing",
-    rating: 5,
-    company: "RetailCo"
-  },
-  {
-    quote: "The best marketing agency we've ever worked with. Professional, creative, and most importantly - they get results. Their data-driven approach has transformed our business.",
-    author: "James Wilson",
-    role: "Director",
-    rating: 5,
-    company: "MediaGroup"
-  },
-  {
-    quote: "Outstanding platform for continuous learning. The hands-on labs and real-world scenarios have significantly improved my technical skills. I feel much more confident in my abilities now.",
-    author: "Priya Sharma",
-    role: "DevOps Engineer",
-    rating: 5,
-    company: "CloudTech"
-  },
-  {
-    quote: "The customer support is phenomenal. Every question was answered promptly and the team went above and beyond to ensure our success. Highly recommend to anyone serious about growth.",
-    author: "Robert Chang",
-    role: "Product Manager",
-    rating: 5,
-    company: "InnovateCorp"
-  }
+interface Testimonial {
+  id: string | number;
+  author: string;
+  role: string;
+  company?: string;
+  initials: string;
+  quote: string;
+  rating: number;
+}
+
+const testimonialSets: Testimonial[][] = [
+  // Set 1 (Featured + 3 grid cards)
+  [
+    {
+      id: "set1-1",
+      author: "Alex Rivera",
+      role: "AI Systems Architect",
+      company: "Apex Global",
+      initials: "AR",
+      rating: 5,
+      quote:
+        "The specialized conditioning pipeline transformed my understanding of model deployment. In just four months, I bridged the gap from theoretical knowledge to building enterprise-grade LLM architectures that our engineering lead approved on first review.",
+    },
+    {
+      id: "set1-2",
+      author: "Nikita Miller",
+      role: "Machine Learning Engineer",
+      company: "DataVantage",
+      initials: "NM",
+      rating: 5,
+      quote:
+        "The curriculum was practical, modern, and aligned with Tier-1 European tech standards. The hands-on project labs gave me the exact confidence needed for senior technical interviews.",
+    },
+    {
+      id: "set1-3",
+      author: "Rohan Sharma",
+      role: "Cyber Security Analyst",
+      company: "FortressNet",
+      initials: "RS",
+      rating: 5,
+      quote:
+        "The Linux WebSSH simulation labs and ISCSI environment practice were unmatched. It felt like handling a real production incident on day one.",
+    },
+    {
+      id: "set1-4",
+      author: "Sophia Kowalska",
+      role: "Full-Stack Engineer",
+      company: "CloudScale Europe",
+      initials: "SK",
+      rating: 5,
+      quote:
+        "ORN-AI helped me standardize my technical signal and clear interviews across 3 EU jurisdictions. The mentor guidance and video resume coaching were invaluable.",
+    },
+  ],
+  // Set 2 (Rotated Featured + 3 grid cards)
+  [
+    {
+      id: "set2-1",
+      author: "Dmitri Volkov",
+      role: "Senior DevOps Engineer",
+      company: "ScaleGrid Europe",
+      initials: "DV",
+      rating: 5,
+      quote:
+        "Transitioning from legacy infrastructure to cloud automation felt seamless. The hands-on containerization and CI/CD pipelines mirror production architectures at Tier-1 tech giants.",
+    },
+    {
+      id: "set2-2",
+      author: "Elena Popova",
+      role: "Data & BI Specialist",
+      company: "InsightTech",
+      initials: "EP",
+      rating: 5,
+      quote:
+        "The statistical depth, interactive visualization projects, and real enterprise datasets pushed my problem-solving ability to an executive level.",
+    },
+    {
+      id: "set2-3",
+      author: "Mateusz Nowak",
+      role: "Security Operations Specialist",
+      company: "SecureCore",
+      initials: "MN",
+      rating: 5,
+      quote:
+        "The zero-trust simulation modules and vulnerability assessment capstones were decisive in landing my offer at a Berlin-based fintech firm.",
+    },
+    {
+      id: "set2-4",
+      author: "Klara Varga",
+      role: "Cloud Infrastructure Architect",
+      company: "Nordic AI Labs",
+      initials: "KV",
+      rating: 5,
+      quote:
+        "Structured scoring gave recruiters confidence in my profile before the first screening call. It cut my job search from 5 months to 3 weeks.",
+    },
+  ],
 ];
 
-function QuoteIcon() {
+function LargeQuoteIcon({ className = "" }: { className?: string }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <g>
-        <path d="M6 19c.4-3.7 1.88-7.03 6-9V7a4 4 0 1 0-4 4" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M17 19c.4-3.7 1.88-7.03 6-9V7a4 4 0 1 0-4 4" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
-      </g>
+    <svg
+      className={`w-10 h-10 ${className}`}
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
     </svg>
   );
 }
 
-const Testimonials = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
+export function Testimonials() {
+  const [currentSetIndex, setCurrentSetIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const totalSets = testimonialSets.length;
 
-  const itemsPerPage = 3;
-  const totalPages = Math.ceil(testimonials.length / itemsPerPage);
+  useEffect(() => {
+    if (isPaused) return;
 
-  const handleNext = () => {
-    setDirection(1);
-    setCurrentIndex((prev) => (prev + 1) % totalPages);
-  };
+    const interval = setInterval(() => {
+      setCurrentSetIndex((prev) => (prev + 1) % totalSets);
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, [isPaused, totalSets]);
 
   const handlePrev = () => {
-    setDirection(-1);
-    setCurrentIndex((prev) => (prev - 1 + totalPages) % totalPages);
+    setCurrentSetIndex((prev) => (prev - 1 + totalSets) % totalSets);
   };
 
-  const currentTestimonials = testimonials.slice(
-    currentIndex * itemsPerPage,
-    (currentIndex + 1) * itemsPerPage
-  );
-
-  const slideVariants = {
-    enter: (direction) => ({
-      x: direction > 0 ? 1000 : -1000,
-      opacity: 0
-    }),
-    center: {
-      x: 0,
-      opacity: 1
-    },
-    exit: (direction) => ({
-      x: direction < 0 ? 1000 : -1000,
-      opacity: 0
-    })
+  const handleNext = () => {
+    setCurrentSetIndex((prev) => (prev + 1) % totalSets);
   };
+
+  const currentSet = testimonialSets[currentSetIndex];
+  const featuredTestimonial = currentSet[0];
+  const secondaryTestimonial = currentSet[1];
+  const bottomTestimonial1 = currentSet[2];
+  const bottomTestimonial2 = currentSet[3];
 
   return (
-    <section className="py-20 px-4 bg-white">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <span className="text-purple-400 text-sm font-semibold tracking-wider uppercase">
-           Real Stories
+    <section className="w-full bg-[#f9f9f9] text-[#1a1c1c] overflow-hidden selection:bg-[#17122A] selection:text-white">
+      {/* Header Section (#17122A Theme) */}
+      <div className="bg-[#17122A] text-white w-full py-16 md:py-20 px-6 md:px-12 text-center flex flex-col items-center justify-center relative overflow-hidden">
+        {/* Subtle geometric blueprint grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.035] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+          }}
+        />
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          viewport={{ once: false, amount: 0.3 }}
+          className="relative z-10 max-w-3xl mx-auto"
+        >
+          <span className="font-mono text-xs text-[#A48FFF] uppercase tracking-widest block mb-3 font-semibold">
+            Real Stories
           </span>
-          <h2 className="text-4xl md:text-5xl font-bold text-black mt-4 mb-4">
-            What Our  <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Learners Say</span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-bold text-white tracking-tight mb-4 leading-tight">
+            What Our Learners Say
           </h2>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-white/80 max-w-2xl mx-auto leading-relaxed font-normal">
             Honest experiences from students who transformed their careers with ORN-AI.
           </p>
-        </div>
+        </motion.div>
+      </div>
 
-        <div className="relative">
-          {/* Navigation Arrows */}
-          <div className="flex items-center justify-center gap-4 mb-8">
-            <button
-              onClick={handlePrev}
-              className="bg-black hover:bg-gray-800 text-white p-3 rounded-full transition-all duration-300 border border-gray-700 hover:border-purple-500"
-              aria-label="Previous testimonials"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <button
-              onClick={handleNext}
-              className="bg-black hover:bg-gray-800 text-white p-3 rounded-full transition-all duration-300 border border-gray-700 hover:border-purple-500"
-              aria-label="Next testimonials"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-          </div>
+      {/* Bento Grid Area with Smooth Disappear / Reappear Cycling */}
+      <div
+        className="max-w-[1400px] mx-auto w-full px-6 md:px-12 lg:px-16 py-16 md:py-20"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentSetIndex}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.98 }}
+            transition={{ duration: 0.6, ease: "easeInOut" }}
+            className="grid grid-cols-1 md:grid-cols-12 gap-6"
+          >
+            {/* Top Row: Large Featured Dark #17122A Card (8 cols) */}
+            <div className="md:col-span-8 bg-[#17122A] text-white rounded-2xl p-8 md:p-12 shadow-md border border-white/10 flex flex-col justify-between relative overflow-hidden group">
+              {/* Subtle background ambient glow */}
+              <div className="absolute top-0 right-0 w-80 h-80 bg-[#6E56CF]/20 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-700" />
 
-          {/* Testimonials Grid */}
-          <div className="overflow-hidden">
-            <AnimatePresence initial={false} custom={direction} mode="wait">
-              <motion.div
-                key={currentIndex}
-                custom={direction}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{
-                  x: { type: "spring", stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.2 }
-                }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {currentTestimonials.map((t, i) => (
-                  <div
-                    key={`${currentIndex}-${i}`}
-                    className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 border border-gray-700 hover:border-purple-500 transition-all duration-300 flex flex-col"
-                  >
-                    <div className="mb-4">
-                      <QuoteIcon />
-                    </div>
-                    <div className="flex mb-4">
-                      {Array.from({ length: t.rating }).map((_, idx) => (
-                        <span key={idx} className="text-yellow-400 text-xl">★</span>
-                      ))}
-                    </div>
-                    <blockquote className="text-gray-300 text-base leading-relaxed mb-6 flex-grow">
-                      "{t.quote}"
-                    </blockquote>
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
-                        {t.author.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <div>
-                        <div className="text-white font-semibold">{t.author}</div>
-                        <div className="text-gray-400 text-sm">
-                          {t.role} {t.company && `at ${t.company}`}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </motion.div>
-            </AnimatePresence>
-          </div>
+              <div className="relative z-10">
+                {/* Quote Icon */}
+                <LargeQuoteIcon className="text-[#6E56CF] mb-5 opacity-90" />
 
-          {/* Pagination Dots */}
-          <div className="flex justify-center gap-2 mt-8">
-            {Array.from({ length: totalPages }).map((_, idx) => (
+                {/* 5 Stars */}
+                <div className="flex items-center gap-1 mb-6 text-[#6E56CF]">
+                  {Array.from({ length: featuredTestimonial.rating }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className="w-4 h-4 fill-[#6E56CF] text-[#6E56CF]"
+                    />
+                  ))}
+                </div>
+
+                {/* Quote Text */}
+                <p className="text-base sm:text-lg md:text-[19px] text-white/95 leading-relaxed font-normal mb-8">
+                  "{featuredTestimonial.quote}"
+                </p>
+              </div>
+
+              {/* Author Info */}
+              <div className="flex items-center gap-4 relative z-10 pt-4 border-t border-white/10 mt-auto">
+                <div className="w-12 h-12 rounded-full bg-[#6E56CF] flex items-center justify-center font-bold text-base text-white shadow-md">
+                  {featuredTestimonial.initials}
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-white tracking-tight">
+                    {featuredTestimonial.author}
+                  </h4>
+                  <p className="text-sm text-[#A48FFF]">
+                    {featuredTestimonial.role}
+                    {featuredTestimonial.company && ` at ${featuredTestimonial.company}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Row: Medium White Card (4 cols) */}
+            <div className="md:col-span-4 bg-white border border-[#E2E8F0] rounded-2xl p-8 shadow-sm flex flex-col justify-between hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300">
+              <div>
+                <LargeQuoteIcon className="text-[#74777f]/60 mb-5" />
+                <p className="text-sm sm:text-base text-[#43474e] leading-relaxed mb-6 font-normal">
+                  "{secondaryTestimonial.quote}"
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3.5 pt-6 border-t border-[#E2E8F0] mt-auto">
+                <div className="w-10 h-10 rounded-full bg-[#f3f3f4] border border-[#E2E8F0] flex items-center justify-center font-bold text-sm text-[#17122A]">
+                  {secondaryTestimonial.initials}
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-[#17122A]">
+                    {secondaryTestimonial.author}
+                  </h4>
+                  <p className="text-xs text-[#43474e]">
+                    {secondaryTestimonial.role}
+                    {secondaryTestimonial.company && ` at ${secondaryTestimonial.company}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Row: Left Small Card (6 cols) */}
+            <div className="md:col-span-6 bg-white border border-[#E2E8F0] rounded-2xl p-8 shadow-sm flex flex-col justify-between hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300">
+              <div>
+                <LargeQuoteIcon className="text-[#74777f]/60 mb-5" />
+                <p className="text-sm sm:text-base text-[#43474e] leading-relaxed mb-6 font-normal">
+                  "{bottomTestimonial1.quote}"
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3.5 pt-6 border-t border-[#E2E8F0] mt-auto">
+                <div className="w-10 h-10 rounded-full bg-[#f3f3f4] border border-[#E2E8F0] flex items-center justify-center font-bold text-sm text-[#17122A]">
+                  {bottomTestimonial1.initials}
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-[#17122A]">
+                    {bottomTestimonial1.author}
+                  </h4>
+                  <p className="text-xs text-[#43474e]">
+                    {bottomTestimonial1.role}
+                    {bottomTestimonial1.company && ` at ${bottomTestimonial1.company}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Row: Right Small Card (6 cols) */}
+            <div className="md:col-span-6 bg-white border border-[#E2E8F0] rounded-2xl p-8 shadow-sm flex flex-col justify-between hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300">
+              <div>
+                <LargeQuoteIcon className="text-[#74777f]/60 mb-5" />
+                <p className="text-sm sm:text-base text-[#43474e] leading-relaxed mb-6 font-normal">
+                  "{bottomTestimonial2.quote}"
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3.5 pt-6 border-t border-[#E2E8F0] mt-auto">
+                <div className="w-10 h-10 rounded-full bg-[#f3f3f4] border border-[#E2E8F0] flex items-center justify-center font-bold text-sm text-[#17122A]">
+                  {bottomTestimonial2.initials}
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-[#17122A]">
+                    {bottomTestimonial2.author}
+                  </h4>
+                  <p className="text-xs text-[#43474e]">
+                    {bottomTestimonial2.role}
+                    {bottomTestimonial2.company && ` at ${bottomTestimonial2.company}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Carousel / Set Controls */}
+        <div className="flex items-center justify-center gap-4 mt-12">
+          <button
+            onClick={handlePrev}
+            aria-label="Previous testimonials"
+            className="w-10 h-10 rounded-full border border-[#17122A]/20 flex items-center justify-center text-[#17122A] hover:bg-[#17122A] hover:text-white transition-all duration-200 active:scale-95 shadow-sm"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          <div className="flex items-center gap-2">
+            {testimonialSets.map((_, idx) => (
               <button
                 key={idx}
-                onClick={() => {
-                  setDirection(idx > currentIndex ? 1 : -1);
-                  setCurrentIndex(idx);
-                }}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  idx === currentIndex 
-                    ? 'bg-purple-500 w-8' 
-                    : 'bg-gray-600 hover:bg-gray-500'
+                onClick={() => setCurrentSetIndex(idx)}
+                aria-label={`Go to testimonial group ${idx + 1}`}
+                className={`h-2.5 rounded-full transition-all duration-300 ${
+                  currentSetIndex === idx
+                    ? "bg-[#17122A] w-7"
+                    : "bg-[#17122A]/25 hover:bg-[#17122A]/50 w-2.5"
                 }`}
-                aria-label={`Go to page ${idx + 1}`}
               />
             ))}
           </div>
+
+          <button
+            onClick={handleNext}
+            aria-label="Next testimonials"
+            className="w-10 h-10 rounded-full border border-[#17122A]/20 flex items-center justify-center text-[#17122A] hover:bg-[#17122A] hover:text-white transition-all duration-200 active:scale-95 shadow-sm"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
       </div>
     </section>
   );
-};
+}
 
 export default Testimonials;
