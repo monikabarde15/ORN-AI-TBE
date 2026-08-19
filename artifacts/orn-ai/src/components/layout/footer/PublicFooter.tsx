@@ -47,7 +47,7 @@ export default function PublicFooter() {
                 href={link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-[#1a132b] p-2.5 rounded-lg hover:bg-[#7c4dff] transition-colors"
+                className="bg-[#2B234B] p-2.5 rounded-lg hover:bg-[#6E56CF] transition-colors"
               >
                 <Icon className="w-4 h-4 text-white" />
               </a>

@@ -39,7 +39,7 @@ interface DraftQuestion {
 export default function AdminAssignments() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
-  
+
   // Under-the-hood resolved subsectionId for database compatibility
   const [resolvedSubsectionId, setResolvedSubsectionId] = useState<string | null>(null);
 
@@ -51,7 +51,7 @@ export default function AdminAssignments() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [qType, setQType] = useState<"mcq" | "true_false" | "short_answer">("mcq");
   const [questionText, setQuestionText] = useState("");
-  
+
   // MCQ Options
   const [mcqOptions, setMcqOptions] = useState(["", "", "", ""]);
   const [mcqCorrect, setMcqCorrect] = useState(0);
@@ -140,7 +140,7 @@ export default function AdminAssignments() {
       // 1. Fetch course details to find or create the default subsection
       const res = await api.get(`/api/courses/${selectedCourseId}`);
       const sections = res.data.sections || [];
-      
+
       let targetSubId = null;
 
       // 1. Check if there is an assessment-related section (search in reverse to prioritize bottom sections)
@@ -444,11 +444,11 @@ export default function AdminAssignments() {
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight bg-blue-900 bg-clip-text text-transparent">
               Course Assignment Builder & Database List
-            </h1>
+            </h1 >
             <p className="text-sm text-muted-foreground mt-1">
               Select a course to design, reorder, and publish interactive homework assessments and quizzes.
             </p>
-          </div>
+          </div >
 
           <div className="flex items-center gap-3">
             <select
@@ -458,324 +458,323 @@ export default function AdminAssignments() {
               disabled={loadingCourses}
             >
               <option value="">Choose Course...</option>
-              {courses.map((course: any) => (
-                <option key={course._id || course.id} value={course._id || course.id}>
-                  {course.title}
-                </option>
-              ))}
+              {
+                courses.map((course: any) => (
+                  <option key={course._id || course.id} value={course._id || course.id}>
+                    {course.title}
+                  </option>
+                ))}
             </select>
-          </div>
-        </div>
+          </div >
+        </div >
 
         {/* Loading Overlay */}
-        {loadingAssignment ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-4">
-            <Loader2 className="size-10 animate-spin text-primary" />
-            <p className="text-sm font-medium text-muted-foreground">Loading course structures and quizzes...</p>
-          </div>
-        ) : !selectedCourseId ? (
-          /* Published Assignments Database List View */
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-foreground">Published Course Assignments</h2>
-                <p className="text-sm text-muted-foreground">List of all active assignments in the database</p>
-              </div>
-              <span className="text-xs font-semibold px-3 py-1 bg-primary/10 text-primary rounded-full">
-                {publishedAssignments.length} Assignments in Database
-              </span>
+        {
+          loadingAssignment ? (
+            <div className="flex flex-col items-center justify-center py-32 space-y-4" >
+              <Loader2 className="size-10 animate-spin text-primary" />
+              <p className="text-sm font-medium text-muted-foreground">Loading course structures and quizzes...</p>
             </div>
-
-            {loadingAssignmentsList ? (
-              <div className="flex justify-center py-16"><Loader2 className="size-8 animate-spin text-primary" /></div>
-            ) : publishedAssignments.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 border rounded-2xl border-dashed bg-muted/20">
-                <BookOpen className="size-10 text-muted-foreground mb-3" />
-                <h3 className="font-semibold text-lg">No Assignments Found</h3>
-                <p className="text-sm text-muted-foreground mt-1">Select a course from top dropdown to create your first assignment.</p>
+          ) : !selectedCourseId ? (
+            /* Published Assignments Database List View */
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground">Published Course Assignments</h2>
+                  <p className="text-sm text-muted-foreground">List of all active assignments in the database</p>
+                </div>
+                <span className="text-xs font-semibold px-3 py-1 bg-primary/10 text-primary rounded-full">
+                  {publishedAssignments.length} Assignments in Database
+                </span>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {publishedAssignments.map((asg: any, idx: number) => (
-                  <Card key={asg.id || idx} className="border shadow-sm hover:shadow-md transition-all">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                          <FileText className="size-4" />
+
+              {loadingAssignmentsList ? (
+                <div className="flex justify-center py-16"><Loader2 className="size-8 animate-spin text-primary" /></div>
+              ) : publishedAssignments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 border rounded-2xl border-dashed bg-muted/20">
+                  <BookOpen className="size-10 text-muted-foreground mb-3" />
+                  <h3 className="font-semibold text-lg">No Assignments Found</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Select a course from top dropdown to create your first assignment.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {publishedAssignments.map((asg: any, idx: number) => (
+                    <Card key={asg.id || idx} className="border shadow-sm hover:shadow-md transition-all">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                            <FileText className="size-4" />
+                          </div>
+                          <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700">
+                            {asg.status || "Published"}
+                          </span>
                         </div>
-                        <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700">
-                          {asg.status || "Published"}
-                        </span>
+                        <CardTitle className="text-base font-bold mt-2 line-clamp-1">{asg.title}</CardTitle>
+                        <CardDescription className="text-xs line-clamp-2">
+                          Course: {asg.courseName || "General Course"}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-0 space-y-3">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
+                          <span>Total Marks: {asg.totalMarks || 100}</span>
+                          <span>Pass: {asg.passingMarks || 70}</span>
+                          <span>Level: {asg.difficulty || "Medium"}</span>
+                        </div>
+                        <div className="flex items-center gap-2 pt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 text-xs font-semibold"
+                            onClick={() => handleEditAssignment(asg)}
+                          >
+                            <Edit2 className="size-3.5 mr-1.5" /> Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 px-2.5"
+                            onClick={(e) => handleDeleteAssignment(asg.id, e)}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Main Workspace Split */
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedCourseId("")}
+                  className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+                >
+                  ← Back to All Assignments List
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+                {/* Left side: Question Creator / Editor (7 cols) */}
+                <div className="lg:col-span-7 space-y-6">
+                  <Card className="shadow-md border rounded-2xl overflow-hidden">
+                    <CardHeader className="bg-slate-50/50 border-b">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <CardTitle className="text-lg font-bold">
+                            {editingIndex !== null ? "Edit Question" : "Create Question"}
+                          </CardTitle>
+                          <CardDescription>
+                            Design a multiple-choice question for the assignment.
+                          </CardDescription>
+                        </div>
+                        {editingIndex !== null && (
+                          <Button variant="outline" size="sm" onClick={resetEditor}>
+                            Cancel Edit
+                          </Button>
+                        )}
                       </div>
-                      <CardTitle className="text-base font-bold mt-2 line-clamp-1">{asg.title}</CardTitle>
-                      <CardDescription className="text-xs line-clamp-2">
-                        Course: {asg.courseName || "General Course"}
-                      </CardDescription>
                     </CardHeader>
-                    <CardContent className="pt-0 space-y-3">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
-                        <span>Total Marks: {asg.totalMarks || 100}</span>
-                        <span>Pass: {asg.passingMarks || 70}</span>
-                        <span>Level: {asg.difficulty || "Medium"}</span>
+                    <CardContent className="p-6 space-y-6">
+                      {/* Question Prompt */}
+                      <div className="space-y-2">
+                        <Label htmlFor="qPrompt" className="text-sm font-semibold">Question Prompt</Label>
+                        <Textarea
+                          id="qPrompt"
+                          placeholder="Write your assignment question here..."
+                          value={questionText}
+                          onChange={(e) => setQuestionText(e.target.value)}
+                          className="min-h-[110px] rounded-xl"
+                        />
                       </div>
-                      <div className="flex items-center gap-2 pt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 text-xs font-semibold"
-                          onClick={() => handleEditAssignment(asg)}
-                        >
-                          <Edit2 className="size-3.5 mr-1.5" /> Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 px-2.5"
-                          onClick={(e) => handleDeleteAssignment(asg.id, e)}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
+
+                      {/* MCQ Configurator */}
+                      <div className="space-y-4">
+                        <Label className="text-sm font-semibold">Options & Correct Answer</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {mcqOptions.map((opt, i) => (
+                            <div
+                              key={i}
+                              className={`flex flex-col gap-2 p-4 rounded-xl border transition-all ${mcqCorrect === i
+                                ? "border-emerald-500 bg-emerald-50/20"
+                                : "border-input bg-slate-50/30"
+                                }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-muted-foreground">Option {i + 1}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setMcqCorrect(i)}
+                                  className={`flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-semibold border transition-all ${mcqCorrect === i
+                                    ? "bg-emerald-600 border-emerald-600 text-white"
+                                    : "bg-background border-input text-muted-foreground hover:bg-slate-50"
+                                    }`}
+                                >
+                                  {mcqCorrect === i && <Check className="size-3" />}
+                                  Correct
+                                </button>
+                              </div>
+                              <Input
+                                placeholder={`Option {i + 1} text`}
+                                value={opt}
+                                onChange={(e) => handleOptionChange(i, e.target.value)}
+                                className="bg-background mt-1 rounded-lg"
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
+
+                      {/* Add/Save to List Action */}
+                      <Button
+                        onClick={handleAddOrUpdateQuestion}
+                        className="w-full h-11 rounded-xl font-bold flex items-center justify-center gap-2"
+                      >
+                        {editingIndex !== null ? (
+                          <>
+                            <Check className="size-5" /> Update Question in List
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="size-5" /> Add Question to Assignment
+                          </>
+                        )}
+                      </Button>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Main Workspace Split */
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedCourseId("")}
-                className="text-xs font-semibold text-muted-foreground hover:text-foreground"
-              >
-                ← Back to All Assignments List
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            {/* Left side: Question Creator / Editor (7 cols) */}
-            <div className="lg:col-span-7 space-y-6">
-              <Card className="shadow-md border rounded-2xl overflow-hidden">
-                <CardHeader className="bg-slate-50/50 border-b">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle className="text-lg font-bold">
-                        {editingIndex !== null ? "Edit Question" : "Create Question"}
-                      </CardTitle>
-                      <CardDescription>
-                        Design a multiple-choice question for the assignment.
-                      </CardDescription>
-                    </div>
-                    {editingIndex !== null && (
-                      <Button variant="outline" size="sm" onClick={resetEditor}>
-                        Cancel Edit
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="p-6 space-y-6">
-                  {/* Question Prompt */}
-                  <div className="space-y-2">
-                    <Label htmlFor="qPrompt" className="text-sm font-semibold">Question Prompt</Label>
-                    <Textarea
-                      id="qPrompt"
-                      placeholder="Write your assignment question here..."
-                      value={questionText}
-                      onChange={(e) => setQuestionText(e.target.value)}
-                      className="min-h-[110px] rounded-xl"
-                    />
-                  </div>
+                </div>
 
-                  {/* MCQ Configurator */}
-                  <div className="space-y-4">
-                    <Label className="text-sm font-semibold">Options & Correct Answer</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {mcqOptions.map((opt, i) => (
-                        <div
-                          key={i}
-                          className={`flex flex-col gap-2 p-4 rounded-xl border transition-all ${
-                            mcqCorrect === i
-                              ? "border-emerald-500 bg-emerald-50/20"
-                              : "border-input bg-slate-50/30"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-muted-foreground">Option {i + 1}</span>
-                            <button
-                              type="button"
-                              onClick={() => setMcqCorrect(i)}
-                              className={`flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-semibold border transition-all ${
-                                mcqCorrect === i
-                                  ? "bg-emerald-600 border-emerald-600 text-white"
-                                  : "bg-background border-input text-muted-foreground hover:bg-slate-50"
-                              }`}
-                            >
-                              {mcqCorrect === i && <Check className="size-3" />}
-                              Correct
-                            </button>
-                          </div>
-                          <Input
-                            placeholder={`Option {i + 1} text`}
-                            value={opt}
-                            onChange={(e) => handleOptionChange(i, e.target.value)}
-                            className="bg-background mt-1 rounded-lg"
-                          />
+                {/* Right side: Summary & Publish (5 cols) */}
+                <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-6">
+                  <Card className="shadow-md border rounded-2xl overflow-hidden">
+                    <CardHeader className="bg-slate-50/50 border-b">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <CardTitle className="text-lg font-bold">Assignment Outline</CardTitle>
+                          <CardDescription>
+                            {questionsList.length} Questions Drafted
+                          </CardDescription>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Add/Save to List Action */}
-                  <Button
-                    onClick={handleAddOrUpdateQuestion}
-                    className="w-full h-11 rounded-xl font-bold flex items-center justify-center gap-2"
-                  >
-                    {editingIndex !== null ? (
-                      <>
-                        <Check className="size-5" /> Update Question in List
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="size-5" /> Add Question to Assignment
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right side: Summary & Publish (5 cols) */}
-            <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-6">
-              <Card className="shadow-md border rounded-2xl overflow-hidden">
-                <CardHeader className="bg-slate-50/50 border-b">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle className="text-lg font-bold">Assignment Outline</CardTitle>
-                      <CardDescription>
-                        {questionsList.length} Questions Drafted
-                      </CardDescription>
-                    </div>
-                    {questionsList.length > 0 && (
-                      <Button
-                        onClick={handleSaveAssignment}
-                        disabled={saving}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 px-4 rounded-xl flex items-center gap-1 shadow-sm"
-                      >
-                        {saving ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                          <Check className="size-4" />
+                        {questionsList.length > 0 && (
+                          <Button
+                            onClick={handleSaveAssignment}
+                            disabled={saving}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 px-4 rounded-xl flex items-center gap-1 shadow-sm"
+                          >
+                            {saving ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Check className="size-4" />
+                            )}
+                            Publish
+                          </Button>
                         )}
-                        Publish
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 max-h-[550px] overflow-y-auto divide-y divide-slate-100">
-                  <AnimatePresence initial={false}>
-                    {questionsList.length === 0 ? (
-                      <div className="py-20 text-center text-sm text-muted-foreground flex flex-col items-center justify-center space-y-3">
-                        <HelpCircle className="size-8 text-slate-300" />
-                        <span>No questions added yet. Construct your assignment using the panel on the left.</span>
                       </div>
-                    ) : (
-                      questionsList.map((q, idx) => (
-                        <motion.div
-                          key={q.id || idx}
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="py-4 first:pt-2 last:pb-2 space-y-3"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex gap-2">
-                              <span className="font-bold text-sm text-primary">{idx + 1}.</span>
-                              <div className="space-y-1">
-                                <p className="font-semibold text-sm text-slate-800 break-words leading-relaxed">
-                                  {q.question}
-                                </p>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-700">
-                                  Multiple Choice
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Question control actions */}
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                onClick={() => moveQuestion(idx, "up")}
-                                disabled={idx === 0}
-                                className="p-1 rounded hover:bg-slate-100 text-muted-foreground disabled:opacity-30"
-                                title="Move Up"
-                              >
-                                <ArrowUp className="size-3.5" />
-                              </button>
-                              <button
-                                onClick={() => moveQuestion(idx, "down")}
-                                disabled={idx === questionsList.length - 1}
-                                className="p-1 rounded hover:bg-slate-100 text-muted-foreground disabled:opacity-30"
-                                title="Move Down"
-                              >
-                                <ArrowDown className="size-3.5" />
-                              </button>
-                              <button
-                                onClick={() => loadQuestionIntoEditor(idx)}
-                                className={`p-1.5 rounded hover:bg-blue-50 text-blue-600 transition-colors ${
-                                  editingIndex === idx ? "bg-blue-50" : ""
-                                }`}
-                                title="Edit Question"
-                              >
-                                <Edit2 className="size-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteFromList(idx)}
-                                className="p-1.5 rounded hover:bg-red-50 text-red-600 transition-colors"
-                                title="Delete Question"
-                              >
-                                <Trash2 className="size-3.5" />
-                              </button>
-                            </div>
+                    </CardHeader>
+                    <CardContent className="p-4 max-h-[550px] overflow-y-auto divide-y divide-slate-100">
+                      <AnimatePresence initial={false}>
+                        {questionsList.length === 0 ? (
+                          <div className="py-20 text-center text-sm text-muted-foreground flex flex-col items-center justify-center space-y-3">
+                            <HelpCircle className="size-8 text-slate-300" />
+                            <span>No questions added yet. Construct your assignment using the panel on the left.</span>
                           </div>
-
-                          {/* Preview options */}
-                          <div className="pl-5 space-y-1.5">
-                            {q.options.map((opt, optIdx) => {
-                              const isCorrect = optIdx === q.correctAnswer;
-                              return (
-                                <div
-                                  key={optIdx}
-                                  className={`flex items-center gap-2 text-xs py-1.5 px-3 rounded-lg border ${
-                                    isCorrect
-                                      ? "bg-emerald-50/50 text-emerald-700 border-emerald-100 font-medium"
-                                      : "bg-slate-50/50 text-muted-foreground border-transparent"
-                                  }`}
-                                >
-                                  {isCorrect ? (
-                                    <CheckCircle className="size-3.5 text-emerald-600 shrink-0" />
-                                  ) : (
-                                    <div className="size-3.5 border rounded-full shrink-0" />
-                                  )}
-                                  <span className="break-all">{opt}</span>
+                        ) : (
+                          questionsList.map((q, idx) => (
+                            <motion.div
+                              key={q.id || idx}
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="py-4 first:pt-2 last:pb-2 space-y-3"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex gap-2">
+                                  <span className="font-bold text-sm text-primary">{idx + 1}.</span>
+                                  <div className="space-y-1">
+                                    <p className="font-semibold text-sm text-slate-800 break-words leading-relaxed">
+                                      {q.question}
+                                    </p>
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-700">
+                                      Multiple Choice
+                                    </span>
+                                  </div>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </motion.div>
-                      ))
-                    )}
-                  </AnimatePresence>
-                </CardContent>
-              </Card>
-            </div>
 
-          </div>
-        </div>
-        )}
-      </div>
-    </Shell>
+                                {/* Question control actions */}
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    onClick={() => moveQuestion(idx, "up")}
+                                    disabled={idx === 0}
+                                    className="p-1 rounded hover:bg-slate-100 text-muted-foreground disabled:opacity-30"
+                                    title="Move Up"
+                                  >
+                                    <ArrowUp className="size-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => moveQuestion(idx, "down")}
+                                    disabled={idx === questionsList.length - 1}
+                                    className="p-1 rounded hover:bg-slate-100 text-muted-foreground disabled:opacity-30"
+                                    title="Move Down"
+                                  >
+                                    <ArrowDown className="size-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => loadQuestionIntoEditor(idx)}
+                                    className={`p-1.5 rounded hover:bg-blue-50 text-blue-600 transition-colors ${editingIndex === idx ? "bg-blue-50" : ""
+                                      }`}
+                                    title="Edit Question"
+                                  >
+                                    <Edit2 className="size-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteFromList(idx)}
+                                    className="p-1.5 rounded hover:bg-red-50 text-red-600 transition-colors"
+                                    title="Delete Question"
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Preview options */}
+                              <div className="pl-5 space-y-1.5">
+                                {q.options.map((opt, optIdx) => {
+                                  const isCorrect = optIdx === q.correctAnswer;
+                                  return (
+                                    <div
+                                      key={optIdx}
+                                      className={`flex items-center gap-2 text-xs py-1.5 px-3 rounded-lg border ${isCorrect
+                                        ? "bg-emerald-50/50 text-emerald-700 border-emerald-100 font-medium"
+                                        : "bg-slate-50/50 text-muted-foreground border-transparent"
+                                        }`}
+                                    >
+                                      {isCorrect ? (
+                                        <CheckCircle className="size-3.5 text-emerald-600 shrink-0" />
+                                      ) : (
+                                        <div className="size-3.5 border rounded-full shrink-0" />
+                                      )}
+                                      <span className="break-all">{opt}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </motion.div>
+                          ))
+                        )}
+                      </AnimatePresence>
+                    </CardContent>
+                  </Card>
+                </div>
+
+              </div>
+            </div >
+          )
+        }
+      </div >
+    </Shell >
   );
 }

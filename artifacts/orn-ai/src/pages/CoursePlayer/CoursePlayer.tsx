@@ -423,19 +423,19 @@ const CoursePlayer = () => {
       currentLessonIndex,
       handleLessonSelect,
     ]);
-const fetchCategory = async (categoryId: string) => {
-  console.log("courseData", course);
-  try {
-    const res = await api.get(`/api/course-category/${categoryId}`);
+  const fetchCategory = async (categoryId: string) => {
+    console.log("courseData", course);
+    try {
+      const res = await api.get(`/api/course-category/${categoryId}`);
 
-    if (res.data?.success) {
-      setCategoryName(res.data.data.name);
+      if (res.data?.success) {
+        setCategoryName(res.data.data.name);
+      }
+      console.log("Category API:", res.data);
+    } catch (error) {
+      console.error(error);
     }
-    console.log("Category API:", res.data);
-  } catch (error) {
-    console.error(error);
-  }
-};
+  };
   // Loading State
   if (loading) {
     return (
@@ -497,7 +497,7 @@ const fetchCategory = async (categoryId: string) => {
           course={course}
           lecture={currentLecture}
           relatedCourses={relatedCourses}
-           categoryName={categoryName}
+          categoryName={categoryName}
           onQuizCompleted={handleQuizCompleted}
           onLessonCompleted={handleLessonCompleted}
 

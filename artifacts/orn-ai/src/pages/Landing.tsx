@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Shell } from "@/components/layout/Shell";
 import { HeroSection } from "@/components/layout/HeroSection";
+import { HeroSection1 } from "@/components/layout/HeroSection1";
 import { VideoSection } from "@/components/layout/VideoSection";
 import FAQ from "@/components/layout/FAQ";
 
@@ -27,6 +28,7 @@ import SolutionTimeline from "@/components/layout/SolutionTimeline";
 import OurBlog from "@/components/layout/BlogSection";
 import Testimonials from "@/components/layout/TestimonialSection";
 import ContactUs from "@/components/layout/ContactUs";
+import SignupSection from "@/components/layout/SignupSection";
 
 
 const PROBLEMS = [
@@ -81,7 +83,8 @@ export default function Landing() {
   return (
    <>
     <Shell>
-      <HeroSection/>
+      {/* <HeroSection/> */}
+      <HeroSection1 />
       <VideoSection />
       <LearningSection />
       {/* <CourseGrid /> */}
@@ -91,6 +94,7 @@ export default function Landing() {
       <Testimonials/>
       <ContactUs/>
       <FAQ />
+      <SignupSection />
     </Shell>
     </>
   );

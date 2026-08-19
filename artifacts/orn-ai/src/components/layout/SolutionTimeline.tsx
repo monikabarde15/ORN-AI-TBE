@@ -1,272 +1,314 @@
-import React from "react";
+﻿import React, { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Link } from "wouter";
+import {
+  FileCheck2,
+  Layers,
+  Sparkles,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Network,
+  FileText,
+  Briefcase,
+  Users2,
+  Building2,
+  FolderGit2,
+} from "lucide-react";
 
-const steps = [
-  {
-    title: "Assess & Score",
-    desc: "Standardized intake and AI-powered evaluation of CVs, technical skills, English proficiency, work eligibility, and workforce readiness.",
-    number: "01",
-    icon: (
-      <svg viewBox="0 0 38 38" width="38" height="38">
-        <defs>
-          <linearGradient id="g1" x1="0" y1="0" x2="38" y2="38">
-            <stop stopColor="#7e55fa" />
-            <stop offset="1" stopColor="#53d1e0" />
-          </linearGradient>
-        </defs>
-        <rect x="0" y="0" rx="14" width="38" height="38" fill="url(#g1)" />
-        <circle cx="16.5" cy="17" r="6.2" stroke="#fff" strokeWidth="2" fill="none" />
-        <line x1="27" y1="27" x2="22.2" y2="22.2" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    title: "Upskill & Validate",
-    desc: "Targeted upskilling pathways, realtime project validation, and guided learning designed to close deployment gaps efficiently.",
-    number: "02",
-    icon: (
-      <svg viewBox="0 0 38 38" width="38" height="38">
-        <defs>
-          <linearGradient id="g2" x1="0" y1="0" x2="38" y2="38">
-            <stop stopColor="#53d1e0" />
-            <stop offset="1" stopColor="#7e55fa" />
-          </linearGradient>
-        </defs>
-        <rect x="0" y="0" rx="14" width="38" height="38" fill="url(#g2)" />
-        <path d="M10 20h18M19 10v18" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    title: "Prepare & Deploy",
-    desc: "AI-ranked, recruiter-ready, talent-matched candidate pipelines delivered with standardized readiness scoring and recruiter intelligence.",
-    number: "03",
-    icon: (
-      <svg viewBox="0 0 38 38" width="38" height="38">
-        <defs>
-          <linearGradient id="g3" x1="0" y1="0" x2="38" y2="38">
-            <stop stopColor="#ff7a7a" />
-            <stop offset="1" stopColor="#ffb347" />
-          </linearGradient>
-        </defs>
-        <rect x="0" y="0" rx="14" width="38" height="38" fill="url(#g3)" />
-        <polygon points="10,28 19,10 28,28" fill="none" stroke="#fff" strokeWidth="2" />
-      </svg>
-    ),
-  },
-];
+export function SolutionTimeline() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [activeSlide, setActiveSlide] = useState(0);
 
-const categories = [
-  {
-    name: "Cross-Technology Training",
-    color: "rgba(249, 199, 79, 0.15)",
-    iconColor: "#F9C74F",
-    icon: (
-      <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
-        <path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.84-.41 1.684-.287 2.489.107.711.327 1.419.671 2.086l.003-.001c1.634 3.163 6.993 4.065 10.324 1.977 1.96-1.228 3.327-3.113 3.967-5.173.64-2.06.49-4.218-.416-6.05l-.062-.13c-.823-1.687-2.326-2.837-3.784-3.586-1.458-.749-2.998-1.192-4.5-1.472z"/>
-      </svg>
-    )
-  },
-  {
-    name: "CV Writing & Optimization",
-    color: "rgba(239, 71, 111, 0.15)",
-    iconColor: "#EF476F",
-    icon: (
-      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M11.25 3.75l-8.5 8.5 8.5 8.5M12.75 3.75l8.5 8.5-8.5 8.5"/>
-        <circle cx="12" cy="12" r="2" fill="currentColor"/>
-      </svg>
-    )
-  },
-  {
-    name: "Interview Preparation",
-    color: "rgba(6, 174, 213, 0.15)",
-    iconColor: "#06AED5",
-    icon: (
-      <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
-        <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm0 2.18l6 2.25v4.66c0 4.23-2.88 8.17-6 9.14-3.12-.97-6-4.91-6-9.14V6.43l6-2.25z"/>
-      </svg>
-    )
-  },
-  {
-    name: "Soft Skills & Communication",
-    color: "rgba(17, 138, 178, 0.15)",
-    iconColor: "#118AB2",
-    icon: (
-      <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-      </svg>
-    )
-  },
-  {
-    name: "Job Placement & Career Support",
-    color: "rgba(138, 201, 38, 0.15)",
-    iconColor: "#8AC926",
-    icon: (
-      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2">
-        <ellipse cx="12" cy="5" rx="9" ry="3"/>
-        <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
-        <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
-      </svg>
-    )
-  },
-  {
-    name: "Career Portfolio Building & Industry Projects",
-    color: "rgba(255, 159, 28, 0.15)",
-    iconColor: "#FF9F1C",
-    icon: (
-      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M3 3v18h18M7 16l4-4 3 3 5-7"/>
-        <circle cx="7" cy="16" r="1.5" fill="currentColor"/>
-        <circle cx="11" cy="12" r="1.5" fill="currentColor"/>
-        <circle cx="14" cy="15" r="1.5" fill="currentColor"/>
-        <circle cx="19" cy="8" r="1.5" fill="currentColor"/>
-      </svg>
-    )
-  },
-];
-
-const fadeUp: any = {
-  hidden: { opacity: 0, y: 40 },
-  visible: (i = 1) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: i * 0.2,
-      duration: 0.6,
-      ease: "easeOut",
+  const processSteps = [
+    {
+      number: "01",
+      title: "Assess & Score",
+      desc: "Standardized intake and AI-powered evaluation of CVs, technical skills, English proficiency, work eligibility, and workforce readiness.",
+      icon: FileCheck2,
     },
-  }),
-};
+    {
+      number: "02",
+      title: "Upskill & Validate",
+      desc: "Targeted upskilling pathways, realtime project validation, and guided learning designed to close deployment gaps efficiently.",
+      icon: Layers,
+    },
+    {
+      number: "03",
+      title: "Prepare & Deploy",
+      desc: "AI-ranked, recruiter-ready, talent-matched candidate pipelines delivered with standardized readiness scoring and recruiter intelligence.",
+      icon: Sparkles,
+    },
+  ];
 
-const SolutionTimeline = () => (
-  <section className="py-[60px] px-4 md:px-6 lg:px-8 bg-white text-black min-h-[80vh] overflow-hidden">
-    <motion.div
-      className="max-w-[900px] mx-auto mb-10 text-center px-4"
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: false, amount: 0.3 }}
-      transition={{ duration: 0.6 }}
-      variants={fadeUp}
-    >
-      <span className="text-[#a789fa] text-base md:text-[1.05rem] font-bold tracking-[2px] uppercase mb-3 block">
-        THE SOLUTION
-      </span>
-      <h2 className="text-2xl md:text-[2.1rem] lg:text-[2.4rem] font-bold mb-2 leading-tight">
-        Turning raw talent into recruiter-ready pipelines.
-        <br />
-        <span className="bg-gradient-to-r from-[#7e55fa] via-[#7e55fa] to-[#53d1e0] bg-clip-text text-transparent">
-          Recruiter-ready talent pipelines.
-        </span>
-      </h2>
-    </motion.div>
+  const careerSupportCards = [
+    {
+      title: "Cross-Technology Training",
+      desc: "Expanding skillsets across adjacent stacks to increase deployment versatility.",
+      icon: Network,
+    },
+    {
+      title: "CV Writing & Optimization",
+      desc: "Algorithmic optimization of resumes for modern ATS systems and human review.",
+      icon: FileText,
+    },
+    {
+      title: "Interview Preparation",
+      desc: "Rigorous simulation of technical, architecture, and behavioral interview panels.",
+      icon: Users2,
+    },
+    {
+      title: "Soft Skills & Communication",
+      desc: "Executive communication and collaboration coaching tailored for Tier-1 engineering teams.",
+      icon: Briefcase,
+    },
+    {
+      title: "Job Placement & Career Support",
+      desc: "Direct routing of verified candidate profiles into employer CRMs and hiring pipelines.",
+      icon: Building2,
+    },
+    {
+      title: "Career Portfolio Building & Industry Projects",
+      desc: "Curation of verifiable enterprise-grade project work into presentation-ready formats.",
+      icon: FolderGit2,
+    },
+  ];
 
-    <div className="relative max-w-[1200px] w-[90%] mx-auto">
-      {/* Background Line - hidden on mobile */}
-      <div className="absolute left-0 right-0 top-[60px] h-[3px] w-full bg-gradient-to-r from-[#7e55fa22] via-[#53d1e038] to-[#53d1e038] rounded-[2px] pointer-events-none hidden md:block"></div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 lg:gap-8 justify-items-center items-stretch relative z-[2]">
-        {steps.map((step, i) => (
-          <motion.div
-            className="group bg-[#171721] rounded-[17px] border-[1.6px] border-[rgba(140,130,255,0.12)] p-6 md:p-7 lg:p-8 text-center max-w-[360px] transition-all duration-300 ease-out hover:border-[#7e55fa] hover:-translate-y-2 hover:scale-[1.02] lg:hover:scale-105 hover:shadow-[0_6px_20px_rgba(126,85,250,0.25)] hover:z-[2]"
-            key={i}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: false, amount: 0.2 }}
-            custom={i}
-            variants={fadeUp}
-          >
-            <div className="flex justify-center mb-4 relative">
-              <span className="relative inline-block w-[38px] h-[55px]">
-                {step.icon}
-                <span className="absolute left-full -translate-x-1/2 -top-[13px] bg-[#140f3c] text-[#a789fa] rounded-full px-[11px] py-[2px] font-bold text-[0.95rem] border-2 border-[#a789fa] z-[3]">
-                  {step.number}
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft } = scrollContainerRef.current;
+      const cardWidth = 320;
+      const index = Math.round(scrollLeft / cardWidth);
+      setActiveSlide(Math.min(Math.max(index, 0), careerSupportCards.length - 1));
+    }
+  };
+
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (el) {
+      el.addEventListener("scroll", handleScroll, { passive: true });
+      return () => el.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
+
+  const scrollToSlide = (index: number) => {
+    if (scrollContainerRef.current) {
+      const cardWidth = 330;
+      scrollContainerRef.current.scrollTo({
+        left: index * cardWidth,
+        behavior: "smooth",
+      });
+      setActiveSlide(index);
+    }
+  };
+
+  const handlePrev = () => {
+    if (activeSlide > 0) scrollToSlide(activeSlide - 1);
+  };
+
+  const handleNext = () => {
+    if (activeSlide < careerSupportCards.length - 1) scrollToSlide(activeSlide + 1);
+  };
+
+  return (
+    <section className="relative w-full bg-[#f7f9fb] text-[#191c1e] py-16 md:py-24 px-6 md:px-12 lg:px-16 overflow-hidden selection:bg-[#17122A] selection:text-white">
+      {/* Subtle Grid Background */}
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(23,18,42,1) 1px, transparent 1px), linear-gradient(90deg, rgba(23,18,42,1) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
+      />
+
+      <div className="max-w-[1440px] mx-auto relative z-10">
+        
+        {/* Top Split Section: The Solution & 3 Process Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-start mb-20 md:mb-28">
+          
+          {/* Left Column: Heading & Description */}
+          <div className="lg:col-span-5">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              viewport={{ once: false, amount: 0.2 }}
+              className="lg:sticky lg:top-28 flex flex-col gap-4"
+            >
+              {/* Pipeline Tag */}
+              <div className="inline-flex items-center gap-2.5 text-[#6E56CF] mb-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#6E56CF]"></span>
                 </span>
-              </span>
-            </div>
-            <div className="text-[#a789fa] text-base md:text-[1.18rem] font-bold mb-2">
-              {step.title}
-            </div>
-            <div className="text-[#e0dbff] text-sm md:text-[0.98rem] font-normal leading-relaxed">
-              {step.desc}
-            </div>
+                <span className="font-mono text-xs uppercase tracking-widest font-semibold">
+                  The Solution
+                </span>
+              </div>
+
+              {/* Headline */}
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[48px] font-extrabold text-[#17122A] leading-[1.15] tracking-tight">
+                Turning raw talent into recruiter-ready pipelines.
+              </h2>
+
+              {/* Description */}
+              <p className="text-[#43474e] text-base sm:text-lg leading-relaxed max-w-md mt-2 font-normal">
+                Our proprietary assessment engine evaluates technical competency, soft skills, and cultural fit, creating a verifiable profile of capability before deployment.
+              </p>
+
+              {/* Action Button */}
+              <div className="mt-4">
+                <Link
+                  href="/courses"
+                  className="inline-flex items-center gap-2 bg-[#17122A] hover:bg-[#2B234B] active:scale-95 text-white font-mono text-xs uppercase tracking-wider font-semibold px-6 py-3.5 rounded-lg shadow-sm hover:-translate-y-0.5 transition-all duration-300 group"
+                >
+                  <span>Explore Engine</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Right Column: Process Cards (01, 02, 03) */}
+          <div className="lg:col-span-7 flex flex-col gap-6">
+            {processSteps.map((step, idx) => {
+              const Icon = step.icon;
+              return (
+                <motion.div
+                  key={step.number}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.15, duration: 0.6, ease: "easeOut" }}
+                  viewport={{ once: false, amount: 0.15 }}
+                  className="group bg-[#17122A] text-white rounded-2xl p-7 sm:p-8 relative overflow-hidden shadow-lg border border-white/10 hover:border-white/20 hover:-translate-y-1 transition-all duration-300"
+                >
+                  {/* Subtle Background Number */}
+                  <div className="absolute top-4 right-6 text-white/15 font-extrabold text-5xl sm:text-6xl select-none pointer-events-none group-hover:text-white/30 transition-colors duration-300">
+                    {step.number}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-5 sm:gap-6 items-start relative z-10">
+                    {/* Icon Container */}
+                    <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-white group-hover:bg-[#6E56CF] group-hover:scale-110 transition-all duration-300">
+                      <Icon className="w-6 h-6" />
+                    </div>
+
+                    <div className="flex flex-col gap-2 flex-grow pr-10 sm:pr-12">
+                      <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                        {step.title}
+                      </h3>
+                      <p className="text-white/80 text-sm sm:text-[15px] leading-relaxed font-light">
+                        {step.desc}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+        </div>
+
+        {/* Bottom Section: Comprehensive Career Support (Scrollable Carousel) */}
+        <div className="pt-12 md:pt-16 border-t border-[#17122A]/10 relative">
+          
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            viewport={{ once: false, amount: 0.2 }}
+            className="text-center mb-10 md:mb-14"
+          >
+            <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#17122A] mb-3 tracking-tight">
+              Comprehensive Career Support
+            </h3>
+            <p className="text-[#43474e] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-normal">
+              Beyond technical proficiency, we equip talent with the collateral needed to navigate modern hiring ecosystems.
+            </p>
           </motion.div>
-        ))}
-      </div>
-    </div>
 
-    {/* Category Buttons Section */}
-    <motion.div
-      className="mt-4 mb-12 px-4 md:px-6"
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: false, amount: 0.2 }}
-      transition={{ duration: 0.6, delay: 0.3 }}
-      variants={fadeUp}
-    >
-      <div className="max-w-7xl mx-auto">
-        {/* First Row - 4 buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          {categories.slice(0, 4).map((category, idx) => (
-            <motion.button
-              key={idx}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false }}
-              transition={{ delay: idx * 0.1 }}
-              whileHover={{ 
-                scale: 1.03,
-                boxShadow: "0 10px 30px rgba(126, 85, 250, 0.2)",
-              }}
-              whileTap={{ scale: 0.98 }}
-              className="bg-white/5 border border-white/10 rounded-2xl py-7 px-6 flex flex-col items-center gap-3.5 cursor-pointer transition-all duration-300 backdrop-blur-[10px] hover:border-[#7e55fa]/30"
-              style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}
+          {/* Scrollable Container with Smooth Snap & Overflow */}
+          <div
+            ref={scrollContainerRef}
+            className="flex gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory scroll-smooth cursor-grab active:cursor-grabbing"
+            style={{
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+            }}
+          >
+            {careerSupportCards.map((card, idx) => {
+              const Icon = card.icon;
+              return (
+                <motion.div
+                  key={card.title}
+                  initial={{ opacity: 0, y: 25 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.08, duration: 0.5, ease: "easeOut" }}
+                  viewport={{ once: false, amount: 0.15 }}
+                  className="career-card group bg-[#17122A] text-white rounded-2xl p-7 sm:p-8 border border-white/10 shadow-md hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 min-w-[280px] sm:min-w-[310px] md:min-w-[330px] max-w-[340px] snap-start flex flex-col justify-between flex-shrink-0 relative overflow-hidden"
+                >
+                  <div className="relative z-10">
+                    <div className="text-white/90 mb-5 group-hover:scale-110 group-hover:text-[#A48FFF] transition-all duration-300">
+                      <Icon className="w-7 h-7" />
+                    </div>
+                    <h4 className="text-xl sm:text-[22px] font-bold text-white mb-3 tracking-tight leading-snug">
+                      {card.title}
+                    </h4>
+                    <p className="text-white/75 text-sm sm:text-[15px] leading-relaxed font-light">
+                      {card.desc}
+                    </p>
+                  </div>
+
+                  {/* Bottom subtle accent indicator line */}
+                  <div className="w-full h-1 bg-white/5 rounded-full mt-6 overflow-hidden">
+                    <div className="w-0 group-hover:w-full h-full bg-[#6E56CF] transition-all duration-500 rounded-full" />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Carousel Controls: Arrows & Active Indicator Dots */}
+          <div className="flex justify-center items-center gap-4 mt-8">
+            <button
+              onClick={handlePrev}
+              disabled={activeSlide === 0}
+              aria-label="Previous Slide"
+              className="w-10 h-10 rounded-full border border-[#17122A]/20 flex items-center justify-center text-[#17122A] hover:bg-[#17122A] hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 active:scale-95 shadow-sm"
             >
-              <div 
-                className="w-[50px] h-[50px] rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
-                style={{ backgroundColor: category.color, color: category.iconColor }}
-              >
-                {category.icon}
-              </div>
-              <span className="text-base font-semibold text-black">
-                {category.name}
-              </span>
-            </motion.button>
-          ))}
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2">
+              {careerSupportCards.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => scrollToSlide(i)}
+                  aria-label={`Go to slide ${i + 1}`}
+                  className={`h-2.5 rounded-full transition-all duration-300 ${
+                    activeSlide === i
+                      ? "bg-[#17122A] w-7"
+                      : "bg-[#17122A]/25 hover:bg-[#17122A]/50 w-2.5"
+                  }`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={handleNext}
+              disabled={activeSlide === careerSupportCards.length - 1}
+              aria-label="Next Slide"
+              className="w-10 h-10 rounded-full border border-[#17122A]/20 flex items-center justify-center text-[#17122A] hover:bg-[#17122A] hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-all duration-200 active:scale-95 shadow-sm"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+
         </div>
 
-        {/* Second Row - 2 buttons (remaining) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto lg:max-w-none lg:mx-0">
-          {categories.slice(4).map((category, idx) => (
-            <motion.button
-              key={idx + 4}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false }}
-              transition={{ delay: idx * 0.1 }}
-              whileHover={{ 
-                scale: 1.03,
-                boxShadow: "0 10px 30px rgba(126, 85, 250, 0.2)",
-              }}
-              whileTap={{ scale: 0.98 }}
-              className="bg-white/5 border border-white/10 rounded-2xl py-7 px-6 flex flex-col items-center gap-3.5 cursor-pointer transition-all duration-300 backdrop-blur-[10px] hover:border-[#7e55fa]/30"
-              style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}
-            >
-              <div 
-                className="w-[50px] h-[50px] rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
-                style={{ backgroundColor: category.color, color: category.iconColor }}
-              >
-                {category.icon}
-              </div>
-              <span className="text-base font-semibold text-black">
-                {category.name}
-              </span>
-            </motion.button>
-          ))}
-        </div>
       </div>
-    </motion.div>
-  </section>
-);
+    </section>
+  );
+}
 
 export default SolutionTimeline;
