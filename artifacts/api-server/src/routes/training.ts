@@ -21,6 +21,7 @@ import {
   paymentLinksTable,
   learningPathsTable,
   liveSessionsTable,
+  userCourseProgressTable,
   type CandidateRow,
 } from "@workspace/db";
 import {
@@ -53,7 +54,8 @@ import {
   serializeTrainingAssignment,
   type LiveSessionState,
 } from "../lib/training";
-import { requireAuth, requireRole, requireCandidateAccess } from "../lib/auth";
+import { requireAuth, requireRole, requireCandidateAccess, attachUser } from "../lib/auth";
+
 
 // Add ai imports
 import { AI_CONFIG } from "../lib/ai/config";
@@ -535,35 +537,243 @@ router.get(
   requireAuth,
   requireCandidateAccess(),
   async (req, res): Promise<void> => {
-    const params = GetCandidateTrainingParams.safeParse(req.params);
-    if (!params.success) {
-      res.status(400).json({ error: params.error.message });
-      return;
+    try {
+      const candidateId = req.params.id;
+
+      let [row] = await db
+        .select()
+        .from(trainingAssignmentsTable)
+        .where(eq(trainingAssignmentsTable.candidateId, candidateId))
+        .orderBy(desc(trainingAssignmentsTable.createdAt))
+        .limit(1);
+
+      if (!row) {
+        // Fallback: check if id is a user ID
+        const [u] = await db.select().from(usersTable).where(eq(usersTable.id, candidateId)).limit(1);
+        if (u?.candidateId) {
+          [row] = await db
+            .select()
+            .from(trainingAssignmentsTable)
+            .where(eq(trainingAssignmentsTable.candidateId, u.candidateId))
+            .orderBy(desc(trainingAssignmentsTable.createdAt))
+            .limit(1);
+        }
+      }
+
+      if (!row) {
+        res.json(GetCandidateTrainingResponse.parse(null));
+        return;
+      }
+
+      const [candidate] = await db
+        .select()
+        .from(candidatesTable)
+        .where(eq(candidatesTable.id, row.candidateId));
+
+      if (!candidate) {
+        res.json(GetCandidateTrainingResponse.parse(null));
+        return;
+      }
+
+      res.json(
+        GetCandidateTrainingResponse.parse(
+          serializeTrainingAssignment(row, candidate),
+        ),
+      );
+    } catch (error: any) {
+      console.error("GET CANDIDATE TRAINING ERROR:", error);
+      res.status(500).json({ error: error?.message || "Failed to load candidate training" });
     }
-    const [row] = await db
-      .select()
-      .from(trainingAssignmentsTable)
-      .where(eq(trainingAssignmentsTable.candidateId, params.data.id))
-      .orderBy(desc(trainingAssignmentsTable.createdAt))
-      .limit(1);
-    if (!row) {
-      res.json(GetCandidateTrainingResponse.parse(null));
-      return;
-    }
-    const [candidate] = await db
-      .select()
-      .from(candidatesTable)
-      .where(eq(candidatesTable.id, row.candidateId));
-    if (!candidate) {
-      res.json(GetCandidateTrainingResponse.parse(null));
-      return;
-    }
-    res.json(
-      GetCandidateTrainingResponse.parse(
-        serializeTrainingAssignment(row, candidate),
-      ),
-    );
   },
+);
+
+router.get(
+  "/candidates/:id/course-progress-details",
+  requireAuth,
+  requireCandidateAccess(),
+  async (req, res): Promise<void> => {
+    try {
+      const candidateId = req.params.id;
+
+      const userIds = new Set<string>([candidateId]);
+      let candRow: any = null;
+
+      try {
+        const [c] = await db.select().from(candidatesTable).where(eq(candidatesTable.id, candidateId)).limit(1);
+        if (c) {
+          candRow = c;
+          userIds.add(c.id);
+          if (c.email) {
+            userIds.add(c.email);
+            userIds.add(c.email.split("@")[0]);
+          }
+          const matchedUsers = await db.select().from(usersTable);
+          matchedUsers.forEach((u) => {
+            if (u.candidateId === c.id || (c.email && u.email?.toLowerCase() === c.email.toLowerCase())) {
+              if (u.id) userIds.add(u.id);
+              if (u.email) {
+                userIds.add(u.email);
+                userIds.add(u.email.split("@")[0]);
+              }
+            }
+          });
+        } else {
+          const allUsers = await db.select().from(usersTable);
+          const matched = allUsers.filter(u => u.id === candidateId || u.email?.toLowerCase() === candidateId.toLowerCase());
+          matched.forEach((u) => {
+            if (u.id) userIds.add(u.id);
+            if (u.email) {
+              userIds.add(u.email);
+              userIds.add(u.email.split("@")[0]);
+            }
+            if (u.candidateId) userIds.add(u.candidateId);
+          });
+        }
+      } catch (err) {
+        console.warn("Candidate lookup error:", err);
+      }
+
+      const idList = Array.from(userIds).filter(Boolean);
+
+      let progressEntries: any[] = [];
+      try {
+        const allProgress = await db.select().from(userCourseProgressTable);
+        progressEntries = allProgress.filter((p) =>
+          idList.some((id) => p.userId && (String(p.userId) === String(id) || String(p.userId).includes(String(id))))
+        );
+      } catch (err) {
+        console.warn("Progress entries lookup error:", err);
+      }
+
+      const courseIdSet = new Set<string>();
+      progressEntries.forEach((p) => {
+        if (p.courseId) courseIdSet.add(p.courseId);
+      });
+
+      let assignments: any[] = [];
+      try {
+        const allAsg = await db.select().from(trainingAssignmentsTable);
+        assignments = allAsg.filter(a => idList.includes(a.candidateId));
+        for (const a of assignments) {
+          if (a.programName) {
+            const lps = await db.select().from(learningPathsTable);
+            for (const lp of lps) {
+              if (lp.title?.toLowerCase() === a.programName.toLowerCase() && Array.isArray(lp.courseIds)) {
+                lp.courseIds.forEach((cid) => courseIdSet.add(cid));
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Assignments lookup error:", err);
+      }
+
+      if (courseIdSet.size === 0) {
+        try {
+          const allProg = await db.select().from(userCourseProgressTable);
+          allProg.forEach((p) => {
+            if (p.courseId) courseIdSet.add(p.courseId);
+          });
+          if (courseIdSet.size === 0) {
+            const allCourses = await db.select().from(coursesTable);
+            allCourses.forEach((c) => courseIdSet.add(c.id));
+          }
+        } catch (err) {
+          console.warn("Fallback courses lookup error:", err);
+        }
+      }
+
+      const courseIds = Array.from(courseIdSet);
+      const detailedCourses = [];
+
+      for (const courseId of courseIds) {
+        try {
+          const [course] = await db.select().from(coursesTable).where(eq(coursesTable.id, courseId)).limit(1);
+          if (!course) continue;
+
+          const sections = await db.select().from(sectionsTable).where(eq(sectionsTable.courseId, course.id)).orderBy(asc(sectionsTable.createdAt));
+          const finalSections = [];
+
+          for (const sec of sections) {
+            const lessons = await db.select().from(subSectionsTable).where(eq(subSectionsTable.sectionId, sec.id)).orderBy(asc(subSectionsTable.createdAt));
+            if (lessons.length > 0) {
+              finalSections.push({
+                id: sec.id,
+                title: sec.sectionName,
+                lessons: lessons.map((l) => ({
+                  id: l.id,
+                  title: l.title,
+                  description: l.description,
+                  duration: l.timeDuration,
+                  durationMinutes: l.timeDuration ? parseInt(l.timeDuration, 10) || undefined : undefined,
+                  videoUrl: l.videoUrl,
+                  pdfUrl: l.pdfUrl,
+                })),
+              });
+            }
+          }
+
+          const courseProgressList = progressEntries.filter((p) => p.courseId === course.id);
+          let mergedLessons: Record<string, boolean> = {};
+          let mergedQuizzes: Record<string, boolean> = {};
+          let mergedPositions: Record<string, number> = {};
+          let lastActiveLessonId: string | undefined = undefined;
+          let lastContentMode: string | undefined = undefined;
+          let finalAssessment: any = undefined;
+
+          for (const rec of courseProgressList) {
+            if (rec.completedLessons && typeof rec.completedLessons === "object") {
+              mergedLessons = { ...mergedLessons, ...(rec.completedLessons as Record<string, boolean>) };
+            }
+            if (rec.completedQuizzes && typeof rec.completedQuizzes === "object") {
+              mergedQuizzes = { ...mergedQuizzes, ...(rec.completedQuizzes as Record<string, boolean>) };
+            }
+            if (rec.lessonPositions && typeof rec.lessonPositions === "object") {
+              mergedPositions = { ...mergedPositions, ...(rec.lessonPositions as Record<string, number>) };
+            }
+            if (rec.lastActiveLessonId) lastActiveLessonId = rec.lastActiveLessonId;
+            if (rec.lastContentMode) lastContentMode = rec.lastContentMode;
+            if (rec.finalAssessment) finalAssessment = rec.finalAssessment;
+          }
+
+          detailedCourses.push({
+            id: course.id,
+            title: course.courseName,
+            courseName: course.courseName,
+            description: course.description,
+            thumbnail: course.thumbnail,
+            difficulty: course.courseLevel,
+            sections: finalSections,
+            progress: {
+              completedLessons: mergedLessons,
+              completedQuizzes: mergedQuizzes,
+              lessonPositions: mergedPositions,
+              lastActiveLessonId,
+              lastContentMode,
+              finalAssessment,
+            },
+          });
+        } catch (err) {
+          console.warn("Course detailed item lookup error:", err);
+        }
+      }
+
+      let projectsList: any[] = [];
+
+      const [latestAssignment] = assignments.length > 0 ? assignments : [null];
+
+      res.json({
+        success: true,
+        candidate: candRow,
+        training: latestAssignment,
+        courses: detailedCourses,
+        projects: projectsList,
+      });
+    } catch (error: any) {
+      console.error("Course progress details handler error:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch candidate progress details", error: String(error) });
+    }
+  }
 );
 
 // ----- Dashboard aggregates -----
@@ -1550,52 +1760,191 @@ router.get(
 // ======================================================
 // COURSE PROGRESS (GET & POST)
 // ======================================================
-const userCourseProgressStore: Record<string, any> = {};
-
-router.get("/courses/:id/progress", async (req, res): Promise<void> => {
+router.get("/courses/:id/progress", attachUser, async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id || req.headers["x-user-id"] || "guest";
-    const key = `${userId}_${id}`;
-    const progress = userCourseProgressStore[key] || {
-      completedLessons: {},
-      completedQuizzes: {},
-      lessonPositions: {},
-    };
-    res.json({ success: true, data: progress });
+    const rawUserId = (req.query.userId as string) || (req as any).user?.id || (req.headers["x-user-id"] as string) || "guest";
+
+    const userIds = new Set<string>([rawUserId]);
+    if (rawUserId && rawUserId !== "guest") {
+      try {
+        const [u] = await db.select().from(usersTable).where(eq(usersTable.id, rawUserId)).limit(1);
+        if (u) {
+          userIds.add(u.id);
+          if (u.candidateId) userIds.add(u.candidateId);
+        }
+      } catch {}
+      try {
+        const [c] = await db.select().from(candidatesTable).where(eq(candidatesTable.id, rawUserId)).limit(1);
+        if (c) {
+          userIds.add(c.id);
+          const [u2] = await db.select().from(usersTable).where(eq(usersTable.candidateId, c.id)).limit(1);
+          if (u2) userIds.add(u2.id);
+        }
+      } catch {}
+    }
+
+    const idList = Array.from(userIds);
+    const existingList = await db
+      .select()
+      .from(userCourseProgressTable)
+      .where(
+        and(
+          inArray(userCourseProgressTable.userId, idList),
+          eq(userCourseProgressTable.courseId, id)
+        )
+      );
+
+    if (existingList.length > 0) {
+      // Merge progress from all matching user / candidate records
+      let mergedLessons: Record<string, boolean> = {};
+      let mergedQuizzes: Record<string, boolean> = {};
+      let mergedPositions: Record<string, number> = {};
+      let lastActiveLessonId: string | undefined = undefined;
+      let lastContentMode: string | undefined = undefined;
+      let finalAssessment: any = undefined;
+
+      for (const rec of existingList) {
+        if (rec.completedLessons && typeof rec.completedLessons === "object") {
+          mergedLessons = { ...mergedLessons, ...(rec.completedLessons as Record<string, boolean>) };
+        }
+        if (rec.completedQuizzes && typeof rec.completedQuizzes === "object") {
+          mergedQuizzes = { ...mergedQuizzes, ...(rec.completedQuizzes as Record<string, boolean>) };
+        }
+        if (rec.lessonPositions && typeof rec.lessonPositions === "object") {
+          mergedPositions = { ...mergedPositions, ...(rec.lessonPositions as Record<string, number>) };
+        }
+        if (rec.lastActiveLessonId) lastActiveLessonId = rec.lastActiveLessonId;
+        if (rec.lastContentMode) lastContentMode = rec.lastContentMode;
+        if (rec.finalAssessment) finalAssessment = rec.finalAssessment;
+      }
+
+      res.json({
+        success: true,
+        data: {
+          completedLessons: mergedLessons,
+          completedQuizzes: mergedQuizzes,
+          lessonPositions: mergedPositions,
+          lastActiveLessonId: lastActiveLessonId || undefined,
+          lastContentMode: lastContentMode || undefined,
+          finalAssessment: finalAssessment || undefined,
+        },
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        completedLessons: {},
+        completedQuizzes: {},
+        lessonPositions: {},
+      },
+    });
   } catch (error) {
+    console.error("Failed to get course progress:", error);
     res.status(500).json({ success: false, message: "Failed to get progress" });
   }
 });
 
-router.post("/courses/:id/progress", async (req, res): Promise<void> => {
+router.post("/courses/:id/progress", attachUser, async (req, res): Promise<void> => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id || req.headers["x-user-id"] || "guest";
-    const key = `${userId}_${id}`;
-    const existing = userCourseProgressStore[key] || {};
-    const updated = {
-      ...existing,
-      ...req.body,
-      completedLessons: {
-        ...(existing.completedLessons || {}),
-        ...(req.body.completedLessons || {}),
-      },
-      completedQuizzes: {
-        ...(existing.completedQuizzes || {}),
-        ...(req.body.completedQuizzes || {}),
-      },
-      lessonPositions: {
-        ...(existing.lessonPositions || {}),
-        ...(req.body.lessonPositions || {}),
-      },
+    const rawUserId = (req.query.userId as string) || (req as any).user?.id || (req.headers["x-user-id"] as string) || req.body?.userId || "guest";
+
+    const userIds = new Set<string>([rawUserId]);
+    if (rawUserId && rawUserId !== "guest") {
+      try {
+        const [u] = await db.select().from(usersTable).where(eq(usersTable.id, rawUserId)).limit(1);
+        if (u) {
+          userIds.add(u.id);
+          if (u.candidateId) userIds.add(u.candidateId);
+        }
+      } catch {}
+      try {
+        const [c] = await db.select().from(candidatesTable).where(eq(candidatesTable.id, rawUserId)).limit(1);
+        if (c) {
+          userIds.add(c.id);
+          const [u2] = await db.select().from(usersTable).where(eq(usersTable.candidateId, c.id)).limit(1);
+          if (u2) userIds.add(u2.id);
+        }
+      } catch {}
+    }
+
+    const idList = Array.from(userIds);
+    const [existing] = await db
+      .select()
+      .from(userCourseProgressTable)
+      .where(
+        and(
+          inArray(userCourseProgressTable.userId, idList),
+          eq(userCourseProgressTable.courseId, id)
+        )
+      )
+      .limit(1);
+
+    const prevLessons = (existing?.completedLessons && typeof existing.completedLessons === "object") ? existing.completedLessons : {};
+    const prevQuizzes = (existing?.completedQuizzes && typeof existing.completedQuizzes === "object") ? existing.completedQuizzes : {};
+    const prevPositions = (existing?.lessonPositions && typeof existing.lessonPositions === "object") ? existing.lessonPositions : {};
+
+    const updatedLessons = {
+      ...prevLessons,
+      ...(req.body.completedLessons || {}),
     };
-    userCourseProgressStore[key] = updated;
-    res.json({ success: true, data: updated });
+    const updatedQuizzes = {
+      ...prevQuizzes,
+      ...(req.body.completedQuizzes || {}),
+    };
+    const updatedPositions = {
+      ...prevPositions,
+      ...(req.body.lessonPositions || {}),
+    };
+    const updatedLastActiveLessonId = req.body.lastActiveLessonId ?? existing?.lastActiveLessonId ?? null;
+    const updatedLastContentMode = req.body.lastContentMode ?? existing?.lastContentMode ?? null;
+    const updatedFinalAssessment = req.body.finalAssessment ?? existing?.finalAssessment ?? null;
+
+    if (existing) {
+      await db
+        .update(userCourseProgressTable)
+        .set({
+          completedLessons: updatedLessons,
+          completedQuizzes: updatedQuizzes,
+          lessonPositions: updatedPositions,
+          lastActiveLessonId: updatedLastActiveLessonId,
+          lastContentMode: updatedLastContentMode,
+          finalAssessment: updatedFinalAssessment,
+          updatedAt: new Date(),
+        })
+        .where(eq(userCourseProgressTable.id, existing.id));
+    } else {
+      await db.insert(userCourseProgressTable).values({
+        userId: rawUserId,
+        courseId: id,
+        completedLessons: updatedLessons,
+        completedQuizzes: updatedQuizzes,
+        lessonPositions: updatedPositions,
+        lastActiveLessonId: updatedLastActiveLessonId,
+        lastContentMode: updatedLastContentMode,
+        finalAssessment: updatedFinalAssessment,
+      });
+    }
+
+    const responseData = {
+      completedLessons: updatedLessons,
+      completedQuizzes: updatedQuizzes,
+      lessonPositions: updatedPositions,
+      lastActiveLessonId: updatedLastActiveLessonId || undefined,
+      lastContentMode: updatedLastContentMode || undefined,
+      finalAssessment: updatedFinalAssessment || undefined,
+    };
+
+    res.json({ success: true, data: responseData });
   } catch (error) {
+    console.error("Failed to save course progress:", error);
     res.status(500).json({ success: false, message: "Failed to save progress" });
   }
 });
+
 
 
 

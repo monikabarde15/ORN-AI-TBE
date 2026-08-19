@@ -35,6 +35,7 @@ const VideoPlayerContent = ({
     <VideoPlayer
       videoUrl={lecture?.videoUrl}
       lessonId={lecture?.id || lecture?.title}
+      metadataDuration={lecture?.duration}
       onPreviousLesson={
         onPreviousLesson
       }

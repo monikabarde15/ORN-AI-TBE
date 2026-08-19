@@ -73,8 +73,8 @@ export default function SidebarContent({
   if (!user) return null;
 
   const linkClass = (active: boolean) =>
-    `flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${active
-      ? "bg-primary/10 text-primary font-medium"
+    `flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ${active
+      ? "bg-primary text-primary-foreground font-semibold shadow-sm"
       : "text-muted-foreground hover:bg-muted hover:text-foreground"
     }`;
 
@@ -88,18 +88,18 @@ export default function SidebarContent({
             </div>
 
             <Link
-              href="#"
+              href="/courses"
               onClick={onNavigate}
-              className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
+              className={linkClass(location === "/courses")}
             >
               <BarChart3 className="size-4" />
               Feed
             </Link>
 
             <Link
-              href="#"
+              href="/workshops"
               onClick={onNavigate}
-              className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
+              className={linkClass(location === "/workshops")}
             >
               <GraduationCap className="size-4" />
               Workshops
@@ -108,10 +108,13 @@ export default function SidebarContent({
             <Link
               href="/recruiter/learning-student-path-list"
               onClick={onNavigate}
-              className={linkClass(location === "/recruiter/learning-student-path-list")}
+              className={linkClass(
+                location === "/recruiter/learning-student-path-list" ||
+                location.startsWith("/recruiter/learning-path-manage-view/")
+              )}
             >
               <GraduationCap className="size-4" />
-             Learning Path
+              Learning Path
             </Link>
             {/* <Link
               href="/recruiter/test-assignment"
@@ -134,9 +137,9 @@ export default function SidebarContent({
             </Link>
 
             <Link
-              href="#"
+              href="/messages"
               onClick={onNavigate}
-              className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
+              className={linkClass(location === "/messages")}
             >
               <UserIcon className="size-4" />
               Messages
@@ -146,7 +149,7 @@ export default function SidebarContent({
               <Link
                 href={`/candidate/${user.candidateId}/evaluation`}
                 onClick={onNavigate}
-                className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted"
+                className={linkClass(location === `/candidate/${user.candidateId}/evaluation`)}
               >
                 <BarChart3 className="size-4" />
                 My Evaluation
@@ -176,14 +179,14 @@ export default function SidebarContent({
                 Talent Search
               </Link>
             )}
-              <Link
-                href="/recruiter-history"
-                onClick={onNavigate}
-                className={linkClass(location === "/recruiter-history")}
-              >
-                <History className="size-4" />
-                History
-              </Link>
+            <Link
+              href="/recruiter-history"
+              onClick={onNavigate}
+              className={linkClass(location === "/recruiter-history")}
+            >
+              <History className="size-4" />
+              History
+            </Link>
 
             {hasPermission("Add Candidate") && (
               <Link
@@ -196,13 +199,13 @@ export default function SidebarContent({
               </Link>
             )}
             <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Containt Management
+              Containt Management
             </div>
             {hasPermission("Blogs") && (
               <Link
                 href="/admin/blog/add"
                 onClick={onNavigate}
-                className={linkClass(location === "/blog/add")}
+                className={linkClass(location === "/admin/blog/add")}
               >
                 <GraduationCap className="size-4" />
                 Blogs
@@ -254,7 +257,8 @@ export default function SidebarContent({
                       onClick={onNavigate}
                       className={linkClass(
                         location === "/recruiter/learning-path-list" ||
-                        location === "/recruiter/learning-path"
+                        location === "/recruiter/learning-path" ||
+                        location.startsWith("/recruiter/learning-path-manage/")
                       )}
                     >
                       <UserPlus className="size-4" />
@@ -263,16 +267,27 @@ export default function SidebarContent({
                   )}
 
                   {/* {hasPermission("Learning Paths") && ( */}
-                    <Link
-                      href="/admin-test-assignment"
-                      onClick={onNavigate}
-                      className={linkClass(
-                        location === "/admin-test-assignment" 
-                      )}
-                    >
-                      <UserPlus className="size-4" />
-                      Assignment
-                    </Link>
+                  <Link
+                    href="/admin-test-assignment"
+                    onClick={onNavigate}
+                    className={linkClass(
+                      location === "/admin-test-assignment"
+                    )}
+                  >
+                    <UserPlus className="size-4" />
+                    Assessment
+                  </Link>
+
+                  <Link
+                    href="/admin/assignments"
+                    onClick={onNavigate}
+                    className={linkClass(
+                      location === "/admin/assignments"
+                    )}
+                  >
+                    <UserPlus className="size-4" />
+                    Assignment
+                  </Link>
                   {/* )} */}
 
                   {hasPermission("Live Training Sessions") && (

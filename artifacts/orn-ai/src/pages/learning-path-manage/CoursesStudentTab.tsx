@@ -25,14 +25,14 @@ export default function CoursesStudentTab({
                     </p>
                 </div>
 
-                <button
+                {/* <button
                     onClick={() =>
                         setShowCourseManager(true)
                     }
                     className="rounded-xl bg-blue-900 px-5 py-3 text-white"
                 >
                     Add More Courses
-                </button>
+                </button> */}
             </div>
 
             {selectedCourses.length === 0 ? (

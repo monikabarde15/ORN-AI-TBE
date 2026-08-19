@@ -239,7 +239,7 @@ const handleConfirmDelete = async () => {
                 key={path.id}
                 className="
                   overflow-hidden
-                  rounded-[28px]
+                  rounded-[8px]
                   border
                   bg-white
                   shadow-sm

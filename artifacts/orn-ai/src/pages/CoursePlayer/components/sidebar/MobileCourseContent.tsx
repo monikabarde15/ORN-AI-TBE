@@ -246,7 +246,7 @@ const MobileCourseContent = ({
                 size={18}
               />
 
-              Final Assessment
+              Certificate & Progress
             </button>
           </div>
         </div>

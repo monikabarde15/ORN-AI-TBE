@@ -94,8 +94,6 @@ const CoursePlayer = () => {
         throw new Error("Course not found");
       }
 
-      setCourse(courseData);
-
       if (courseData.category) {
         fetchCategory(courseData.category);
       } else {
@@ -140,10 +138,27 @@ const CoursePlayer = () => {
         })
       ) || [];
 
-      setSections(formattedSections);
+      // Save formatted course state so the Final Assessment can read quizzes
+      setCourse({
+        ...courseData,
+        sections: formattedSections,
+      });
 
-      // Find all lessons array
-      const allLessons = formattedSections.flatMap((s) => s.lessons);
+      // Filter out assessment sections from the visible syllabus sidebar and progress calculations
+      const visibleSections = formattedSections.filter((section: any) => {
+        const name = (section.title || section.sectionName || "").toLowerCase();
+        return !(
+          name.includes("assessment") ||
+          name.includes("final") ||
+          name.includes("exam") ||
+          name.includes("assignment")
+        );
+      });
+
+      setSections(visibleSections);
+
+      // Find all lessons array (excluding hidden assessment section)
+      const allLessons = visibleSections.flatMap((s) => s.lessons);
 
       // Determine active lecture to auto-resume:
       // If last active lesson was completed, move to the NEXT uncompleted lesson
@@ -178,14 +193,14 @@ const CoursePlayer = () => {
         setContentMode(modeToSet);
 
         // Expand parent section of active lesson
-        const parentSec = formattedSections.find((s) =>
+        const parentSec = visibleSections.find((s) =>
           s.lessons.some((l) => l.id === activeLesson?.id)
         );
         if (parentSec) {
           setExpandedSections([parentSec.id]);
         }
-      } else if (formattedSections.length > 0) {
-        setExpandedSections([formattedSections[0].id]);
+      } else if (visibleSections.length > 0) {
+        setExpandedSections([visibleSections[0].id]);
       }
     } catch (err) {
       console.error("Course fetch error:", err);
@@ -245,14 +260,34 @@ const CoursePlayer = () => {
 
   const handleLessonCompleted = useCallback(
     (lessonId: string) => {
-      setSections((prev) =>
-        prev.map((section) => ({
+      setSections((prev) => {
+        const updated = prev.map((section) => ({
           ...section,
           lessons: section.lessons.map((item) =>
             item.id === lessonId ? { ...item, completed: true } : item
           ),
-        }))
-      );
+        }));
+
+        // Check if all lessons are completed
+        let allCompleted = true;
+        let hasLessons = false;
+        updated.forEach((section) => {
+          section.lessons?.forEach((lesson: any) => {
+            hasLessons = true;
+            if (!lesson.completed) {
+              allCompleted = false;
+            }
+          });
+        });
+
+        if (hasLessons && allCompleted) {
+          setTimeout(() => {
+            setContentMode("finalAssessment");
+          }, 800);
+        }
+
+        return updated;
+      });
 
       setCurrentLecture((prev) =>
         prev && prev.id === lessonId ? { ...prev, completed: true } : prev

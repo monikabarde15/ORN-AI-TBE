@@ -17,6 +17,7 @@ import learningPaths from "./learning-paths";
 import courseCategoryRoutes from "./course-category";
 import userPermissionsRoutes from "./user-permissions";
 import assessment from "./assessment";
+import assignmentRouter from "./assignment";
 import testMailRouter from "./test-mail";
 
 
@@ -25,6 +26,7 @@ const router: IRouter = Router();
 router.use(testMailRouter);
 router.use(healthRouter);
 router.use(assessment);
+router.use(assignmentRouter);
 router.use(metaRouter);
 router.use(authRouter);
 router.use(candidatesRouter);

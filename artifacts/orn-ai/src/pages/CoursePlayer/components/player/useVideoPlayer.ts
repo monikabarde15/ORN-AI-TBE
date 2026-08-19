@@ -2,9 +2,31 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { saveLessonPositionStorage } from "../../utils/progressStorage";
 
+const parseDuration = (val: any): number => {
+    if (!val) return 0;
+    if (typeof val === "number") {
+        return val < 100 ? val * 60 : val;
+    }
+    const str = String(val).trim();
+    if (str.includes(":")) {
+        const parts = str.split(":");
+        if (parts.length === 2) {
+            return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+        } else if (parts.length === 3) {
+            return parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);
+        }
+    }
+    const num = parseFloat(str);
+    if (!isNaN(num)) {
+        return num < 100 ? num * 60 : num;
+    }
+    return 0;
+};
+
 export const useVideoPlayer = (
     lessonId: string,
-    onLessonCompleted?: (lessonId: string) => void
+    onLessonCompleted?: (lessonId: string) => void,
+    metadataDuration?: string | number
 ) => {
     const { user } = useAuth();
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -12,7 +34,7 @@ export const useVideoPlayer = (
 
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
+    const [duration, setDuration] = useState(() => parseDuration(metadataDuration));
     const [volume, setVolume] = useState(1);
     const [isMuted, setIsMuted] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -47,15 +69,14 @@ export const useVideoPlayer = (
 
     const seek = useCallback(
         (percentage: number) => {
-            if (!videoRef.current || !duration) return;
+            if (!videoRef.current || !duration || isNaN(duration) || !isFinite(duration)) return;
 
+            const targetTime = (percentage / 100) * duration;
+            if (isNaN(targetTime) || !isFinite(targetTime)) return;
 
-            videoRef.current.currentTime =
-                (percentage / 100) * duration;
+            videoRef.current.currentTime = targetTime;
         },
         [duration]
-
-
     );
 
     const changeVolume = useCallback((value: number) => {
@@ -151,7 +172,9 @@ export const useVideoPlayer = (
     const resumePlayback = () => {
         if (
             videoRef.current &&
-            resumeTime
+            resumeTime &&
+            !isNaN(resumeTime) &&
+            isFinite(resumeTime)
         ) {
             videoRef.current.currentTime =
                 resumeTime;
@@ -201,9 +224,13 @@ export const useVideoPlayer = (
                 String(video.currentTime)
             );
 
+            const effectiveDuration = (video.duration && isFinite(video.duration) && !isNaN(video.duration))
+                ? video.duration
+                : parseDuration(metadataDuration);
+
             if (
-                video.duration &&
-                video.currentTime >= video.duration - 1
+                effectiveDuration > 0 &&
+                video.currentTime >= effectiveDuration - 1
             ) {
                 localStorage.removeItem(
                     `lesson-progress-${lessonId}`
@@ -215,7 +242,14 @@ export const useVideoPlayer = (
         };
 
         const updateDuration = () => {
-            setDuration(video.duration || 0);
+            if (video.duration && isFinite(video.duration) && !isNaN(video.duration)) {
+                setDuration(video.duration);
+            } else {
+                const backup = parseDuration(metadataDuration);
+                if (backup > 0) {
+                    setDuration(backup);
+                }
+            }
         };
 
         const onPlay = () => setIsPlaying(true);
@@ -229,6 +263,7 @@ export const useVideoPlayer = (
         };
 
         video.addEventListener("timeupdate", updateTime);
+        video.addEventListener("durationchange", updateDuration);
         video.addEventListener("loadedmetadata", updateDuration);
         video.addEventListener("play", onPlay);
         video.addEventListener("pause", onPause);
@@ -236,6 +271,7 @@ export const useVideoPlayer = (
 
         return () => {
             video.removeEventListener("timeupdate", updateTime);
+            video.removeEventListener("durationchange", updateDuration);
             video.removeEventListener(
                 "loadedmetadata",
                 updateDuration
@@ -323,7 +359,8 @@ export const useVideoPlayer = (
         const video = videoRef.current;
 
         setCurrentTime(0);
-        setDuration(0);
+        const backup = parseDuration(metadataDuration);
+        setDuration(backup > 0 ? backup : 0);
 
         video.play()
             .then(() => {

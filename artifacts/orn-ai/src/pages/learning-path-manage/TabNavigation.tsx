@@ -60,7 +60,7 @@ export default function TabNavigation({
                 onClick={() =>
                     setActiveTab("courses")
                 }
-                className={`rounded-xl px-6 py-3 ${activeTab === "courses"
+                className={`rounded-xl px-2 py-2 ${activeTab === "courses"
                         ? "bg-blue-900 text-white"
                         : "border bg-white"
                     }`}
@@ -72,7 +72,7 @@ export default function TabNavigation({
                 onClick={() =>
                     setActiveTab("sessions")
                 }
-                className={`rounded-xl px-6 py-3 ${activeTab === "sessions"
+                className={`rounded-xl px-2 py-2 ${activeTab === "sessions"
                         ? "bg-blue-900 text-white"
                         : "border bg-white"
                     }`}

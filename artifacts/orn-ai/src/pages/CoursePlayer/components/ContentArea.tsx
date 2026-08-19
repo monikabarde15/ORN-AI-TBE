@@ -3,6 +3,7 @@ import PdfViewerContent from "./PdfViewerContent";
 import QuizPlayer from "./QuizPlayer";
 import VideoPlayerContent from "./VideoPlayerContent";
 import FinalAssessment from "./FinalAssessment";
+import CertificatePerformanceView from "./CertificatePerformanceView";
 import MobileCourseContent from "./sidebar/MobileCourseContent";
 
 interface ContentAreaProps {

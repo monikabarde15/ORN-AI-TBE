@@ -230,7 +230,7 @@ const SidebarRail = ({
         )}
       </div>
 
-      {/* ASSESSMENT */}
+      {/* CERTIFICATE & PROGRESS */}
 
       <div
         className="
@@ -246,7 +246,7 @@ const SidebarRail = ({
   "
       >
         <button
-          title="Final Assessment"
+          title="Certificate & Progress"
           onClick={
             onFinalAssessmentSelect
           }

@@ -37,6 +37,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { motion, MotionConfig, useReducedMotion } from "framer-motion";
+import { UserStatsTable } from "./AdminDashboard/UserStatsTable";
 
 // ============================================================
 // HELPERS

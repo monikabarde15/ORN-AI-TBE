@@ -47,7 +47,7 @@ export default function LearningPathManage() {
     
       
       console.log(user);const [thumbnailPreview, setThumbnailPreview] = useState("");
-const [videoPreview, setVideoPreview] = useState("");
+    const [videoPreview, setVideoPreview] = useState("");
 
     const [activeTab, setActiveTab] = useState("courses");
     const [loading, setLoading] = useState(false);

@@ -5,6 +5,7 @@ import { useVideoPlayer } from "./useVideoPlayer";
 interface VideoPlayerProps {
     videoUrl: string;
     lessonId: string;
+    metadataDuration?: string | number;
 
     onPreviousLesson?: () => void;
     onNextLesson?: () => void;
@@ -12,7 +13,7 @@ interface VideoPlayerProps {
 }
 
 const VideoPlayer = ({
-    videoUrl, lessonId, onPreviousLesson, onNextLesson, onLessonCompleted,
+    videoUrl, lessonId, onPreviousLesson, onNextLesson, onLessonCompleted, metadataDuration,
 }: VideoPlayerProps) => {
     const {
         videoRef,
@@ -42,7 +43,7 @@ const VideoPlayer = ({
         resumeTime,
         resumePlayback,
         startOver,
-    } = useVideoPlayer(lessonId, onLessonCompleted);
+    } = useVideoPlayer(lessonId, onLessonCompleted, metadataDuration);
 
     return (
         <div

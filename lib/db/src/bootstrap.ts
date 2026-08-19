@@ -208,4 +208,49 @@ ADD COLUMN IF NOT EXISTS languages_known text[] NOT NULL DEFAULT '{}';
     CREATE INDEX IF NOT EXISTS audit_logs_created_at_idx
       ON audit_logs (created_at DESC);
   `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS user_course_progress (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id text NOT NULL,
+      course_id text NOT NULL,
+      completed_lessons jsonb NOT NULL DEFAULT '{}'::jsonb,
+      completed_quizzes jsonb NOT NULL DEFAULT '{}'::jsonb,
+      lesson_positions jsonb NOT NULL DEFAULT '{}'::jsonb,
+      last_active_lesson_id text,
+      last_content_mode text,
+      final_assessment jsonb,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS assignments (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      title text NOT NULL,
+      description text,
+      course_id uuid,
+      course_name text,
+      candidate_id uuid,
+      target_role text,
+      category text,
+      difficulty text NOT NULL DEFAULT 'Medium',
+      total_marks integer NOT NULL DEFAULT 100,
+      passing_marks integer NOT NULL DEFAULT 70,
+      due_date timestamptz,
+      instructions text,
+      status text NOT NULL DEFAULT 'Published',
+      questions jsonb,
+      attachments jsonb,
+      created_by uuid,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS assignments_course_id_idx ON assignments (course_id);
+  `);
 }
+

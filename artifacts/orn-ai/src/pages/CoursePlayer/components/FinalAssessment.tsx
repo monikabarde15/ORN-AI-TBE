@@ -89,31 +89,72 @@ const FinalAssessment = ({ course }: FinalAssessmentProps) => {
 
   const [showCertificate, setShowCertificate] = useState(false);
 
-  // Extract quizzes from course sections if available
+  // Fetch official course questions from assignments/assessments or course sections
   useEffect(() => {
-    if (course?.sections) {
-      const extractedQuizzes: Question[] = [];
-      let qId = 1;
-      course.sections.forEach((section: any) => {
-        section.lessons?.forEach((lesson: any) => {
-          lesson.quizzes?.forEach((quiz: any) => {
-            if (quiz.question && Array.isArray(quiz.options) && quiz.options.length > 0) {
-              extractedQuizzes.push({
-                id: qId++,
-                question: quiz.question,
-                options: quiz.options,
-                correctAnswer: typeof quiz.correctAnswer === "number" ? quiz.correctAnswer : 0,
-              });
-            }
-          });
-        });
-      });
+    import("../../../../services/api").then(({ default: api }) => {
+      Promise.all([
+        api.get("/api/assignments").catch(() => null),
+        api.get("/api/assessments").catch(() => null),
+      ]).then(([asgRes, astRes]) => {
+        const assignments = asgRes?.data?.assignments || asgRes?.data?.data || [];
+        const assessments = astRes?.data?.data || [];
 
-      if (extractedQuizzes.length >= 3) {
-        setQuestions(extractedQuizzes);
-      }
-    }
-  }, [course]);
+        // 1. Check matching assignment for this courseId/courseName
+        const matchedAsg = assignments.find(
+          (a: any) =>
+            (courseId && a.courseId === courseId) ||
+            (course?.courseName && a.courseName?.toLowerCase() === course.courseName.toLowerCase()) ||
+            (course?.title && a.courseName?.toLowerCase() === course.title.toLowerCase())
+        );
+
+        // 2. Check matching assessment for this courseId/courseName
+        const matchedAst = assessments.find(
+          (a: any) =>
+            (courseId && a.courseId === courseId) ||
+            (course?.courseName && a.assessmentName?.toLowerCase().includes(course.courseName.toLowerCase()))
+        );
+
+        let targetQuestions: any[] = [];
+
+        if (matchedAsg && Array.isArray(matchedAsg.questions) && matchedAsg.questions.length > 0) {
+          targetQuestions = matchedAsg.questions;
+        } else if (matchedAst && Array.isArray(matchedAst.questions) && matchedAst.questions.length > 0) {
+          targetQuestions = matchedAst.questions;
+        } else if (course?.sections) {
+          // Extract from lesson section quizzes
+          course.sections.forEach((sec: any) => {
+            sec.lessons?.forEach((l: any) => {
+              l.quizzes?.forEach((quiz: any) => {
+                if (quiz.question && Array.isArray(quiz.options)) {
+                  targetQuestions.push(quiz);
+                }
+              });
+            });
+          });
+        }
+
+        // Filter out placeholder questions like "Enter your question here"
+        const validQuestions = targetQuestions.filter(
+          (q: any) => q.question && !q.question.toLowerCase().includes("enter your question")
+        );
+
+        if (validQuestions.length > 0) {
+          setQuestions(
+            validQuestions.map((q: any, idx: number) => ({
+              id: idx + 1,
+              question: q.question,
+              options: Array.isArray(q.options) ? q.options : ["Option A", "Option B", "Option C", "Option D"],
+              correctAnswer: typeof q.correctAnswer === "number" ? q.correctAnswer : 0,
+            }))
+          );
+        } else {
+          setQuestions([]);
+        }
+      }).catch((err) => {
+        console.error("Failed to load course questions:", err);
+      });
+    });
+  }, [course, courseId]);
 
   // Load existing saved assessment result from storage
   useEffect(() => {
@@ -213,14 +254,14 @@ const FinalAssessment = ({ course }: FinalAssessmentProps) => {
                 Course Final Step
               </span>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Course Final Assessment
+                Course Final Assignment
               </h1>
             </div>
           </div>
 
           <p className="text-gray-600 leading-relaxed mb-6 text-sm sm:text-base">
             Demonstrate your mastery of <strong>{course?.courseName || course?.title || "this course"}</strong>.
-            Completing this final assessment with a score of <strong>60% or higher</strong> will earn you your official Certificate of Completion!
+            Completing this final assignment test with a score of <strong>60% or higher</strong> will earn you your official Certificate of Completion!
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -241,9 +282,10 @@ const FinalAssessment = ({ course }: FinalAssessmentProps) => {
           <div className="flex flex-wrap items-center gap-4">
             <button
               onClick={() => setCurrentStep("quiz")}
-              className="px-6 py-3 bg-[#0B1F4D] hover:bg-[#102B6A] text-white font-semibold rounded-xl shadow-md transition-all flex items-center gap-2"
+              disabled={questions.length === 0}
+              className="px-6 py-3 bg-[#0B1F4D] hover:bg-[#102B6A] text-white font-semibold rounded-xl shadow-md transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Start Assessment
+              Start Assignment Test
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -269,7 +311,7 @@ const FinalAssessment = ({ course }: FinalAssessmentProps) => {
                 Question {currentQuestionIdx + 1} of {questions.length}
               </span>
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 mt-0.5">
-                Assessment Test
+                Assignment Test
               </h2>
             </div>
 
@@ -302,18 +344,16 @@ const FinalAssessment = ({ course }: FinalAssessmentProps) => {
                 <button
                   key={optIdx}
                   onClick={() => handleOptionSelect(optIdx)}
-                  className={`w-full text-left p-4 rounded-xl border transition-all flex items-start gap-3 ${
-                    isSelected
+                  className={`w-full text-left p-4 rounded-xl border transition-all flex items-start gap-3 ${isSelected
                       ? "border-[#102B6A] bg-blue-50/70 text-[#102B6A] font-medium shadow-2xs"
                       : "border-gray-200 hover:border-gray-300 bg-white text-gray-700"
-                  }`}
+                    }`}
                 >
                   <div
-                    className={`w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 shrink-0 ${
-                      isSelected
+                    className={`w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 shrink-0 ${isSelected
                         ? "border-[#102B6A] bg-[#102B6A] text-white"
                         : "border-gray-400 bg-white"
-                    }`}
+                      }`}
                   >
                     {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                   </div>
@@ -360,9 +400,8 @@ const FinalAssessment = ({ course }: FinalAssessmentProps) => {
         <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-200">
           <div className="text-center max-w-lg mx-auto mb-8">
             <div
-              className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-4 ${
-                assessmentResult.passed ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
-              }`}
+              className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-4 ${assessmentResult.passed ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+                }`}
             >
               {assessmentResult.passed ? (
                 <ShieldCheck className="w-10 h-10" />
@@ -372,11 +411,10 @@ const FinalAssessment = ({ course }: FinalAssessmentProps) => {
             </div>
 
             <span
-              className={`inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 ${
-                assessmentResult.passed
+              className={`inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 ${assessmentResult.passed
                   ? "bg-green-50 text-green-700 border border-green-200"
                   : "bg-red-50 text-red-700 border border-red-200"
-              }`}
+                }`}
             >
               {assessmentResult.passed ? "Assessment Passed 🎉" : "Assessment Not Passed"}
             </span>
@@ -389,35 +427,29 @@ const FinalAssessment = ({ course }: FinalAssessmentProps) => {
             </p>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons Top */}
           <div className="flex flex-wrap items-center justify-center gap-4 p-4 bg-gray-50 rounded-xl mb-8 border border-gray-100">
-            {assessmentResult.passed ? (
-              <button
-                onClick={() => setShowCertificate(true)}
-                className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl shadow-md transition-all flex items-center gap-2 text-sm"
-              >
-                <Award className="w-5 h-5" />
-                View & Print Certificate
-              </button>
-            ) : (
-              <p className="text-xs text-gray-500 w-full text-center">
-                Score at least 60% to unlock your official Certificate of Completion.
-              </p>
-            )}
+            <button
+              onClick={() => setCurrentStep("certificate")}
+              className="px-6 py-3.5 bg-[#102B6A] hover:bg-[#0B1F4D] text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2 text-sm"
+            >
+              <Award className="w-5 h-5 text-amber-400" />
+              Next: View Final Certificate & Stats ➔
+            </button>
 
             <button
               onClick={handleRetake}
-              className="px-5 py-3 bg-white hover:bg-gray-100 text-gray-700 font-medium rounded-xl border border-gray-200 transition-colors text-sm flex items-center gap-2"
+              className="px-5 py-3.5 bg-white hover:bg-gray-100 text-gray-700 font-medium rounded-xl border border-gray-200 transition-colors text-sm flex items-center gap-2"
             >
               <RotateCcw className="w-4 h-4" />
               Retake Assessment
             </button>
           </div>
 
-          {/* Detailed Question Review */}
+          {/* Detailed Question Review (Answer Sheet) */}
           <div className="space-y-4">
             <h3 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-2">
-              Question Answers Review
+              Question Answers Review (Answer Sheet)
             </h3>
 
             {questions.map((q, idx) => {
@@ -427,9 +459,8 @@ const FinalAssessment = ({ course }: FinalAssessmentProps) => {
               return (
                 <div
                   key={idx}
-                  className={`p-4 rounded-xl border ${
-                    isCorrect ? "border-green-200 bg-green-50/40" : "border-red-200 bg-red-50/40"
-                  }`}
+                  className={`p-4 rounded-xl border ${isCorrect ? "border-green-200 bg-green-50/40" : "border-red-200 bg-red-50/40"
+                    }`}
                 >
                   <div className="flex items-start gap-2.5">
                     {isCorrect ? (
@@ -457,6 +488,151 @@ const FinalAssessment = ({ course }: FinalAssessmentProps) => {
                 </div>
               );
             })}
+          </div>
+
+          {/* Action Buttons Bottom */}
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-8 mt-6 border-t">
+            <button
+              onClick={() => setCurrentStep("certificate")}
+              className="px-8 py-3.5 bg-[#102B6A] hover:bg-[#0B1F4D] text-white font-bold rounded-xl shadow-lg transition-all flex items-center gap-2 text-sm"
+            >
+              <Award className="w-5 h-5 text-amber-400" />
+              Next: View Final Certificate & Stats ➔
+            </button>
+            <button
+              onClick={handleRetake}
+              className="px-6 py-3.5 bg-white hover:bg-gray-100 text-gray-700 font-medium rounded-xl border border-gray-200 transition-colors text-sm flex items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Retake Assessment
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* CERTIFICATE STEP */}
+      {currentStep === "certificate" && assessmentResult && (
+        <div className="p-2 sm:p-4 md:p-6 max-w-6xl mx-auto space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Congratulations, {user?.name || user?.email?.split("@")[0] || "Learner"}!
+              </h2>
+              <p className="text-sm text-gray-500">
+                You have successfully cleared the assessment and completed the course.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentStep("result")}
+                className="px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border text-xs font-semibold rounded-xl transition-all"
+              >
+                ← View Answer Sheet
+              </button>
+              <button
+                onClick={() => setShowCertificate(true)}
+                className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-xl shadow transition-all flex items-center gap-1.5"
+              >
+                <Award className="w-4 h-4" />
+                Download Certificate (PDF)
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left side: Certificate Preview (8 cols) */}
+            <div className="lg:col-span-8 bg-white border-4 border-amber-300/80 rounded-2xl p-8 shadow-md text-center relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-24 h-24 bg-gradient-to-br from-amber-400/20 to-transparent rounded-br-full" />
+              <div className="space-y-4">
+                <span className="text-xs font-bold text-amber-700 uppercase tracking-widest bg-amber-50 px-4 py-1.5 rounded-full border border-amber-200 inline-block">
+                  ORN-AI LEARNING PLATFORM
+                </span>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 uppercase tracking-wide">
+                  Certificate of Completion
+                </h1>
+                <p className="text-xs uppercase text-gray-500 tracking-wider">This is proudly presented to</p>
+                <h3 className="text-2xl sm:text-3xl font-bold text-[#102B6A] border-b-2 border-amber-400 inline-block px-8 pb-1">
+                  {user?.name || user?.email || "Student Learner"}
+                </h3>
+                <p className="text-sm text-gray-600 max-w-lg mx-auto leading-relaxed">
+                  for successfully completing all video modules, practical labs, and scoring{" "}
+                  <strong className="text-green-700">{assessmentResult.percentage}%</strong> in the assessment requirements for
+                </p>
+                <h4 className="text-xl font-bold text-gray-900">{course?.courseName || course?.title || "Course Specialization"}</h4>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 items-end pt-6 mt-6 border-t text-left text-xs text-gray-500">
+                  <div>
+                    <span className="font-semibold block text-gray-800">Issue Date:</span>
+                    <span>{assessmentResult.date}</span>
+                    <span className="font-semibold block text-gray-800 mt-1">Certificate ID:</span>
+                    <span className="font-mono">ORN-{courseId?.slice(0, 4).toUpperCase()}-{Math.random().toString(36).substring(2, 8).toUpperCase()}</span>
+                  </div>
+                  <div className="hidden md:flex flex-col items-center">
+                    <div className="w-12 h-12 rounded-full bg-amber-50 border-2 border-amber-400 flex items-center justify-center">
+                      <CheckCircle2 className="w-6 h-6 text-amber-600" />
+                    </div>
+                    <span className="text-[10px] font-bold text-amber-700 uppercase mt-1">Verified Authentic</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-serif italic font-bold text-sm text-gray-800 block">ORN AI Academy</span>
+                    <span>Authorized Signatory</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right side: Detailed Quiz & Pass/Fail Stats (4 cols) */}
+            <div className="lg:col-span-4 space-y-4">
+              <div className="bg-white rounded-2xl border p-5 shadow-sm space-y-4">
+                <h3 className="font-bold text-gray-900 text-base flex items-center gap-2 border-b pb-3">
+                  📊 Assessment & Quiz Stats
+                </h3>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-blue-50/60 border border-blue-100">
+                    <span className="text-xs font-medium text-gray-700">Total Questions / Quizzes</span>
+                    <span className="text-sm font-bold text-blue-700">{assessmentResult.total} Quizzes</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/60 border border-emerald-100">
+                    <span className="text-xs font-medium text-gray-700">Correct Answers (Sahi)</span>
+                    <span className="text-sm font-bold text-emerald-700">{assessmentResult.score} Correct ✅</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-red-50/60 border border-red-100">
+                    <span className="text-xs font-medium text-gray-700">Wrong Answers (Galat)</span>
+                    <span className="text-sm font-bold text-red-700">{assessmentResult.total - assessmentResult.score} Incorrect ❌</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50/60 border border-purple-100">
+                    <span className="text-xs font-medium text-gray-700">Final Score %</span>
+                    <span className="text-sm font-bold text-purple-700">{assessmentResult.percentage}%</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-amber-50/60 border border-amber-100">
+                    <span className="text-xs font-medium text-gray-700">Status</span>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-600 text-white">
+                      {assessmentResult.passed ? "PASSED 🎉" : "FAILED"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 space-y-2">
+                  <button
+                    onClick={() => setShowCertificate(true)}
+                    className="w-full py-3 bg-[#102B6A] hover:bg-[#0B1F4D] text-white text-xs font-bold rounded-xl transition-all shadow"
+                  >
+                    Print / Download Official Certificate
+                  </button>
+                  <button
+                    onClick={handleRetake}
+                    className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition-all"
+                  >
+                    Retake Assessment
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

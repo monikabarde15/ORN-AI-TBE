@@ -52,7 +52,7 @@ const CourseSidebar = ({
 
     ${sidebarCollapsed
             ? "w-[72px]"
-            : "w-[380px] xl:w-[420px] 2xl:w-[460px]"
+            : "w-[340px] xl:w-[380px] 2xl:w-[420px]"
           }
   `}
       >

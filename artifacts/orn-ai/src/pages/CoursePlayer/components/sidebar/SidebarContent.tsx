@@ -185,7 +185,7 @@ const SidebarContent = ({
         )}
       </div>
 
-      {/* FINAL ASSESSMENT */}
+      {/* CERTIFICATE & PROGRESS */}
 
       <div
         className="
@@ -208,6 +208,9 @@ const SidebarContent = ({
         flex
         items-center
         justify-between
+        text-sm
+        font-medium
+        text-white
       "
         >
           <div
@@ -218,7 +221,7 @@ const SidebarContent = ({
         "
           >
             <span>
-              Final Assessment
+              Certificate & Progress
             </span>
 
             {isAllCompleted && (
