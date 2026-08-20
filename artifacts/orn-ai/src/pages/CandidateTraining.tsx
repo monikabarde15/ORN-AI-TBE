@@ -343,7 +343,7 @@ export default function CandidateTraining() {
   return (
     <Shell>
       <MotionConfig reducedMotion="user">
-        <div className="px-6 lg:px-10 py-8 max-w-[1250px] mx-auto w-full">
+        <div className="px-6 lg:px-10 py-8 max-w-[1800px] mx-auto w-full">
           <Link
             href="/training"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
@@ -382,7 +382,7 @@ export default function CandidateTraining() {
                     </div>
                   </div>
                 </div>
-                <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-300 hover:bg-purple-500/15 border-0 font-medium px-3 py-1 text-xs">
+                <Badge className="bg-blue-900 text-white dark:text-purple-300 hover:bg-purple-500/15 border-0 font-medium px-3 py-1 text-xs">
                   {summary.progressPct >= 100 || summary.passedAssessments > 0 ? "Module complete" : "In Progress"}
                 </Badge>
               </div>
@@ -392,7 +392,7 @@ export default function CandidateTraining() {
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
                     <div>
-                      <div className="text-xs font-semibold text-primary flex items-center gap-1.5 mb-1.5">
+                      <div className="text-xs font-semibold text-blue-900 flex items-center gap-1.5 mb-1.5">
                         <Sparkles className="size-3.5" />
                         Recommended career path
                       </div>
@@ -420,7 +420,7 @@ export default function CandidateTraining() {
                   {/* Admin Real-Time Task & Performance Summary Grid */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border/60 text-sm">
                     <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-foreground transition-all">
-                      <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1.5">
+                      <div className="text-xs text-blue-900 dark:text-blue-400 font-semibold flex items-center gap-1.5">
                         <BookOpen className="size-3.5" /> Enrolled Courses
                       </div>
                       <div className="font-bold text-foreground text-sm mt-1.5 truncate">
@@ -433,38 +433,38 @@ export default function CandidateTraining() {
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-foreground transition-all">
-                      <div className="text-xs text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-1.5">
+                    <div className="p-3.5 rounded-xl bg-blue-500/10 border border-purple-500/20 text-foreground transition-all">
+                      <div className="text-xs text-blue-900 dark:text-purple-400 font-semibold flex items-center gap-1.5">
                         <Video className="size-3.5" /> Video Progress
                       </div>
                       <div className="font-bold text-foreground text-sm mt-1.5">
                         {summary.completedLessons} / {summary.totalLessons || 2} Watched
                       </div>
-                      <div className="text-[11px] text-purple-600 dark:text-purple-400 font-bold mt-0.5">
+                      <div className="text-[11px] text-blue-900 dark:text-purple-400 font-bold mt-0.5">
                         {summary.progressPct}% Completed
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-foreground transition-all">
-                      <div className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1.5">
+                    <div className="p-3.5 rounded-xl bg-blue-500/10 border border-amber-500/20 text-foreground transition-all">
+                      <div className="text-xs text-blue-900 dark:text-amber-400 font-semibold flex items-center gap-1.5">
                         <Award className="size-3.5" /> Assignment Tests
                       </div>
                       <div className="font-bold text-foreground text-sm mt-1.5">
                         {summary.assessmentCount || 1} Attempted
                       </div>
-                      <div className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">
-                        Avg Score: {summary.bestScore || 100}% (Passed 🎉)
+                      <div className="text-[11px] text-blue-900 dark:text-amber-400 font-bold mt-0.5">
+                        Avg Score: {summary.bestScore || 100}% (Passed)
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-foreground transition-all">
-                      <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+                    <div className="p-3.5 rounded-xl bg-blue-500/10 border border-emerald-500/20 text-foreground transition-all">
+                      <div className="text-xs text-blue-900 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
                         <GraduationCap className="size-3.5" /> Certificate Status
                       </div>
-                      <div className="font-bold text-emerald-600 dark:text-emerald-400 text-sm mt-1.5">
+                      <div className="font-bold text-foreground dark:text-emerald-400 text-sm mt-1.5">
                         {summary.progressPct >= 100 || summary.passedAssessments > 0 ? "Issued ✅" : "In Progress"}
                       </div>
-                      <div className="text-[11px] text-emerald-600/90 dark:text-emerald-400/90 font-medium mt-0.5">
+                      <div className="text-[11px] text-blue-900 dark:text-amber-400/90 font-medium mt-0.5">
                         Official Verification
                       </div>
                     </div>
@@ -478,7 +478,7 @@ export default function CandidateTraining() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-base flex items-center gap-2">
+                      <CardTitle className="text-blue-900 flex items-center gap-2">
                         <Play className="size-4 fill-foreground/80" />
                         Self-paced modules
                       </CardTitle>
@@ -515,7 +515,7 @@ export default function CandidateTraining() {
                       return (
                         <div
                           key={course.id || idx}
-                          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border transition-all ${isDone ? "bg-emerald-500/5 border-emerald-500/20" : "bg-background hover:bg-muted/20"}`}
+                          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border transition-all ${isDone ? "bg-blue-500 border-blue-500" : "bg-background hover:bg-muted/20"}`}
                         >
                           <div className="flex items-start gap-3 min-w-0">
                             <div className={`size-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isDone ? "bg-emerald-500/10 text-emerald-600" : hasStarted ? "bg-amber-500/10 text-amber-600" : "bg-muted text-muted-foreground"}`}>
@@ -533,8 +533,8 @@ export default function CandidateTraining() {
                                     <Clock3 className="size-3" /> Watched: {watchTimeStr}
                                   </span>
                                 )}
-                                <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-semibold border border-purple-100">
-                                  📝 Quizzes: {attemptedCount}/{totalQuizzesCount} Attempted {remainingCount > 0 ? `(${remainingCount} Remaining)` : "✅ All Done"}
+                                <span className="bg-blue-500/10 text-blue-900 px-2 py-0.5 rounded font-semibold border border-purple-100">
+                                  Quizzes: {attemptedCount}/{totalQuizzesCount} Attempted {remainingCount > 0 ? `(${remainingCount} Remaining)` : "✅ All Done"}
                                 </span>
                                 {assessment && (
                                   <span className={assessment.passed ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"}>
@@ -549,14 +549,14 @@ export default function CandidateTraining() {
                             {course.id && (
                               <>
                                 <Link href={`/course/details/${course.id}`}>
-                                  <Button size="sm" variant="outline" className="h-8 text-xs px-3 font-semibold text-primary border-primary/30 hover:bg-primary/5">
+                                  <Button size="sm" variant="outline" className="h-8 text-xs px-3 font-semibold text-blue-900 border-primary/30 hover:bg-primary/5">
                                     <Play className="size-3.5 mr-1 fill-current" /> Watch Lessons
                                   </Button>
                                 </Link>
 
                                 <Link href={`/course/details/${course.id}?mode=quiz`}>
-                                  <Button size="sm" className={remainingCount > 0 ? "h-8 text-xs px-3 bg-[#102B6A] hover:bg-[#0B1F4D] text-white font-bold" : "h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"}>
-                                    <Award className="size-3.5 mr-1 text-amber-300" />
+                                  <Button size="sm" className={remainingCount > 0 ? "h-8 text-xs px-3 bg-blue-900 hover:bg-[#0B1F4D] text-white font-bold" : "h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"}>
+                                    <Award className="size-3.5 mr-1 text-white-300" />
                                     {remainingCount > 0 ? `Attempt Quizzes (${remainingCount} Left)` : "Re-take Assignment"}
                                   </Button>
                                 </Link>
@@ -657,7 +657,7 @@ export default function CandidateTraining() {
                                 </div>
                               </div>
                             </div>
-                            <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0 text-xs px-2.5 py-0.5 shrink-0 font-bold">
+                            <Badge className="bg-blue-900 text-white dark:text-white-900 border-0 text-xs px-2.5 py-0.5 shrink-0 font-bold">
                               Graded (Passed)
                             </Badge>
                           </div>
@@ -704,7 +704,7 @@ export default function CandidateTraining() {
                           </div>
                         </div>
                       </div>
-                      <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0 text-xs px-2.5 py-0.5 shrink-0">
+                      <Badge className="bg-blue-900 text-white dark:text-white border-0 text-xs px-2.5 py-0.5 shrink-0">
                         Graded (Passed)
                       </Badge>
                     </div>
@@ -718,7 +718,7 @@ export default function CandidateTraining() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="text-base flex items-center gap-2">
-                        <Brain className="size-4 text-purple-600 dark:text-purple-400" />
+                        <Brain className="size-4 text-blue-900 dark:text-purple-400" />
                         Course Assessments & Final Exams
                       </CardTitle>
                       <CardDescription>
@@ -765,7 +765,7 @@ export default function CandidateTraining() {
                         >
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="size-9 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
+                              <div className="size-9 rounded-lg bg-blue-500/10 text-blue-900 flex items-center justify-center shrink-0">
                                 <Award className="size-4" />
                               </div>
                               <div className="min-w-0">
@@ -777,7 +777,7 @@ export default function CandidateTraining() {
                               </div>
                             </div>
                             <Badge className={isPassed ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0 text-xs px-2.5 py-0.5 shrink-0 font-bold" : hasAttempted ? "bg-amber-500/10 text-amber-700 border-0 text-xs px-2.5 py-0.5 shrink-0 font-bold" : "bg-muted text-muted-foreground border-0 text-xs px-2.5 py-0.5 shrink-0 font-bold"}>
-                              {isPassed ? "Exam Passed 🎉" : hasAttempted ? "Under Review" : "Pending Test"}
+                              {isPassed ? "Exam Passed" : hasAttempted ? "Under Review" : "Pending Test"}
                             </Badge>
                           </div>
 
@@ -788,16 +788,16 @@ export default function CandidateTraining() {
                               <span className="font-bold text-foreground text-sm">{totalQ} {totalQ === 1 ? "Question" : "Questions"}</span>
                             </div>
                             <div className="p-2 rounded bg-emerald-500/10 text-center">
-                              <span className="text-emerald-700 dark:text-emerald-300 block text-[10px] uppercase font-semibold">Sahi (Correct)</span>
-                              <span className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">{correctQ} Correct ✅</span>
+                              <span className="text-emerald-700 dark:text-emerald-300 block text-[10px] uppercase font-semibold">Correct</span>
+                              <span className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">{correctQ}</span>
                             </div>
                             <div className="p-2 rounded bg-red-500/10 text-center">
-                              <span className="text-red-700 dark:text-red-300 block text-[10px] uppercase font-semibold">Galat (Incorrect)</span>
-                              <span className="font-bold text-red-700 dark:text-red-300 text-sm">{wrongQ} Incorrect {wrongQ > 0 ? "❌" : "✅"}</span>
+                              <span className="text-red-700 dark:text-red-300 block text-[10px] uppercase font-semibold">Incorrect</span>
+                              <span className="font-bold text-red-700 dark:text-red-300 text-sm">{wrongQ} </span>
                             </div>
-                            <div className="p-2 rounded bg-purple-500/10 text-center">
-                              <span className="text-purple-700 dark:text-purple-300 block text-[10px] uppercase font-semibold">Final Score</span>
-                              <span className="font-bold text-purple-700 dark:text-purple-300 text-sm">{scorePct}%</span>
+                            <div className="p-2 rounded bg-blue-900 text-center">
+                              <span className="text-white dark:text-purple-300 block text-[10px] uppercase font-semibold">Final Score</span>
+                              <span className="font-bold text-white dark:text-purple-300 text-sm">{scorePct}%</span>
                             </div>
                           </div>
                         </div>
@@ -834,11 +834,11 @@ export default function CandidateTraining() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-xl bg-purple-500/15 text-purple-600 flex items-center justify-center shrink-0">
+                      <div className="size-12 rounded-xl bg-blue-500/10 text-blue-900 flex items-center justify-center shrink-0">
                         <Award className="size-6" />
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+                        <div className="text-xs font-semibold text-blue-900 dark:text-purple-400 uppercase tracking-wider">
                           Certified Candidate
                         </div>
                         <div className="text-lg font-bold text-foreground mt-0.5">
@@ -849,7 +849,7 @@ export default function CandidateTraining() {
                         </div>
                       </div>
                     </div>
-                    <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0 text-xs px-3 py-1 font-medium">
+                    <Badge className="bg-blue-900 text-white dark:text-emerald-300 border-0 text-xs px-3 py-1 font-medium">
                       ✓ Verified Certificate Issued
                     </Badge>
                   </div>
@@ -881,7 +881,7 @@ export default function CandidateTraining() {
                       className="flex items-center justify-between gap-4 p-3.5 rounded-lg border bg-background"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="size-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                        <div className="size-8 rounded-lg bg-blue-500/10 text-blue-900 flex items-center justify-center shrink-0">
                           <CalendarClock className="size-4" />
                         </div>
                         <div>
