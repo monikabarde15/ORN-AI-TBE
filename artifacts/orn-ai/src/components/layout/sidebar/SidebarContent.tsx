@@ -97,7 +97,7 @@ export default function SidebarContent({
             </Link>
 
             <Link
-              href="/workshops"
+              href="#"
               onClick={onNavigate}
               className={linkClass(location === "/workshops")}
             >
@@ -137,7 +137,7 @@ export default function SidebarContent({
             </Link>
 
             <Link
-              href="/messages"
+              href="#"
               onClick={onNavigate}
               className={linkClass(location === "/messages")}
             >
@@ -273,6 +273,8 @@ export default function SidebarContent({
                     className={linkClass(
                       location === "/admin-test-assignment"
                     )}
+                  >
+                    <UserPlus className="size-4" />
                     Assessment
                   </Link>
 
