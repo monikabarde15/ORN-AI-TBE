@@ -574,7 +574,7 @@ export default function TrainingDashboard() {
   return (
     <Shell>
       <MotionConfig reducedMotion="user">
-        <div className="px-6 lg:px-10 py-8 max-w-[1400px] mx-auto w-full">
+        <div className="px-6 lg:px-10 py-8 max-w-[1800px] mx-auto w-full">
           {/* Header */}
           <motion.div
             initial={motionInitial}
@@ -830,7 +830,7 @@ export default function TrainingDashboard() {
                         <Card>
                           <CardHeader>
                             <CardTitle className="text-sm flex items-center gap-2">
-                              <Video className="size-4 text-blue-500" />
+                              <Video className="size-4 text-blue-900" />
                               Video Views by User
                             </CardTitle>
                           </CardHeader>
@@ -841,7 +841,7 @@ export default function TrainingDashboard() {
                                 <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                                 <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
                                 <Tooltip />
-                                <Bar dataKey="views" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="views" fill="#0d2d5d" radius={[4, 4, 0, 0]} />
                               </BarChart>
                             </ResponsiveContainer>
                           </CardContent>
@@ -850,7 +850,7 @@ export default function TrainingDashboard() {
                         <Card>
                           <CardHeader>
                             <CardTitle className="text-sm flex items-center gap-2">
-                              <PieChartIcon className="size-4 text-emerald-500" />
+                              <PieChartIcon className="size-4 text-blue-900" />
                               Certificate Distribution
                             </CardTitle>
                           </CardHeader>
@@ -904,8 +904,8 @@ export default function TrainingDashboard() {
                                   <div className="flex flex-wrap gap-1.5 max-w-[280px]">
                                     {Array.isArray(row.coursesList) && row.coursesList.length > 0 ? (
                                       row.coursesList.map((c: any, i: number) => (
-                                        <Badge key={i} variant="secondary" className="text-xs bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border-purple-200 font-medium py-0.5">
-                                          <BookOpen className="size-3 mr-1 text-purple-500 shrink-0" />
+                                        <Badge key={i} variant="secondary" className="text-xs bg-blue-900 text-white dark:bg-white-950 dark:text-purple-300 border-purple-200 font-medium py-0.5">
+                                          <BookOpen className="size-3 mr-1 text-white-500 shrink-0" />
                                           {c.title || c.courseName || `Course ${i + 1}`}
                                         </Badge>
                                       ))
@@ -942,7 +942,7 @@ export default function TrainingDashboard() {
                                           completionDate: row.certificateDate || new Date(row.lastActive).toLocaleDateString(),
                                           certificateId: row.certificateId || `CERT-${Date.now()}`,
                                         })}
-                                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer border border-blue-200 px-2 py-0.5 rounded-md hover:bg-blue-50 transition-colors"
+                                        className="flex items-center gap-1 text-xs text-blue-900 hover:text-blue-800 font-semibold cursor-pointer border border-blue-200 px-2 py-0.5 rounded-md hover:bg-blue-50 transition-colors"
                                       >
                                         <Eye className="size-3" /> View
                                       </button>
@@ -1067,7 +1067,7 @@ export default function TrainingDashboard() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2 text-sm">
-                                <BookOpen className="size-4 shrink-0 text-primary" />
+                                <BookOpen className="size-4 shrink-0 text-blue-900" />
                                 <span className="truncate max-w-[260px]">{row.courseTitle || "Course"}</span>
                               </div>
                             </TableCell>
@@ -1077,7 +1077,7 @@ export default function TrainingDashboard() {
                                   <Progress value={Math.min(100, Math.max(0, pct))} className="h-2" />
                                 </div>
                                 <Badge variant="outline" className="whitespace-nowrap">
-                                  <PlayCircle className="size-3 mr-1 text-blue-500" />
+                                  <PlayCircle className="size-3 mr-1 text-blue-900" />
                                   {completed} / {total}
                                 </Badge>
                                 <span className="text-xs font-semibold min-w-[38px] text-right">{pct}%</span>

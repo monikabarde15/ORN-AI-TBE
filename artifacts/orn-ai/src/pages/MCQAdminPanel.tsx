@@ -413,6 +413,16 @@ const saveAssessment = async () => {
             passingPercentage: activeAssessment.passingPercentage,
             instructions: activeAssessment.instructions,
             description: activeAssessment.description,
+            questions: (activeAssessment.questions || []).map((q) => ({
+                question: q.text,
+                options: q.options,
+                correctAnswer: q.correctOptionIndex,
+                explanation: q.explanation,
+                difficulty: q.difficulty,
+                marks: q.marks,
+                timeLimitSeconds: q.timeLimitSeconds,
+                status: q.status || "Published",
+            })),
         });
 
         toast.success("Assessment Updated");

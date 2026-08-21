@@ -333,16 +333,47 @@ router.put(
         })
         .where(eq(assessmentsTable.id, id));
 
+      if (Array.isArray(req.body.questions)) {
+        await db
+          .delete(assessmentQuestionsTable)
+          .where(eq(assessmentQuestionsTable.assessmentId, id));
+
+        if (req.body.questions.length > 0) {
+          const questionRows = req.body.questions.map((q: any, idx: number) => ({
+            assessmentId: id,
+            question: q.question || q.text || "Enter your question here",
+            options: Array.isArray(q.options) ? q.options : ["Option A", "Option B", "Option C", "Option D"],
+            correctAnswer: Number(q.correctAnswer ?? q.correctOptionIndex) || 0,
+            explanation: q.explanation || "",
+            difficulty: q.difficulty || "Easy",
+            marks: Number(q.marks) || 1,
+            timeLimitSeconds: Number(q.timeLimitSeconds) || 60,
+            status: q.status || "Published",
+            orderNo: idx + 1,
+          }));
+
+          await db.insert(assessmentQuestionsTable).values(questionRows);
+        }
+      }
+
       const [updatedAssessment] = await db
         .select()
         .from(assessmentsTable)
         .where(eq(assessmentsTable.id, id));
 
+      const updatedQuestions = await db
+        .select()
+        .from(assessmentQuestionsTable)
+        .where(eq(assessmentQuestionsTable.assessmentId, id))
+        .orderBy(assessmentQuestionsTable.orderNo);
+
       res.status(200).json({
         success: true,
-        message:
-          "Assessment updated successfully",
-        data: updatedAssessment,
+        message: "Assessment updated successfully",
+        data: {
+          ...updatedAssessment,
+          questions: updatedQuestions,
+        },
       });
     } catch (error) {
       console.log(

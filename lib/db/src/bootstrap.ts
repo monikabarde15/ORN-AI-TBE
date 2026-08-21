@@ -11,10 +11,11 @@ import { db } from "./index";
  * runtime. If the schema grows, replace this with `drizzle-kit migrate`.
  */
 export async function ensureSchema(): Promise<void> {
-  // `gen_random_uuid()` ships in pgcrypto. Replit's built-in Postgres has it
-  // pre-enabled, but a freshly provisioned Render Postgres may not, so we
-  // ensure the extension exists before referencing the function.
-  await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
+  try {
+    await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
+  } catch (err: any) {
+    console.warn("pgcrypto extension check skipped:", err?.message || err);
+  }
 
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS candidates (

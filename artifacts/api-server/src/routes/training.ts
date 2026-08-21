@@ -5,6 +5,7 @@ import {
   eq,
   desc,
   and,
+  or,
   inArray,
   asc,
 } from "drizzle-orm";
@@ -479,20 +480,73 @@ router.get("/training/assignments/:id", requireAuth, async (req, res): Promise<v
 
 // ----- Patch progress -----
 router.patch("/training/assignments/:id", requireAuth, requireRole("recruiter", "admin"), async (req, res): Promise<void> => {
-  const params = UpdateTrainingAssignmentParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
+  const targetId = req.params.id;
+  if (!targetId || targetId === "undefined" || targetId === "null") {
+    res.status(400).json({ error: "Invalid training assignment or candidate ID" });
     return;
   }
+
   const body = UpdateTrainingAssignmentBody.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: body.error.message });
     return;
   }
-  const [current] = await db
+
+  let [current] = await db
     .select()
     .from(trainingAssignmentsTable)
-    .where(eq(trainingAssignmentsTable.id, params.data.id));
+    .where(
+      or(
+        eq(trainingAssignmentsTable.id, targetId),
+        eq(trainingAssignmentsTable.candidateId, targetId)
+      )
+    )
+    .orderBy(desc(trainingAssignmentsTable.createdAt))
+    .limit(1);
+
+  if (!current) {
+    let candId = targetId;
+    try {
+      const [candidate] = await db
+        .select()
+        .from(candidatesTable)
+        .where(eq(candidatesTable.id, targetId))
+        .limit(1);
+      if (candidate) {
+        candId = candidate.id;
+      }
+    } catch {}
+
+    const now = new Date();
+    const targetDate = new Date(Date.now() + 30 * 86400 * 1000);
+    try {
+      const [inserted] = await db
+        .insert(trainingAssignmentsTable)
+        .values({
+          candidateId: candId,
+          assessmentCategory: "needs_upskilling",
+          trainingType: "upskilling",
+          programId: "prog-default",
+          programName: "Standard Career Path",
+          recommendedPath: "Full Stack & AI Development",
+          deliveryMode: "self_paced",
+          trainerId: "tr-default",
+          trainerName: "Senior Tech Trainer",
+          modules: [],
+          liveSessions: [],
+          startDate: now,
+          targetCompletionDate: targetDate,
+          status: (body.data.status as any) || "completed",
+          progressPct: body.data.progressPct ?? 100,
+          finalReadinessNote: body.data.finalReadinessNote || "Training completed by trainer/recruiter sign-off.",
+        })
+        .returning();
+      current = inserted;
+    } catch (err: any) {
+      logger.error({ err: err?.message || err }, "Failed to auto-create training assignment");
+    }
+  }
+
   if (!current) {
     res.status(404).json({ error: "Assignment not found" });
     return;
@@ -510,20 +564,24 @@ router.patch("/training/assignments/:id", requireAuth, requireRole("recruiter", 
       finalReadinessNote: next.finalReadinessNote,
       updatedAt: new Date(),
     })
-    .where(eq(trainingAssignmentsTable.id, params.data.id))
+    .where(eq(trainingAssignmentsTable.id, current.id))
     .returning();
+
   if (!updated) {
     res.status(500).json({ error: "Failed to update assignment" });
     return;
   }
+
   const [candidate] = await db
     .select()
     .from(candidatesTable)
     .where(eq(candidatesTable.id, updated.candidateId));
+
   if (!candidate) {
-    res.status(404).json({ error: "Candidate not found" });
+    res.json(serializeTrainingAssignment(updated, { id: updated.candidateId, name: "Candidate" } as any));
     return;
   }
+
   res.json(
     UpdateTrainingAssignmentResponse.parse(
       serializeTrainingAssignment(updated, candidate),
@@ -696,10 +754,10 @@ router.get(
 
           for (const sec of sections) {
             const rawLessons = await db.select().from(subSectionsTable).where(eq(subSectionsTable.sectionId, sec.id)).orderBy(asc(subSectionsTable.createdAt));
-            // Filter out empty auto-created "Final Assessment" placeholder subsections from standard course curriculum
+            // Filter out only auto-created assessment containers from standard curriculum
             const lessons = rawLessons.filter((l) => {
               const t = (l.title || "").trim().toLowerCase();
-              if ((t === "final assessment" || t === "assessment" || t.includes("auto-created assessment")) && !l.videoUrl && !l.pdfUrl) {
+              if (t.includes("auto-created assessment") && !l.videoUrl && !l.pdfUrl) {
                 return false;
               }
               return true;

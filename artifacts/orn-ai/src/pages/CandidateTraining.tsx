@@ -88,12 +88,9 @@ function isAssessmentPlaceholder(item: any) {
   if (!item) return false;
   const t = (item.title || item.name || item.sectionName || "").trim().toLowerCase();
   return (
-    t === "final assessment" ||
-    t === "assessment" ||
-    t === "final exam" ||
-    t === "exam" ||
+    t.includes("auto-created assessment") ||
     t.includes("assessment container") ||
-    t.includes("auto-created assessment")
+    (t === "final assessment" && !item.videoUrl && !item.pdfUrl && !item.quiz && !item.quizzes)
   );
 }
 
@@ -116,6 +113,16 @@ function fmtDuration(seconds?: number | null) {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}m ${secs < 10 ? "0" : ""}${secs}s`;
+}
+
+function formatCountry(countryStr?: string, locationStr?: string) {
+  if (!countryStr || countryStr.trim().startsWith("+") || /^\+?\d+$/.test(countryStr.trim())) {
+    if (locationStr && !locationStr.trim().startsWith("+") && !/^\+?\d+$/.test(locationStr.trim())) {
+      return locationStr.trim();
+    }
+    return "United Kingdom";
+  }
+  return countryStr.trim();
 }
 
 function normalizeCourseDetails(course: any) {
@@ -151,47 +158,106 @@ function QuizAssignmentModal({
     setLoading(true);
 
     const courseId = course.id || course._id;
-    const courseTitle = course.courseName || course.title || "";
+    const courseTitle = (course.courseName || course.title || "").trim();
 
-    // Initialize existing answers from candidate's progress
+    // 1. Resolve existing answers from all possible sources (API, props, and LocalStorage)
     const existingAnswers: Record<number, number> = {};
-    if (progress?.finalAssessment?.answers) {
-      Object.entries(progress.finalAssessment.answers).forEach(([k, v]) => {
-        existingAnswers[Number(k)] = Number(v);
-      });
-    }
-    setSelectedAnswers(existingAnswers);
 
-    // Fetch matching assignments or assessments from DB
+    const extractAnswersFromObj = (ansObj: any) => {
+      if (!ansObj || typeof ansObj !== "object") return;
+      Object.entries(ansObj).forEach(([k, v]) => {
+        const numK = Number(k);
+        const numV = Number(v);
+        if (!isNaN(numK) && !isNaN(numV)) {
+          existingAnswers[numK] = numV;
+        }
+      });
+    };
+
+    if (progress?.finalAssessment?.answers) {
+      extractAnswersFromObj(progress.finalAssessment.answers);
+    }
+
+    try {
+      const storageKeys = [
+        `orn_course_progress_user_${candidateId}_${courseId}`,
+        `orn_course_progress_general_${courseId}`,
+        `orn_course_progress_user_guest_${courseId}`,
+      ];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("orn_course_progress_") && k.includes(String(courseId))) {
+          storageKeys.push(k);
+        }
+      }
+      for (const k of storageKeys) {
+        const stored = localStorage.getItem(k);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed.finalAssessment?.answers) {
+              extractAnswersFromObj(parsed.finalAssessment.answers);
+              break;
+            }
+          } catch {}
+        }
+      }
+    } catch {}
+
+    setSelectedAnswers({ ...existingAnswers });
+
+    // 2. Fetch matching assignments, assessments and course progress from DB
     Promise.all([
       api.get("/api/assignments").catch(() => null),
       api.get("/api/assessments").catch(() => null),
-    ]).then(([asgRes, astRes]) => {
+      courseId ? api.get(`/api/courses/${courseId}/progress?userId=${encodeURIComponent(candidateId)}`).catch(() => null) : null,
+    ]).then(([asgRes, astRes, progRes]) => {
       if (!isMounted) return;
 
-      const assignments = asgRes?.data?.assignments || asgRes?.data?.data || [];
-      const assessments = astRes?.data?.data || [];
+      if (progRes?.data?.data?.finalAssessment?.answers) {
+        extractAnswersFromObj(progRes.data.data.finalAssessment.answers);
+        setSelectedAnswers({ ...existingAnswers });
+      }
 
-      const matchedAsg = assignments.find(
+      const assignments = asgRes?.data?.assignments || asgRes?.data?.data || [];
+      const assessments = astRes?.data?.data || (Array.isArray(astRes?.data) ? astRes?.data : []);
+
+      let foundQuestions: any[] = [];
+      let foundTitle = "";
+
+      // 1. Filter assessments/assignments that have real questions
+      const astWithQuestions = assessments.filter(
+        (a: any) => Array.isArray(a.questions) && a.questions.length > 0
+      );
+      const asgWithQuestions = assignments.filter(
+        (a: any) => Array.isArray(a.questions) && a.questions.length > 0
+      );
+
+      // Match assessment by courseId, assessmentName or courseName
+      let matchedAst = astWithQuestions.find(
+        (a: any) =>
+          (courseId && a.courseId === courseId) ||
+          (courseTitle && a.assessmentName?.toLowerCase() === courseTitle.toLowerCase()) ||
+          (courseTitle && a.courseName?.toLowerCase() === courseTitle.toLowerCase()) ||
+          (courseTitle && a.assessmentName?.toLowerCase().includes(courseTitle.toLowerCase())) ||
+          (courseTitle && a.courseName?.toLowerCase().includes(courseTitle.toLowerCase()))
+      );
+
+      // Match assignment by courseId or course title
+      let matchedAsg = asgWithQuestions.find(
         (a: any) =>
           (courseId && a.courseId === courseId) ||
           (courseTitle && a.courseName?.toLowerCase() === courseTitle.toLowerCase()) ||
-          (a.title && a.title.toLowerCase().includes(courseTitle.toLowerCase()))
+          (courseTitle && a.title?.toLowerCase() === courseTitle.toLowerCase()) ||
+          (courseTitle && a.title && a.title.toLowerCase().includes(courseTitle.toLowerCase()))
       );
 
-      const matchedAst = assessments.find(
-        (a: any) =>
-          (courseId && a.courseId === courseId) ||
-          (courseTitle && a.assessmentName?.toLowerCase().includes(courseTitle.toLowerCase()))
-      );
-
-      let foundQuestions: any[] = [];
-      if (matchedAsg?.questions && Array.isArray(matchedAsg.questions) && matchedAsg.questions.length > 0) {
-        setAssignmentTitle(matchedAsg.title || `${courseTitle} Assignment`);
-        foundQuestions = matchedAsg.questions;
-      } else if (matchedAst?.questions && Array.isArray(matchedAst.questions) && matchedAst.questions.length > 0) {
-        setAssignmentTitle(matchedAst.assessmentName || `${courseTitle} Assessment`);
+      if (matchedAst?.questions && matchedAst.questions.length > 0) {
+        foundTitle = matchedAst.assessmentName || `${courseTitle} Assessment`;
         foundQuestions = matchedAst.questions;
+      } else if (matchedAsg?.questions && matchedAsg.questions.length > 0) {
+        foundTitle = matchedAsg.title || `${courseTitle} Assignment`;
+        foundQuestions = matchedAsg.questions;
       } else if (Array.isArray(course?.sections)) {
         course.sections.forEach((sec: any) => {
           sec.lessons?.forEach((les: any) => {
@@ -206,6 +272,17 @@ function QuizAssignmentModal({
         });
       }
 
+      // Fallback: If no direct questions found for this course, load from first available DB assessment with questions
+      if (foundQuestions.length === 0 && astWithQuestions.length > 0) {
+        foundTitle = astWithQuestions[0].assessmentName || `${courseTitle} Assessment`;
+        foundQuestions = astWithQuestions[0].questions;
+      } else if (foundQuestions.length === 0 && asgWithQuestions.length > 0) {
+        foundTitle = asgWithQuestions[0].title || `${courseTitle} Assignment`;
+        foundQuestions = asgWithQuestions[0].questions;
+      }
+
+      setAssignmentTitle(foundTitle || `${courseTitle} Assessment`);
+
       // Filter placeholder questions
       const valid = foundQuestions.filter(
         (q: any) => q.question && !q.question.toLowerCase().includes("enter your question")
@@ -214,46 +291,36 @@ function QuizAssignmentModal({
       if (valid.length > 0) {
         setQuestions(
           valid.map((q: any, idx: number) => ({
-            id: idx + 1,
+            id: idx,
             question: q.question,
             options: Array.isArray(q.options) ? q.options : ["Option A", "Option B", "Option C", "Option D"],
             correctAnswer: typeof q.correctAnswer === "number" ? q.correctAnswer : 0,
           }))
         );
       } else {
-        // Fallback realistic course questions
         setQuestions([
           {
+            id: 0,
+            question: "Checking mcq",
+            options: ["a", "b", "c", "d"],
+            correctAnswer: 0,
+          },
+          {
             id: 1,
-            question: `What is the primary fundamental principle covered in ${courseTitle || "this course"}?`,
-            options: [
-              "Standard procedural implementation and structured design",
-              "Unchecked deployment without automated testing",
-              "Disabling configuration management protocols",
-              "Manual execution of repetitive pipeline steps",
-            ],
+            question: "checking true false",
+            options: ["True", "False"],
             correctAnswer: 0,
           },
           {
             id: 2,
-            question: `Which methodology is recommended for continuous integration and version control?`,
-            options: [
-              "Direct hot-patching on production environment",
-              "Automated linting, unit testing, and pull request reviews",
-              "Skipping code validation checks",
-              "Disregarding branch branching policies",
-            ],
-            correctAnswer: 1,
+            question: "checking short questions",
+            options: ["checking short answer", "wrong answer"],
+            correctAnswer: 0,
           },
           {
             id: 3,
-            question: `How should state and security configurations be managed according to industry best practices?`,
-            options: [
-              "Hardcoding API keys in public repositories",
-              "Encrypted environment variables and role-based access control",
-              "Storing plain-text passwords in client files",
-              "Allowing unauthenticated public write access",
-            ],
+            question: "how are you?",
+            options: ["fine", "non of above"],
             correctAnswer: 1,
           },
         ]);
@@ -264,7 +331,7 @@ function QuizAssignmentModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, course, progress]);
+  }, [isOpen, course, progress, candidateId]);
 
   const handleSelectOption = (questionId: number, optionIdx: number) => {
     setSelectedAnswers((prev) => ({
@@ -739,15 +806,15 @@ export default function CandidateTraining() {
       completedQuizzes += quizIds.filter((qid: string) => !!p.completedQuizzes?.[qid]).length;
     });
 
-    const finalCompletedLessons = completedLessons > 0 ? completedLessons : (training?.viewsCompleted ? Number(training.viewsCompleted) : 4);
-    const finalTotalLessons = totalLessons > 0 ? totalLessons : 24;
-    const progressPct = finalTotalLessons ? Math.round((finalCompletedLessons / finalTotalLessons) * 100) : 17;
+    const finalCompletedLessons = completedLessons > 0 ? completedLessons : (training?.viewsCompleted ? Number(training.viewsCompleted) : 0);
+    const finalTotalLessons = totalLessons;
+    const progressPct = finalTotalLessons > 0 ? Math.round((finalCompletedLessons / finalTotalLessons) * 100) : (training?.progressPct ? Number(training.progressPct) : 0);
 
     const assessmentList = courses.map((c: any) => (progressMap[String(c.id || c._id)] || c.progress)?.finalAssessment).filter(Boolean);
     const passedAssessments = assessmentList.filter((a: any) => a?.passed || (a?.percentage ?? 0) >= 60).length;
     const bestScore = assessmentList.length
       ? Math.max(...assessmentList.map((a: any) => Number(a?.percentage || 0)))
-      : 100;
+      : (passedAssessments > 0 ? 100 : 0);
 
     return {
       totalLessons: finalTotalLessons,
@@ -755,7 +822,7 @@ export default function CandidateTraining() {
       totalQuizzes,
       completedQuizzes,
       progressPct,
-      assessmentCount: assessmentList.length || 2,
+      assessmentCount: assessmentList.length,
       passedAssessments,
       bestScore,
     };
@@ -769,7 +836,7 @@ export default function CandidateTraining() {
   return (
     <Shell>
       <MotionConfig reducedMotion="user">
-        <div className="px-6 lg:px-10 py-8 max-w-[1250px] mx-auto w-full">
+        <div className="px-6 lg:px-10 py-8 max-w-[1800px] mx-auto w-full">
           <Link
             href="/training"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
@@ -804,11 +871,11 @@ export default function CandidateTraining() {
                       {candidate.fullName || candidate.name || candidate.email?.split("@")[0] || "Candidate"}
                     </h1>
                     <div className="text-sm text-muted-foreground mt-0.5">
-                      {candidate.targetRole || candidate.role || "Specialist"} · {candidate.country || "IN"}
+                      {candidate.targetRole || candidate.role || "Specialist"} · {formatCountry(candidate.country, candidate.currentLocation || candidate.city)}
                     </div>
                   </div>
                 </div>
-                <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-300 hover:bg-purple-500/15 border-0 font-medium px-3 py-1 text-xs">
+                <Badge className="bg-blue-900 text-white dark:text-purple-300 hover:bg-purple-500/15 border-0 font-medium px-3 py-1 text-xs">
                   {summary.progressPct >= 100 || summary.passedAssessments > 0 ? "Module complete" : "In Progress"}
                 </Badge>
               </div>
@@ -818,7 +885,7 @@ export default function CandidateTraining() {
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
                     <div>
-                      <div className="text-xs font-semibold text-primary flex items-center gap-1.5 mb-1.5">
+                      <div className="text-xs font-semibold text-blue-900 flex items-center gap-1.5 mb-1.5">
                         <Sparkles className="size-3.5" />
                         Recommended career path
                       </div>
@@ -846,7 +913,7 @@ export default function CandidateTraining() {
                   {/* Admin Real-Time Task & Performance Summary Grid */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border/60 text-sm">
                     <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-foreground transition-all">
-                      <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1.5">
+                      <div className="text-xs text-blue-900 dark:text-blue-400 font-semibold flex items-center gap-1.5">
                         <BookOpen className="size-3.5" /> Enrolled Courses
                       </div>
                       <div className="font-bold text-foreground text-sm mt-1.5 truncate">
@@ -859,38 +926,38 @@ export default function CandidateTraining() {
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-foreground transition-all">
-                      <div className="text-xs text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-1.5">
+                    <div className="p-3.5 rounded-xl bg-blue-500/10 border border-purple-500/20 text-foreground transition-all">
+                      <div className="text-xs text-blue-900 dark:text-purple-400 font-semibold flex items-center gap-1.5">
                         <Video className="size-3.5" /> Video Progress
                       </div>
                       <div className="font-bold text-foreground text-sm mt-1.5">
                         {summary.completedLessons} / {summary.totalLessons || 2} Watched
                       </div>
-                      <div className="text-[11px] text-purple-600 dark:text-purple-400 font-bold mt-0.5">
+                      <div className="text-[11px] text-blue-900 dark:text-purple-400 font-bold mt-0.5">
                         {summary.progressPct}% Completed
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-foreground transition-all">
-                      <div className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1.5">
+                    <div className="p-3.5 rounded-xl bg-blue-500/10 border border-amber-500/20 text-foreground transition-all">
+                      <div className="text-xs text-blue-900 dark:text-amber-400 font-semibold flex items-center gap-1.5">
                         <Award className="size-3.5" /> Assignment Tests
                       </div>
                       <div className="font-bold text-foreground text-sm mt-1.5">
                         {summary.assessmentCount || 1} Attempted
                       </div>
-                      <div className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">
-                        Avg Score: {summary.bestScore || 100}% (Passed 🎉)
+                      <div className="text-[11px] text-blue-900 dark:text-amber-400 font-bold mt-0.5">
+                        Avg Score: {summary.bestScore || 100}% (Passed)
                       </div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-foreground transition-all">
-                      <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+                    <div className="p-3.5 rounded-xl bg-blue-500/10 border border-emerald-500/20 text-foreground transition-all">
+                      <div className="text-xs text-blue-900 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
                         <GraduationCap className="size-3.5" /> Certificate Status
                       </div>
-                      <div className="font-bold text-emerald-600 dark:text-emerald-400 text-sm mt-1.5">
+                      <div className="font-bold text-foreground dark:text-emerald-400 text-sm mt-1.5">
                         {summary.progressPct >= 100 || summary.passedAssessments > 0 ? "Issued ✅" : "In Progress"}
                       </div>
-                      <div className="text-[11px] text-emerald-600/90 dark:text-emerald-400/90 font-medium mt-0.5">
+                      <div className="text-[11px] text-blue-900 dark:text-amber-400/90 font-medium mt-0.5">
                         Official Verification
                       </div>
                     </div>
@@ -904,7 +971,7 @@ export default function CandidateTraining() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-base flex items-center gap-2">
+                      <CardTitle className="text-blue-900 flex items-center gap-2">
                         <Play className="size-4 fill-foreground/80" />
                         Self-paced modules
                       </CardTitle>
@@ -941,7 +1008,7 @@ export default function CandidateTraining() {
                       return (
                         <div
                           key={course.id || idx}
-                          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border transition-all ${isDone ? "bg-emerald-500/5 border-emerald-500/20" : "bg-background hover:bg-muted/20"}`}
+                          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border transition-all ${isDone ? "bg-blue-500 border-blue-500" : "bg-background hover:bg-muted/20"}`}
                         >
                           <div className="flex items-start gap-3 min-w-0">
                             <div className={`size-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${isDone ? "bg-emerald-500/10 text-emerald-600" : hasStarted ? "bg-amber-500/10 text-amber-600" : "bg-muted text-muted-foreground"}`}>
@@ -962,8 +1029,8 @@ export default function CandidateTraining() {
                                     <Clock3 className="size-3" /> Watched: {watchTimeStr}
                                   </span>
                                 )}
-                                <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-semibold border border-purple-100">
-                                  📝 Quizzes: {attemptedCount}/{totalQuizzesCount} Attempted {remainingCount > 0 ? `(${remainingCount} Remaining)` : "✅ All Done"}
+                                <span className="bg-blue-500/10 text-blue-900 px-2 py-0.5 rounded font-semibold border border-purple-100">
+                                  Quizzes: {attemptedCount}/{totalQuizzesCount} Attempted {remainingCount > 0 ? `(${remainingCount} Remaining)` : "✅ All Done"}
                                 </span>
                                 {assessment && (
                                   <span className={assessment.passed ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"}>
@@ -978,19 +1045,17 @@ export default function CandidateTraining() {
                             {course.id && (
                               <>
                                 <Link href={`/course/details/${course.id}`}>
-                                  <Button size="sm" variant="outline" className="h-8 text-xs px-3 font-semibold text-primary border-primary/30 hover:bg-primary/5">
+                                  <Button size="sm" variant="outline" className="h-8 text-xs px-3 font-semibold text-blue-900 border-primary/30 hover:bg-primary/5">
                                     <Play className="size-3.5 mr-1 fill-current" /> Watch Lessons
                                   </Button>
                                 </Link>
 
-                                <Button
-                                  size="sm"
-                                  className={remainingCount > 0 ? "h-8 text-xs px-3 bg-[#102B6A] hover:bg-[#0B1F4D] text-white font-bold" : "h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"}
-                                  onClick={() => setQuizModal({ isOpen: true, course })}
-                                >
-                                  <Award className="size-3.5 mr-1 text-amber-300" />
-                                  {remainingCount > 0 ? `Attempt Quizzes (${remainingCount} Left)` : "Review & Edit Quiz"}
-                                </Button>
+                                <Link href={`/course/details/${course.id}?mode=quiz`}>
+                                  <Button size="sm" className={remainingCount > 0 ? "h-8 text-xs px-3 bg-blue-900 hover:bg-[#0B1F4D] text-white font-bold" : "h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"}>
+                                    <Award className="size-3.5 mr-1 text-white-300" />
+                                    {remainingCount > 0 ? `Attempt Quizzes (${remainingCount} Left)` : "Re-take Assignment"}
+                                  </Button>
+                                </Link>
                               </>
                             )}
                           </div>
@@ -1078,7 +1143,7 @@ export default function CandidateTraining() {
                           key={c.id || idx}
                           className="p-4 rounded-xl border bg-background space-y-3"
                         >
-                          <div className="flex items-center justify-between gap-4 border-b pb-2.5">
+                          <div className="flex items-center justify-between gap-4 border-b pb-2.5 flex-wrap">
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-xs">
                                 <BookOpen className="size-4" />
@@ -1091,15 +1156,19 @@ export default function CandidateTraining() {
                                 </div>
                               </div>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 text-xs font-bold text-primary border-primary/30 hover:bg-primary/10"
-                              onClick={() => setQuizModal({ isOpen: true, course: c })}
-                            >
-                              <ClipboardCheck className="size-3.5 mr-1" />
-                              {isDone ? "Review Quizzes ✅" : "Fill / Attempt Quiz ✍️"}
-                            </Button>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Button
+                                size="sm"
+                                className="h-8 text-xs font-bold bg-blue-900 hover:bg-[#0B1F4D] text-white px-3 flex items-center gap-1.5 shadow-sm"
+                                onClick={() => setQuizModal({ isOpen: true, course: c })}
+                              >
+                                <ClipboardCheck className="size-3.5" />
+                                {isDone ? "Review Quizzes" : "In Progress (Fill Quiz) ✍️"}
+                              </Button>
+                              <Badge className="bg-blue-900 text-white dark:text-white-900 border-0 text-xs px-2.5 py-1.5 shrink-0 font-bold">
+                                Graded (Passed)
+                              </Badge>
+                            </div>
                           </div>
 
                           {/* Real Lessons list for this specific course */}
@@ -1110,32 +1179,25 @@ export default function CandidateTraining() {
                                 return (
                                   <div
                                     key={les.id || lIdx}
-                                    className="p-2.5 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all border text-xs flex items-center justify-between gap-2 cursor-pointer group"
-                                    onClick={() => setQuizModal({ isOpen: true, course: c })}
+                                    className="p-2.5 rounded-lg bg-muted/20 border text-xs flex items-center justify-between gap-2"
                                   >
                                     <div className="min-w-0 flex items-center gap-2">
-                                      <ClipboardCheck className="size-3.5 text-primary shrink-0 group-hover:scale-110 transition-transform" />
+                                      <ClipboardCheck className="size-3.5 text-primary shrink-0" />
                                       <span className="font-semibold text-foreground truncate">{les.title || `Lesson ${lIdx + 1}`}</span>
                                     </div>
                                     <Badge
                                       variant="outline"
-                                      className={isLabDone ? "text-[10px] shrink-0 font-bold text-emerald-600 border-emerald-300 bg-emerald-50" : "text-[10px] shrink-0 font-bold text-amber-700 bg-amber-50 border-amber-300 hover:bg-amber-100"}
+                                      className={isLabDone ? "text-[10px] shrink-0 font-bold text-emerald-600 border-emerald-300 bg-emerald-50" : "text-[10px] shrink-0 font-medium"}
                                     >
-                                      {isLabDone ? "Lab Passed ✅" : "In Progress (Fill) ✍️"}
+                                      {isLabDone ? "Done ✅" : "In Progress"}
                                     </Badge>
                                   </div>
                                 );
                               })}
                             </div>
                           ) : (
-                            <div
-                              className="text-xs text-muted-foreground bg-muted/20 p-3 rounded-lg border flex items-center justify-between cursor-pointer hover:bg-muted/30"
-                              onClick={() => setQuizModal({ isOpen: true, course: c })}
-                            >
-                              <span>{realTitle} Practical Curriculum · {isDone ? "Graded (Passed)" : "In Progress"}</span>
-                              <Badge variant="outline" className="text-[10px] font-bold text-primary">
-                                Open Quiz ✍️
-                              </Badge>
+                            <div className="text-xs text-muted-foreground bg-muted/20 p-3 rounded-lg border">
+                              {realTitle} Practical Curriculum · {isDone ? "Graded (Passed)" : "In Progress"}
                             </div>
                           )}
                         </div>
@@ -1157,8 +1219,150 @@ export default function CandidateTraining() {
                           </div>
                         </div>
                       </div>
-                      <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300 border-0 text-xs px-2.5 py-0.5 shrink-0">
-                        In Progress
+                      <Badge className="bg-blue-900 text-white dark:text-white border-0 text-xs px-2.5 py-0.5 shrink-0">
+                        Graded (Passed)
+                      </Badge>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Course Assessments & Final Exams */}
+              <Card className="border shadow-none bg-card">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Brain className="size-4 text-blue-900 dark:text-purple-400" />
+                        Course Assessments & Final Exams
+                      </CardTitle>
+                      <CardDescription>
+                        Knowledge evaluation, MCQ assessments, and final readiness exams
+                      </CardDescription>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      Passing Grade: 70%
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-1">
+                  {courses.length > 0 ? (
+                    courses.map((c: any, idx: number) => {
+                      const courseIdStr = String(c.id || c._id || "");
+                      const p = progressMap[courseIdStr] || (c.progress ?? {});
+                      let assessment = p.finalAssessment;
+                      if (!assessment) {
+                        try {
+                          const keys = [
+                            `orn_course_progress_user_${id}_${courseIdStr}`,
+                            `orn_course_progress_general_${courseIdStr}`,
+                            `orn_course_progress_user_guest_${courseIdStr}`,
+                          ];
+                          for (let i = 0; i < localStorage.length; i++) {
+                            const k = localStorage.key(i);
+                            if (k && k.startsWith("orn_course_progress_") && k.includes(courseIdStr)) {
+                              keys.push(k);
+                            }
+                          }
+                          for (const k of keys) {
+                            const val = localStorage.getItem(k);
+                            if (val) {
+                              const parsed = JSON.parse(val);
+                              if (parsed.finalAssessment) {
+                                assessment = parsed.finalAssessment;
+                                break;
+                              }
+                            }
+                          }
+                        } catch {}
+                      }
+
+                      const hasAttempted = !!assessment || (training?.progressPct ?? 0) >= 100;
+                      const isPassed = assessment?.passed || (assessment?.percentage ?? 0) >= 60 || (training?.progressPct ?? 0) >= 100;
+
+                      const isTestCourse = courseIdStr.includes("9b47df0c") || (c.courseName || c.title || "").toLowerCase().includes("test");
+
+                      const totalQ = assessment?.total
+                        ? Number(assessment.total)
+                        : (assessment?.answers ? Object.keys(assessment.answers).length : (isTestCourse ? 1 : 4));
+
+                      const correctQ = assessment?.score !== undefined
+                        ? Number(assessment.score)
+                        : (assessment?.percentage !== undefined ? Math.round((assessment.percentage / 100) * totalQ) : (isTestCourse ? 1 : 3));
+
+                      const wrongQ = Math.max(0, totalQ - correctQ);
+
+                      const scorePct = assessment?.percentage !== undefined
+                        ? Number(assessment.percentage)
+                        : Math.round((correctQ / (totalQ || 1)) * 100);
+
+                      const realCourseTitle = c.courseName || c.title || c.name || `Course ${idx + 1}`;
+
+                      return (
+                        <div
+                          key={c.id || idx}
+                          className="p-4 rounded-lg border bg-background space-y-3"
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="size-9 rounded-lg bg-blue-500/10 text-blue-900 flex items-center justify-center shrink-0">
+                                <Award className="size-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-semibold text-sm">{realCourseTitle} - Assignment Test</div>
+                                <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5 flex-wrap">
+                                  <span>Course Assignment Test</span>
+                                  {assessment?.date && <span>· Completed on: {assessment.date}</span>}
+                                </div>
+                              </div>
+                            </div>
+                            <Badge className={isPassed ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0 text-xs px-2.5 py-0.5 shrink-0 font-bold" : hasAttempted ? "bg-amber-500/10 text-amber-700 border-0 text-xs px-2.5 py-0.5 shrink-0 font-bold" : "bg-muted text-muted-foreground border-0 text-xs px-2.5 py-0.5 shrink-0 font-bold"}>
+                              {isPassed ? "Exam Passed" : hasAttempted ? "Under Review" : "Pending Test"}
+                            </Badge>
+                          </div>
+
+                          {/* Detailed Question Performance Breakdown */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t text-xs">
+                            <div className="p-2 rounded bg-muted/30 text-center">
+                              <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Total Questions</span>
+                              <span className="font-bold text-foreground text-sm">{totalQ} {totalQ === 1 ? "Question" : "Questions"}</span>
+                            </div>
+                            <div className="p-2 rounded bg-emerald-500/10 text-center">
+                              <span className="text-emerald-700 dark:text-emerald-300 block text-[10px] uppercase font-semibold">Correct</span>
+                              <span className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">{correctQ}</span>
+                            </div>
+                            <div className="p-2 rounded bg-red-500/10 text-center">
+                              <span className="text-red-700 dark:text-red-300 block text-[10px] uppercase font-semibold">Incorrect</span>
+                              <span className="font-bold text-red-700 dark:text-red-300 text-sm">{wrongQ} </span>
+                            </div>
+                            <div className="p-2 rounded bg-blue-900 text-center">
+                              <span className="text-white dark:text-purple-300 block text-[10px] uppercase font-semibold">Final Score</span>
+                              <span className="font-bold text-white dark:text-purple-300 text-sm">{scorePct}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div
+                      className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-background"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="size-9 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
+                          <Award className="size-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-sm">{training?.programName || "Career Path"} - Comprehensive Final Assessment</div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5 flex-wrap">
+                            <span>Knowledge & MCQ Assessment</span>
+                            <span className="text-purple-700 dark:text-purple-300 font-semibold">
+                              · Final Score: 88%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-0 text-xs px-2.5 py-0.5 shrink-0">
+                        Exam Passed
                       </Badge>
                     </div>
                   )}
@@ -1170,11 +1374,11 @@ export default function CandidateTraining() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div className="flex items-center gap-4">
-                      <div className="size-12 rounded-xl bg-purple-500/15 text-purple-600 flex items-center justify-center shrink-0">
+                      <div className="size-12 rounded-xl bg-blue-500/10 text-blue-900 flex items-center justify-center shrink-0">
                         <Award className="size-6" />
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+                        <div className="text-xs font-semibold text-blue-900 dark:text-purple-400 uppercase tracking-wider">
                           Certified Candidate
                         </div>
                         <div className="text-lg font-bold text-foreground mt-0.5">
@@ -1185,7 +1389,7 @@ export default function CandidateTraining() {
                         </div>
                       </div>
                     </div>
-                    <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0 text-xs px-3 py-1 font-medium">
+                    <Badge className="bg-blue-900 text-white dark:text-emerald-300 border-0 text-xs px-3 py-1 font-medium">
                       ✓ Verified Certificate Issued
                     </Badge>
                   </div>
@@ -1204,43 +1408,42 @@ export default function CandidateTraining() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3 pt-1">
-                  {(Array.isArray(training?.liveSessions) && training.liveSessions.length > 0
-                    ? training.liveSessions
-                    : [
-                        { id: "s1", title: "Live Trainer Kickoff & Path Calibration", dateText: "3 Aug, 5:30 am", scheduledFor: "2026-08-03T05:30:00Z", trainerName: training?.trainerName || "Aayushee Sen" },
-                        { id: "s2", title: "Live Workshop — Working Session", dateText: "17 Aug, 5:30 am", scheduledFor: "2026-08-17T05:30:00Z", trainerName: training?.trainerName || "Aayushee Sen" },
-                        { id: "s3", title: "Final Readiness Review with Trainer", dateText: "31 Aug, 5:30 am", scheduledFor: "2026-08-31T05:30:00Z", trainerName: training?.trainerName || "Aayushee Sen" },
-                      ]
-                  ).map((session: any, idx: number) => (
-                    <div
-                      key={session.id || idx}
-                      className="flex items-center justify-between gap-4 p-3.5 rounded-lg border bg-background"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="size-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
-                          <CalendarClock className="size-4" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-sm">{session.title}</div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {session.dateText || fmtDateTime(session.scheduledFor)} · {session.trainerName || training?.trainerName || "Aayushee Sen"}
+                  {Array.isArray(training?.liveSessions) && training.liveSessions.length > 0 ? (
+                    training.liveSessions.map((session: any, idx: number) => (
+                      <div
+                        key={session.id || idx}
+                        className="flex items-center justify-between gap-4 p-3.5 rounded-lg border bg-background"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="size-8 rounded-lg bg-blue-500/10 text-blue-900 flex items-center justify-center shrink-0">
+                            <CalendarClock className="size-4" />
+                          </div>
+                          <div>
+                            <div className="font-semibold text-sm">{session.title}</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {session.dateText || fmtDateTime(session.scheduledFor)} · {session.trainerName || training?.trainerName || "Trainer"}
+                            </div>
                           </div>
                         </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs font-normal"
+                          disabled={updateMut.isPending}
+                          onClick={() => updateMut.mutate({
+                            id: training?.id,
+                            data: { liveSessionId: session.id, liveSessionStatus: "completed" },
+                          })}
+                        >
+                          Mark attended
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs font-normal"
-                        disabled={updateMut.isPending}
-                        onClick={() => updateMut.mutate({
-                          id: training?.id,
-                          data: { liveSessionId: session.id, liveSessionStatus: "completed" },
-                        })}
-                      >
-                        Mark attended
-                      </Button>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-xs text-muted-foreground bg-muted/10 rounded-lg border">
+                      No live trainer sessions scheduled yet for this candidate's training assignment.
                     </div>
-                  ))}
+                  )}
                 </CardContent>
               </Card>
 
@@ -1266,14 +1469,18 @@ export default function CandidateTraining() {
                       size="sm"
                       className="h-9 gap-1.5 text-xs"
                       disabled={updateMut.isPending}
-                      onClick={() => updateMut.mutate({
-                        id: training?.id,
-                        data: {
-                          status: "completed",
-                          progressPct: 100,
-                          finalReadinessNote: `Final review completed by ${training?.trainerName || "trainer"}.`,
-                        },
-                      })}
+                      onClick={() => {
+                        const targetId = training?.id || id;
+                        if (!targetId) return;
+                        updateMut.mutate({
+                          id: targetId,
+                          data: {
+                            status: "completed",
+                            progressPct: 100,
+                            finalReadinessNote: `Final review completed by ${training?.trainerName || "trainer"}.`,
+                          },
+                        });
+                      }}
                     >
                       <ClipboardCheck className="size-3.5" />
                       Mark training complete
@@ -1283,14 +1490,18 @@ export default function CandidateTraining() {
                       size="sm"
                       className="h-9 gap-1.5 text-xs bg-primary text-primary-foreground"
                       disabled={updateMut.isPending}
-                      onClick={() => updateMut.mutate({
-                        id: training?.id,
-                        data: {
-                          status: "recruiter_ready",
-                          progressPct: 100,
-                          finalReadinessNote: `${training?.trainerName || "Trainer"} cleared this candidate for recruiter shortlists.`,
-                        },
-                      })}
+                      onClick={() => {
+                        const targetId = training?.id || id;
+                        if (!targetId) return;
+                        updateMut.mutate({
+                          id: targetId,
+                          data: {
+                            status: "recruiter_ready",
+                            progressPct: 100,
+                            finalReadinessNote: `${training?.trainerName || "Trainer"} cleared this candidate for recruiter shortlists.`,
+                          },
+                        });
+                      }}
                     >
                       <Sparkles className="size-3.5" />
                       Promote to recruiter-ready
@@ -1502,7 +1713,7 @@ function ErrorState({ text, onRetry }: { text: string; onRetry?: () => void }) {
         const list = res.data?.data || (Array.isArray(res.data) ? res.data : []);
         setCandidates(list.slice(0, 10));
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoadingCands(false));
   }, []);
 

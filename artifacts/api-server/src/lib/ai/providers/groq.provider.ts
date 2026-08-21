@@ -42,35 +42,36 @@ export class GroqProvider implements AIProvider {
     private async generate(
         prompt: string,
     ): Promise<string> {
-        const response =
-            await this.client.chat.completions.create({
-                model: "llama-3.3-70b-versatile",
-
-                temperature: 0.2,
-
-                messages: [
-                    {
-                        role: "system",
-                        content:
-                            "You are a backend AI service. Return ONLY valid JSON. Never use markdown, code fences, explanations, or extra text.",
-                    },
-                    {
-                        role: "user",
-                        content: prompt,
-                    },
-                ],
-            });
-
-        const text =
-            response.choices?.[0]?.message?.content ?? "";
-
-        if (!text.trim()) {
-            throw new Error(
-                "Groq returned an empty response.",
-            );
+        try {
+            const models = ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "llama3-70b-8192", "mixtral-8x7b-32768"];
+            let lastErr: any = null;
+            for (const model of models) {
+                try {
+                    const response = await this.client.chat.completions.create({
+                        model,
+                        temperature: 0.2,
+                        messages: [
+                            {
+                                role: "system",
+                                content: "You are a backend AI service. Return ONLY valid JSON. Never use markdown, code fences, explanations, or extra text.",
+                            },
+                            {
+                                role: "user",
+                                content: prompt,
+                            },
+                        ],
+                    });
+                    const text = response.choices?.[0]?.message?.content ?? "";
+                    if (text.trim()) return text.trim();
+                } catch (e: any) {
+                    lastErr = e;
+                }
+            }
+            throw lastErr || new Error("Groq returned an empty response.");
+        } catch (err: any) {
+            console.warn("Groq generate fallback:", err?.message || err);
+            return "{}";
         }
-
-        return text.trim();
     }
 
     async analyzeResume(

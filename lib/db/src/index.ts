@@ -1,6 +1,11 @@
+import dns from "node:dns";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
+
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {}
 
 const { Pool } = pg;
 
@@ -53,6 +58,15 @@ export const pool = new Pool({
   password: decodeURIComponent(parsedDatabaseUrl.password),
   database: parsedDatabaseUrl.pathname?.slice(1),
   ssl: resolveSslConfig(),
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+  lookup: (hostname, options, callback) => {
+    if (typeof options === "function") {
+      return dns.lookup(hostname, { family: 4 }, options);
+    }
+    return dns.lookup(hostname, { ...(options || {}), family: 4 }, callback);
+  },
 });
 export const db = drizzle(pool, { schema });
 

@@ -386,9 +386,11 @@ export default function Register() {
         }
       }
 
-      // ✅ Step 4: Save email & candidate code for OTP page
+      // ✅ Step 4: Save email & candidate details for OTP page
       sessionStorage.setItem("verifyEmail", response.email);
       sessionStorage.setItem("candidateCode", response.candidateCode);
+      sessionStorage.setItem("registerName", `${values.firstName || ""} ${values.lastName || ""}`.trim() || "Candidate");
+      sessionStorage.setItem("registerRole", values.preferredRole || values.currentRole || "Specialist");
 
       // ✅ Step 5: Show success message
       toast.success("Registration successful! Please verify your email.");

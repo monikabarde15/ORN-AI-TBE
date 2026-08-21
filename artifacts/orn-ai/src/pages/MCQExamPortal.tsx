@@ -110,7 +110,6 @@ const handleStartAssessment = async (assessment: StudentAssessment) => {
     setAssessmentId(data.id);
 
     const publishedQuestions: Question[] = (data.questions || [])
-      .filter((q: any) => q.status === "Published")
       .map((q: any) => ({
         id: q.id,
         text: q.question,
