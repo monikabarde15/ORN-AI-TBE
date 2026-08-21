@@ -551,14 +551,14 @@ export default function VerifyOtp() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Button
+                  {/* <Button
                     size="lg"
                     className="h-14 bg-blue-900 hover:bg-[#0B1F4D] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all"
                     onClick={() => setStep("assessment")}
                   >
                     <ClipboardCheck className="size-5" />
                     Go to Assessments ✍️
-                  </Button>
+                  </Button> */}
 
                   <Button
                     size="lg"
@@ -625,19 +625,17 @@ export default function VerifyOtp() {
                               [currentQIdx]: oIdx,
                             }))
                           }
-                          className={`w-full text-left p-4 rounded-xl border text-sm font-medium transition-all flex items-center justify-between gap-3 ${
-                            isSelected
+                          className={`w-full text-left p-4 rounded-xl border text-sm font-medium transition-all flex items-center justify-between gap-3 ${isSelected
                               ? "bg-blue-50 border-blue-900 text-blue-900 shadow-sm font-bold"
                               : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-3">
                             <span
-                              className={`size-6 rounded-full text-xs flex items-center justify-center font-bold ${
-                                isSelected
+                              className={`size-6 rounded-full text-xs flex items-center justify-center font-bold ${isSelected
                                   ? "bg-blue-900 text-white"
                                   : "bg-slate-100 text-slate-600"
-                              }`}
+                                }`}
                             >
                               {String.fromCharCode(65 + oIdx)}
                             </span>
