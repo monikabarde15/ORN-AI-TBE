@@ -273,8 +273,6 @@ export default function SidebarContent({
                     className={linkClass(
                       location === "/admin-test-assignment"
                     )}
-                  >
-                    <UserPlus className="size-4" />
                     Assessment
                   </Link>
 
