@@ -695,7 +695,15 @@ router.get(
           const finalSections = [];
 
           for (const sec of sections) {
-            const lessons = await db.select().from(subSectionsTable).where(eq(subSectionsTable.sectionId, sec.id)).orderBy(asc(subSectionsTable.createdAt));
+            const rawLessons = await db.select().from(subSectionsTable).where(eq(subSectionsTable.sectionId, sec.id)).orderBy(asc(subSectionsTable.createdAt));
+            // Filter out empty auto-created "Final Assessment" placeholder subsections from standard course curriculum
+            const lessons = rawLessons.filter((l) => {
+              const t = (l.title || "").trim().toLowerCase();
+              if ((t === "final assessment" || t === "assessment" || t.includes("auto-created assessment")) && !l.videoUrl && !l.pdfUrl) {
+                return false;
+              }
+              return true;
+            });
             if (lessons.length > 0) {
               finalSections.push({
                 id: sec.id,
@@ -738,11 +746,11 @@ router.get(
 
           detailedCourses.push({
             id: course.id,
-            title: course.courseName,
-            courseName: course.courseName,
+            title: course.title || (course as any).courseName,
+            courseName: course.title || (course as any).courseName,
             description: course.description,
             thumbnail: course.thumbnail,
-            difficulty: course.courseLevel,
+            difficulty: course.difficulty || (course as any).courseLevel,
             sections: finalSections,
             progress: {
               completedLessons: mergedLessons,

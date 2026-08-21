@@ -84,17 +84,31 @@ function getPathId(training: any, search: string) {
   );
 }
 
+function isAssessmentPlaceholder(item: any) {
+  if (!item) return false;
+  const t = (item.title || item.name || item.sectionName || "").trim().toLowerCase();
+  return (
+    t === "final assessment" ||
+    t === "assessment" ||
+    t === "final exam" ||
+    t === "exam" ||
+    t.includes("assessment container") ||
+    t.includes("auto-created assessment")
+  );
+}
+
 function extractCourseLessons(course: any) {
+  let list: any[] = [];
   if (Array.isArray(course?.modules) && course.modules.length > 0) {
-    return course.modules;
+    list = course.modules;
+  } else if (Array.isArray(course?.lessons) && course.lessons.length > 0) {
+    list = course.lessons;
+  } else if (Array.isArray(course?.sections) && course.sections.length > 0) {
+    const validSections = course.sections.filter((s: any) => !isAssessmentPlaceholder(s));
+    const targetSections = validSections.length > 0 ? validSections : course.sections;
+    list = targetSections.flatMap((s: any) => (Array.isArray(s.lessons) ? s.lessons : []));
   }
-  if (Array.isArray(course?.lessons) && course.lessons.length > 0) {
-    return course.lessons;
-  }
-  if (Array.isArray(course?.sections) && course.sections.length > 0) {
-    return course.sections.flatMap((s: any) => s.lessons || []);
-  }
-  return [];
+  return list.filter((l: any) => !isAssessmentPlaceholder(l));
 }
 
 function fmtDuration(seconds?: number | null) {
@@ -106,6 +120,383 @@ function fmtDuration(seconds?: number | null) {
 
 function normalizeCourseDetails(course: any) {
   return course?.data ?? course?.course ?? course ?? {};
+}
+
+function QuizAssignmentModal({
+  isOpen,
+  onClose,
+  course,
+  candidateId,
+  progress,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  course: any;
+  candidateId: string;
+  progress?: ProgressData;
+  onSuccess: () => void;
+}) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [assignmentTitle, setAssignmentTitle] = useState("Course Assignment & Quizzes");
+
+  useEffect(() => {
+    if (!isOpen || !course) return;
+
+    let isMounted = true;
+    setLoading(true);
+
+    const courseId = course.id || course._id;
+    const courseTitle = course.courseName || course.title || "";
+
+    // Initialize existing answers from candidate's progress
+    const existingAnswers: Record<number, number> = {};
+    if (progress?.finalAssessment?.answers) {
+      Object.entries(progress.finalAssessment.answers).forEach(([k, v]) => {
+        existingAnswers[Number(k)] = Number(v);
+      });
+    }
+    setSelectedAnswers(existingAnswers);
+
+    // Fetch matching assignments or assessments from DB
+    Promise.all([
+      api.get("/api/assignments").catch(() => null),
+      api.get("/api/assessments").catch(() => null),
+    ]).then(([asgRes, astRes]) => {
+      if (!isMounted) return;
+
+      const assignments = asgRes?.data?.assignments || asgRes?.data?.data || [];
+      const assessments = astRes?.data?.data || [];
+
+      const matchedAsg = assignments.find(
+        (a: any) =>
+          (courseId && a.courseId === courseId) ||
+          (courseTitle && a.courseName?.toLowerCase() === courseTitle.toLowerCase()) ||
+          (a.title && a.title.toLowerCase().includes(courseTitle.toLowerCase()))
+      );
+
+      const matchedAst = assessments.find(
+        (a: any) =>
+          (courseId && a.courseId === courseId) ||
+          (courseTitle && a.assessmentName?.toLowerCase().includes(courseTitle.toLowerCase()))
+      );
+
+      let foundQuestions: any[] = [];
+      if (matchedAsg?.questions && Array.isArray(matchedAsg.questions) && matchedAsg.questions.length > 0) {
+        setAssignmentTitle(matchedAsg.title || `${courseTitle} Assignment`);
+        foundQuestions = matchedAsg.questions;
+      } else if (matchedAst?.questions && Array.isArray(matchedAst.questions) && matchedAst.questions.length > 0) {
+        setAssignmentTitle(matchedAst.assessmentName || `${courseTitle} Assessment`);
+        foundQuestions = matchedAst.questions;
+      } else if (Array.isArray(course?.sections)) {
+        course.sections.forEach((sec: any) => {
+          sec.lessons?.forEach((les: any) => {
+            if (Array.isArray(les.quizzes)) {
+              les.quizzes.forEach((q: any) => {
+                if (q.question && Array.isArray(q.options)) {
+                  foundQuestions.push(q);
+                }
+              });
+            }
+          });
+        });
+      }
+
+      // Filter placeholder questions
+      const valid = foundQuestions.filter(
+        (q: any) => q.question && !q.question.toLowerCase().includes("enter your question")
+      );
+
+      if (valid.length > 0) {
+        setQuestions(
+          valid.map((q: any, idx: number) => ({
+            id: idx + 1,
+            question: q.question,
+            options: Array.isArray(q.options) ? q.options : ["Option A", "Option B", "Option C", "Option D"],
+            correctAnswer: typeof q.correctAnswer === "number" ? q.correctAnswer : 0,
+          }))
+        );
+      } else {
+        // Fallback realistic course questions
+        setQuestions([
+          {
+            id: 1,
+            question: `What is the primary fundamental principle covered in ${courseTitle || "this course"}?`,
+            options: [
+              "Standard procedural implementation and structured design",
+              "Unchecked deployment without automated testing",
+              "Disabling configuration management protocols",
+              "Manual execution of repetitive pipeline steps",
+            ],
+            correctAnswer: 0,
+          },
+          {
+            id: 2,
+            question: `Which methodology is recommended for continuous integration and version control?`,
+            options: [
+              "Direct hot-patching on production environment",
+              "Automated linting, unit testing, and pull request reviews",
+              "Skipping code validation checks",
+              "Disregarding branch branching policies",
+            ],
+            correctAnswer: 1,
+          },
+          {
+            id: 3,
+            question: `How should state and security configurations be managed according to industry best practices?`,
+            options: [
+              "Hardcoding API keys in public repositories",
+              "Encrypted environment variables and role-based access control",
+              "Storing plain-text passwords in client files",
+              "Allowing unauthenticated public write access",
+            ],
+            correctAnswer: 1,
+          },
+        ]);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, course, progress]);
+
+  const handleSelectOption = (questionId: number, optionIdx: number) => {
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [questionId]: optionIdx,
+    }));
+  };
+
+  const answeredCount = Object.keys(selectedAnswers).length;
+  const totalCount = questions.length;
+
+  let correctCount = 0;
+  questions.forEach((q) => {
+    if (selectedAnswers[q.id] === q.correctAnswer) {
+      correctCount++;
+    }
+  });
+
+  const percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+  const isPassed = percentage >= 60;
+
+  const handleSaveAndSubmit = async () => {
+    if (!course?.id) return;
+    setSaving(true);
+
+    try {
+      const courseId = course.id || course._id;
+      const completedQuizzes: Record<string, boolean> = { ...(progress?.completedQuizzes || {}) };
+      questions.forEach((q) => {
+        if (selectedAnswers[q.id] !== undefined) {
+          completedQuizzes[`q_${q.id}`] = true;
+        }
+      });
+
+      const assessmentPayload = {
+        completed: answeredCount >= totalCount,
+        score: correctCount,
+        total: totalCount,
+        percentage,
+        passed: isPassed,
+        date: new Date().toISOString().split("T")[0],
+        answers: selectedAnswers,
+      };
+
+      await api.post(`/api/courses/${courseId}/progress`, {
+        userId: candidateId,
+        completedQuizzes,
+        finalAssessment: assessmentPayload,
+      });
+
+      toast({
+        title: "Assignment Quiz Saved!",
+        description: `Score: ${correctCount}/${totalCount} (${percentage}%). Status: ${isPassed ? "Passed ✅" : "In Progress"}`,
+      });
+
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      toast({
+        title: "Could not save quiz answers",
+        description: err?.message || "Please check connection",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+      <div className="bg-background border rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="p-5 border-b flex items-center justify-between bg-muted/20">
+          <div>
+            <div className="flex items-center gap-2">
+              <ClipboardCheck className="size-5 text-primary" />
+              <h3 className="font-bold text-lg text-foreground">{assignmentTitle}</h3>
+              <Badge variant="outline" className="text-xs">
+                {course?.courseName || course?.title || "Course"}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Select your answers. Answered questions will indicate correct (✅) or incorrect (❌) status.
+            </p>
+          </div>
+          <Button size="icon" variant="ghost" className="rounded-full size-8" onClick={onClose}>
+            <XCircle className="size-5 text-muted-foreground hover:text-foreground" />
+          </Button>
+        </div>
+
+        {/* Progress & Score Bar */}
+        <div className="px-5 py-3 bg-muted/10 border-b flex items-center justify-between text-xs font-medium">
+          <div className="flex items-center gap-2">
+            <span>Attempted: <strong>{answeredCount}/{totalCount}</strong></span>
+            <span>·</span>
+            <span>Score: <strong className={isPassed ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"}>{percentage}%</strong></span>
+          </div>
+          <Badge className={isPassed ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0" : answeredCount > 0 ? "bg-amber-500/10 text-amber-700 border-0" : "bg-muted text-muted-foreground border-0"}>
+            {isPassed ? "Passed ✅" : answeredCount > 0 ? "In Progress ⏳" : "Not Started"}
+          </Badge>
+        </div>
+
+        {/* Questions Body */}
+        <div className="p-5 overflow-y-auto space-y-6 flex-1">
+          {loading ? (
+            <div className="py-12 text-center text-muted-foreground text-sm flex items-center justify-center gap-2">
+              <Loader2 className="size-4 animate-spin" /> Loading assignment questions...
+            </div>
+          ) : questions.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground text-sm">
+              No questions found for this assignment.
+            </div>
+          ) : (
+            questions.map((q, qIdx) => {
+              const hasAnswered = selectedAnswers[q.id] !== undefined;
+              const chosenOption = selectedAnswers[q.id];
+              const isCorrect = chosenOption === q.correctAnswer;
+
+              return (
+                <div key={q.id || qIdx} className="p-4 rounded-xl border bg-card space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="font-semibold text-sm text-foreground flex items-start gap-2">
+                      <span className="size-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs shrink-0 font-bold mt-0.5">
+                        {qIdx + 1}
+                      </span>
+                      <span>{q.question}</span>
+                    </div>
+                    {hasAnswered && (
+                      <Badge variant="outline" className={isCorrect ? "text-[11px] shrink-0 text-emerald-700 bg-emerald-50 border-emerald-300 font-bold" : "text-[11px] shrink-0 text-red-700 bg-red-50 border-red-300 font-bold"}>
+                        {isCorrect ? "✅ Sahi (Correct)" : "❌ Galat (Incorrect)"}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Options */}
+                  <div className="space-y-2 pt-1">
+                    {q.options.map((opt: string, optIdx: number) => {
+                      const isSelected = chosenOption === optIdx;
+                      const isThisOptionCorrect = optIdx === q.correctAnswer;
+
+                      let containerClass = "p-3 rounded-lg border text-xs cursor-pointer transition-all flex items-center justify-between gap-3 ";
+                      if (hasAnswered) {
+                        if (isSelected) {
+                          if (isCorrect) {
+                            containerClass += "bg-emerald-500/15 border-emerald-500 text-emerald-900 dark:text-emerald-200 font-semibold shadow-sm";
+                          } else {
+                            containerClass += "bg-red-500/15 border-red-500 text-red-900 dark:text-red-200 font-semibold shadow-sm";
+                          }
+                        } else if (isThisOptionCorrect) {
+                          containerClass += "bg-emerald-500/5 border-emerald-500/40 text-emerald-700 dark:text-emerald-300";
+                        } else {
+                          containerClass += "bg-muted/20 border-border/60 opacity-60";
+                        }
+                      } else {
+                        containerClass += isSelected ? "bg-primary/10 border-primary text-primary font-bold shadow-sm" : "bg-muted/10 hover:bg-muted/30 border-border";
+                      }
+
+                      return (
+                        <div
+                          key={optIdx}
+                          className={containerClass}
+                          onClick={() => handleSelectOption(q.id, optIdx)}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="size-5 rounded-full border flex items-center justify-center text-[10px] font-bold shrink-0">
+                              {String.fromCharCode(65 + optIdx)}
+                            </span>
+                            <span className="truncate">{opt}</span>
+                          </div>
+
+                          <div className="shrink-0 flex items-center gap-1">
+                            {hasAnswered && isSelected && (
+                              isCorrect ? (
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded">
+                                  Your Answer ✅
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-red-700 bg-red-100 dark:bg-red-950 px-2 py-0.5 rounded">
+                                  Your Answer ❌
+                                </span>
+                              )
+                            )}
+                            {hasAnswered && !isSelected && isThisOptionCorrect && (
+                              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100/60 dark:bg-emerald-950 px-2 py-0.5 rounded">
+                                Correct Option ✅
+                              </span>
+                            )}
+                            {!hasAnswered && isSelected && (
+                              <span className="text-[10px] font-bold text-primary bg-primary/15 px-2 py-0.5 rounded">
+                                Selected
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t bg-muted/20 flex items-center justify-between gap-3 flex-wrap">
+          <div className="text-xs text-muted-foreground">
+            {answeredCount < totalCount ? (
+              <span>Remaining: <strong>{totalCount - answeredCount}</strong> question(s) left to fill</span>
+            ) : (
+              <span className="text-emerald-600 font-bold">All {totalCount} questions attempted!</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Close
+            </Button>
+            <Button
+              size="sm"
+              className="bg-[#102B6A] hover:bg-[#0B1F4D] text-white font-bold"
+              disabled={saving}
+              onClick={handleSaveAndSubmit}
+            >
+              {saving ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : <ClipboardCheck className="size-3.5 mr-1.5" />}
+              Save & Submit Answers
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function CandidateTraining() {
@@ -120,6 +511,10 @@ export default function CandidateTraining() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [assignOpen, setAssignOpen] = useState(false);
+  const [quizModal, setQuizModal] = useState<{
+    isOpen: boolean;
+    course: any;
+  }>({ isOpen: false, course: null });
 
   // Use the real backend endpoints directly here instead of the generated
   // candidate hooks. This page is recruiter/admin-facing, and the backend
@@ -238,26 +633,57 @@ export default function CandidateTraining() {
 
   const courses = useMemo(() => {
     const map = new Map<string, any>();
-    
-    // 1. Add all candidate progress courses (includes test and hhhtee)
+
+    // Index all system courses first
+    const sysMap = new Map<string, any>();
+    systemCourses.forEach((c: any) => {
+      const cid = String(c.id || c._id || "");
+      if (cid) sysMap.set(cid, c);
+    });
+    (courseDetailsQuery.data || []).forEach((c: any) => {
+      const cid = String(c.id || c._id || "");
+      if (cid) sysMap.set(cid, { ...(sysMap.get(cid) || {}), ...c });
+    });
+
+    // 1. Add all candidate progress courses merged with metadata
     allDetailedCourses.forEach((c: any) => {
-      const cid = c.id || c._id;
-      if (cid) map.set(String(cid), c);
+      const cid = String(c.id || c._id || "");
+      if (cid) {
+        const sys = sysMap.get(cid) || {};
+        map.set(cid, {
+          ...sys,
+          ...c,
+          title: c.title || c.courseName || sys.title || sys.courseName,
+          courseName: c.courseName || c.title || sys.courseName || sys.title,
+          description: c.description || sys.description,
+          thumbnail: c.thumbnail || sys.thumbnail,
+        });
+      }
     });
 
     // 2. Add courses from candidate's learning path
     (courseDetailsQuery.data || []).forEach((c: any) => {
-      const cid = c.id || c._id;
-      if (cid && !map.has(String(cid))) {
-        map.set(String(cid), c);
+      const cid = String(c.id || c._id || "");
+      if (cid) {
+        const sys = sysMap.get(cid) || {};
+        const existing = map.get(cid) || {};
+        map.set(cid, {
+          ...sys,
+          ...existing,
+          ...c,
+          title: c.title || c.courseName || existing.title || existing.courseName || sys.title || sys.courseName,
+          courseName: c.courseName || c.title || existing.courseName || existing.title || sys.courseName || sys.title,
+          description: c.description || existing.description || sys.description,
+          thumbnail: c.thumbnail || existing.thumbnail || sys.thumbnail,
+        });
       }
     });
 
     // 3. If empty, fallback to system courses
     if (map.size === 0) {
       systemCourses.forEach((c: any) => {
-        const cid = c.id || c._id;
-        if (cid) map.set(String(cid), c);
+        const cid = String(c.id || c._id || "");
+        if (cid) map.set(cid, c);
       });
     }
 
@@ -526,6 +952,9 @@ export default function CandidateTraining() {
                                 {realCourseTitle}
                                 {isDone && <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">Completed</span>}
                               </div>
+                              {course.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-1">{course.description}</p>
+                              )}
                               <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
                                 <span className="font-medium text-foreground">{lessons.length > 0 ? `${lessons.length} lessons` : "60 min"}</span>
                                 {watchTimeStr && (
@@ -554,26 +983,29 @@ export default function CandidateTraining() {
                                   </Button>
                                 </Link>
 
-                                <Link href={`/course/details/${course.id}?mode=quiz`}>
-                                  <Button size="sm" className={remainingCount > 0 ? "h-8 text-xs px-3 bg-[#102B6A] hover:bg-[#0B1F4D] text-white font-bold" : "h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"}>
-                                    <Award className="size-3.5 mr-1 text-amber-300" />
-                                    {remainingCount > 0 ? `Attempt Quizzes (${remainingCount} Left)` : "Re-take Assignment"}
-                                  </Button>
-                                </Link>
+                                <Button
+                                  size="sm"
+                                  className={remainingCount > 0 ? "h-8 text-xs px-3 bg-[#102B6A] hover:bg-[#0B1F4D] text-white font-bold" : "h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"}
+                                  onClick={() => setQuizModal({ isOpen: true, course })}
+                                >
+                                  <Award className="size-3.5 mr-1 text-amber-300" />
+                                  {remainingCount > 0 ? `Attempt Quizzes (${remainingCount} Left)` : "Review & Edit Quiz"}
+                                </Button>
                               </>
                             )}
                           </div>
 
                           {/* Dynamic Active Sections & Video Modules list from API */}
                           {(() => {
-                            const realActiveSections = (Array.isArray(course.sections) ? course.sections : []).filter((sec: any) => {
-                              const secLessons = Array.isArray(sec.lessons) ? sec.lessons : [];
-                              const secCompleted = secLessons.filter((l: any) => !!p.completedLessons?.[l.id]).length;
-                              const titleLower = (sec.title || "").toLowerCase();
-                              if (secCompleted > 0) return true;
-                              if (titleLower.includes("assessment") || titleLower.includes("quiz")) return false;
-                              return secLessons.length > 0;
-                            });
+                            const realActiveSections = (Array.isArray(course.sections) ? course.sections : [])
+                              .map((sec: any) => {
+                                const validLessons = (Array.isArray(sec.lessons) ? sec.lessons : []).filter((l: any) => !isAssessmentPlaceholder(l));
+                                return { ...sec, lessons: validLessons };
+                              })
+                              .filter((sec: any) => {
+                                if (isAssessmentPlaceholder(sec)) return false;
+                                return sec.lessons.length > 0;
+                              });
 
                             if (realActiveSections.length === 0) return null;
 
@@ -584,16 +1016,17 @@ export default function CandidateTraining() {
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                   {realActiveSections.map((sec: any, sIdx: number) => {
-                                    const secLessons = Array.isArray(sec.lessons) ? sec.lessons : [];
+                                    const secLessons = sec.lessons || [];
                                     const secCompleted = secLessons.filter((l: any) => !!p.completedLessons?.[l.id]).length;
+                                    const isSecDone = secCompleted >= secLessons.length && secLessons.length > 0;
                                     return (
                                       <div key={sec.id || sIdx} className="p-2.5 rounded-lg bg-muted/30 border text-xs flex items-center justify-between gap-2">
                                         <div className="min-w-0">
-                                          <span className="font-semibold text-foreground block truncate">{sec.title || `Module ${sIdx + 1}`}</span>
+                                          <span className="font-semibold text-foreground block truncate">{sec.title || sec.sectionName || `Module ${sIdx + 1}`}</span>
                                           <span className="text-[11px] text-muted-foreground">{secCompleted} / {secLessons.length} lessons watched</span>
                                         </div>
-                                        <Badge variant="outline" className={secCompleted >= secLessons.length && secLessons.length > 0 ? "text-[10px] shrink-0 font-bold text-emerald-600 border-emerald-300 bg-emerald-50" : "text-[10px] shrink-0 font-medium"}>
-                                          {secCompleted >= secLessons.length && secLessons.length > 0 ? "Done ✅" : "In Progress"}
+                                        <Badge variant="outline" className={isSecDone ? "text-[10px] shrink-0 font-bold text-emerald-600 border-emerald-300 bg-emerald-50" : "text-[10px] shrink-0 font-medium"}>
+                                          {isSecDone ? "Done ✅" : "In Progress"}
                                         </Badge>
                                       </div>
                                     );
@@ -623,11 +1056,11 @@ export default function CandidateTraining() {
                         Course Assignments & Practical Labs
                       </CardTitle>
                       <CardDescription>
-                        Hands-on projects and lab assignments evaluated by the trainer
+                        Hands-on projects and lab assignments evaluated by the trainer (Click to review or fill quiz)
                       </CardDescription>
                     </div>
                     <Badge variant="outline" className="text-xs">
-                      {Array.isArray(candidateProjects) && candidateProjects.length > 0 ? `${candidateProjects.length} Assigned` : `${courses.length || 1} Assigned`}
+                      {courses.length > 0 ? `${courses.length} Course Module(s)` : "1 Assigned"}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -636,8 +1069,9 @@ export default function CandidateTraining() {
                     courses.map((c: any, idx: number) => {
                       const p = progressMap[String(c.id || c._id)] || (c.progress ?? {});
                       const lessons = extractCourseLessons(c);
-                      const realTitle = (c.courseName && !c.courseName.startsWith("Course ")) ? c.courseName : ((c.title && !c.title.startsWith("Course ")) ? c.title : (idx === 0 ? "hhhtee" : "test"));
-                      const isDone = (training?.progressPct ?? 0) >= 100 || p.finalAssessment?.passed;
+                      const realTitle = (c.courseName && !c.courseName.startsWith("Course ")) ? c.courseName : ((c.title && !c.title.startsWith("Course ")) ? c.title : `Course ${idx + 1}`);
+                      const completedCount = lessons.filter((l: any) => !!p.completedLessons?.[l.id]).length;
+                      const isDone = (lessons.length > 0 && completedCount >= lessons.length) || (training?.progressPct ?? 0) >= 100 || p.finalAssessment?.passed;
 
                       return (
                         <div
@@ -653,36 +1087,55 @@ export default function CandidateTraining() {
                                 <div className="font-bold text-sm text-foreground">{realTitle} - Practical Labs</div>
                                 <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5 flex-wrap">
                                   <span>Course: {realTitle}</span>
-                                  <span>· {lessons.length > 0 ? `${lessons.length} Practical Lessons` : "Practical Lab Assignment"}</span>
+                                  <span>· {lessons.length > 0 ? `${lessons.length} Practical Lessons` : "Practical Curriculum"}</span>
                                 </div>
                               </div>
                             </div>
-                            <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0 text-xs px-2.5 py-0.5 shrink-0 font-bold">
-                              Graded (Passed)
-                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs font-bold text-primary border-primary/30 hover:bg-primary/10"
+                              onClick={() => setQuizModal({ isOpen: true, course: c })}
+                            >
+                              <ClipboardCheck className="size-3.5 mr-1" />
+                              {isDone ? "Review Quizzes ✅" : "Fill / Attempt Quiz ✍️"}
+                            </Button>
                           </div>
 
-                          {/* Lessons list for this specific course */}
+                          {/* Real Lessons list for this specific course */}
                           {lessons.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                               {lessons.map((les: any, lIdx: number) => {
                                 const isLabDone = !!p.completedLessons?.[les.id] || isDone;
                                 return (
-                                  <div key={les.id || lIdx} className="p-2.5 rounded-lg bg-muted/20 border text-xs flex items-center justify-between gap-2">
+                                  <div
+                                    key={les.id || lIdx}
+                                    className="p-2.5 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all border text-xs flex items-center justify-between gap-2 cursor-pointer group"
+                                    onClick={() => setQuizModal({ isOpen: true, course: c })}
+                                  >
                                     <div className="min-w-0 flex items-center gap-2">
-                                      <ClipboardCheck className="size-3.5 text-primary shrink-0" />
+                                      <ClipboardCheck className="size-3.5 text-primary shrink-0 group-hover:scale-110 transition-transform" />
                                       <span className="font-semibold text-foreground truncate">{les.title || `Lesson ${lIdx + 1}`}</span>
                                     </div>
-                                    <Badge variant="outline" className={isLabDone ? "text-[10px] shrink-0 font-bold text-emerald-600 border-emerald-300 bg-emerald-50" : "text-[10px] shrink-0"}>
-                                      {isLabDone ? "Lab Passed ✅" : "In Progress"}
+                                    <Badge
+                                      variant="outline"
+                                      className={isLabDone ? "text-[10px] shrink-0 font-bold text-emerald-600 border-emerald-300 bg-emerald-50" : "text-[10px] shrink-0 font-bold text-amber-700 bg-amber-50 border-amber-300 hover:bg-amber-100"}
+                                    >
+                                      {isLabDone ? "Lab Passed ✅" : "In Progress (Fill) ✍️"}
                                     </Badge>
                                   </div>
                                 );
                               })}
                             </div>
                           ) : (
-                            <div className="text-xs text-muted-foreground bg-muted/20 p-3 rounded-lg border">
-                              {realTitle} Practical Lab Assignment · Score: 94/100 (Passed)
+                            <div
+                              className="text-xs text-muted-foreground bg-muted/20 p-3 rounded-lg border flex items-center justify-between cursor-pointer hover:bg-muted/30"
+                              onClick={() => setQuizModal({ isOpen: true, course: c })}
+                            >
+                              <span>{realTitle} Practical Curriculum · {isDone ? "Graded (Passed)" : "In Progress"}</span>
+                              <Badge variant="outline" className="text-[10px] font-bold text-primary">
+                                Open Quiz ✍️
+                              </Badge>
                             </div>
                           )}
                         </div>
@@ -700,129 +1153,12 @@ export default function CandidateTraining() {
                           <div className="font-semibold text-sm">{training?.programName || "Curriculum"} Practical Lab Assignment</div>
                           <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1 flex-wrap">
                             <span>Program: {training?.programName || "Career Path"}</span>
-                            <span className="text-emerald-600 font-medium">· Score: 94/100</span>
+                            <span className="text-muted-foreground">· Status: In Progress</span>
                           </div>
                         </div>
                       </div>
-                      <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0 text-xs px-2.5 py-0.5 shrink-0">
-                        Graded (Passed)
-                      </Badge>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Course Assessments & Final Exams */}
-              <Card className="border shadow-none bg-card">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Brain className="size-4 text-purple-600 dark:text-purple-400" />
-                        Course Assessments & Final Exams
-                      </CardTitle>
-                      <CardDescription>
-                        Knowledge evaluation, MCQ assessments, and final readiness exams
-                      </CardDescription>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      Passing Grade: 70%
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3 pt-1">
-                  {courses.length > 0 ? (
-                    courses.map((c: any, idx: number) => {
-                      const courseIdStr = String(c.id || c._id || "");
-                      const p = progressMap[courseIdStr] || (c.progress ?? {});
-                      const assessment = p.finalAssessment;
-                      const hasAttempted = !!assessment || (training?.progressPct ?? 0) >= 100;
-                      const isPassed = assessment?.passed || (assessment?.percentage ?? 0) >= 60 || (training?.progressPct ?? 0) >= 100;
-
-                      // Dynamically extract database test question count and score per specific course ID
-                      const isTestCourse = courseIdStr.includes("9b47df0c") || (c.courseName || c.title || "").toLowerCase().includes("test");
-
-                      const totalQ = assessment?.total
-                        ? Number(assessment.total)
-                        : (assessment?.answers ? Object.keys(assessment.answers).length : (isTestCourse ? 1 : 4));
-
-                      const correctQ = assessment?.score !== undefined
-                        ? Number(assessment.score)
-                        : (assessment?.percentage !== undefined ? Math.round((assessment.percentage / 100) * totalQ) : (isTestCourse ? 1 : 3));
-
-                      const wrongQ = Math.max(0, totalQ - correctQ);
-
-                      const scorePct = assessment?.percentage !== undefined
-                        ? Number(assessment.percentage)
-                        : Math.round((correctQ / totalQ) * 100);
-
-                      const realCourseTitle = c.courseName || c.title || c.name || `Course ${idx + 1}`;
-
-                      return (
-                        <div
-                          key={c.id || idx}
-                          className="p-4 rounded-lg border bg-background space-y-3"
-                        >
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="size-9 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
-                                <Award className="size-4" />
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-semibold text-sm">{realCourseTitle} - Assignment Test</div>
-                                <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5 flex-wrap">
-                                  <span>Course Assignment Test</span>
-                                  {assessment?.date && <span>· Completed on: {assessment.date}</span>}
-                                </div>
-                              </div>
-                            </div>
-                            <Badge className={isPassed ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0 text-xs px-2.5 py-0.5 shrink-0 font-bold" : hasAttempted ? "bg-amber-500/10 text-amber-700 border-0 text-xs px-2.5 py-0.5 shrink-0 font-bold" : "bg-muted text-muted-foreground border-0 text-xs px-2.5 py-0.5 shrink-0 font-bold"}>
-                              {isPassed ? "Exam Passed 🎉" : hasAttempted ? "Under Review" : "Pending Test"}
-                            </Badge>
-                          </div>
-
-                          {/* Detailed Question Performance Breakdown */}
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t text-xs">
-                            <div className="p-2 rounded bg-muted/30 text-center">
-                              <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Total Questions</span>
-                              <span className="font-bold text-foreground text-sm">{totalQ} {totalQ === 1 ? "Question" : "Questions"}</span>
-                            </div>
-                            <div className="p-2 rounded bg-emerald-500/10 text-center">
-                              <span className="text-emerald-700 dark:text-emerald-300 block text-[10px] uppercase font-semibold">Sahi (Correct)</span>
-                              <span className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">{correctQ} Correct ✅</span>
-                            </div>
-                            <div className="p-2 rounded bg-red-500/10 text-center">
-                              <span className="text-red-700 dark:text-red-300 block text-[10px] uppercase font-semibold">Galat (Incorrect)</span>
-                              <span className="font-bold text-red-700 dark:text-red-300 text-sm">{wrongQ} Incorrect {wrongQ > 0 ? "❌" : "✅"}</span>
-                            </div>
-                            <div className="p-2 rounded bg-purple-500/10 text-center">
-                              <span className="text-purple-700 dark:text-purple-300 block text-[10px] uppercase font-semibold">Final Score</span>
-                              <span className="font-bold text-purple-700 dark:text-purple-300 text-sm">{scorePct}%</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div
-                      className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-background"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="size-9 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
-                          <Award className="size-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-sm">{training?.programName || "Career Path"} - Comprehensive Final Assessment</div>
-                          <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span>Knowledge & MCQ Assessment</span>
-                            <span className="text-purple-700 dark:text-purple-300 font-semibold">
-                              · Final Score: 88%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <Badge className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-0 text-xs px-2.5 py-0.5 shrink-0">
-                        Exam Passed
+                      <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300 border-0 text-xs px-2.5 py-0.5 shrink-0">
+                        In Progress
                       </Badge>
                     </div>
                   )}
@@ -971,6 +1307,20 @@ export default function CandidateTraining() {
               candidateName={candidate.fullName}
               open={assignOpen}
               onOpenChange={setAssignOpen}
+            />
+          )}
+
+          {quizModal.isOpen && quizModal.course && (
+            <QuizAssignmentModal
+              isOpen={quizModal.isOpen}
+              onClose={() => setQuizModal({ isOpen: false, course: null })}
+              course={quizModal.course}
+              candidateId={id}
+              progress={progressMap[String(quizModal.course.id || quizModal.course._id)] || quizModal.course.progress}
+              onSuccess={() => {
+                qc.invalidateQueries({ queryKey: ["admin-candidate-training", id] });
+                qc.invalidateQueries({ queryKey: ["candidate-course-progress-details", id] });
+              }}
             />
           )}
         </div>
