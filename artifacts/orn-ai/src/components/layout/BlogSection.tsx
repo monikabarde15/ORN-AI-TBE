@@ -2,6 +2,7 @@
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import api from "../../../services/api";
 
 interface BlogPost {
   id: string | number;
@@ -14,6 +15,9 @@ interface BlogPost {
   published_at?: string;
   createdAt?: string;
 }
+
+const plainText = (value?: string) =>
+  value?.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() || "";
 
 const DEFAULT_BLOGS: BlogPost[] = [
   {
@@ -64,10 +68,10 @@ export function BlogSection() {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/blogs")
+    api.get("/api/blogs")
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch blogs");
-        return res.json();
+        const payload = res?.data;
+        return Array.isArray(payload) ? payload : payload?.data;
       })
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
@@ -75,13 +79,13 @@ export function BlogSection() {
             id: item.blogId || item.id,
             blogId: item.blogId,
             title: item.title,
-            description: item.description,
-            excerpt: item.description,
+            description: plainText(item.description),
+            excerpt: plainText(item.description),
             category: item.category || "Technology",
             thumbnail:
               item.thumbnail ||
               "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80",
-            published_at: item.createdAt || new Date().toISOString(),
+            published_at: item.published_at || item.publishedAt || item.createdAt || new Date().toISOString(),
           }));
           setBlogs(formatted);
         }
